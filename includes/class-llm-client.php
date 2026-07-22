@@ -401,7 +401,18 @@ class LLMClient {
     }
 
     /**
+     * Allowed URL hosts for LLM API requests — SSRF protection.
+     */
+    const ALLOWED_API_HOSTS = array(
+        'api.openai.com',
+        'api.anthropic.com',
+        'openrouter.ai',
+    );
+
+    /**
      * Perform HTTP POST request using WordPress HTTP API for proxy/SSL support.
+     * Validates the URL against allowed hosts to prevent SSRF through
+     * malicious provider/endpoint configuration.
      *
      * @param string $url     API endpoint.
      * @param array  $body    JSON-serialisable request body.
@@ -409,9 +420,28 @@ class LLMClient {
      *
      * @return string Raw response body.
      *
-     * @throws \RuntimeException On transport failure.
+     * @throws \RuntimeException On transport failure or SSRF-detected URL.
      */
     private function http_post( string $url, array $body, array $headers = array() ): string {
+        // SSRF guard: validate URL scheme and host.
+        $parsed = wp_parse_url( $url );
+        if ( ! isset( $parsed['scheme'], $parsed['host'] ) ) {
+            throw new \RuntimeException( 'LLM request URL is malformed.' );
+        }
+        if ( ! in_array( $parsed['scheme'], array( 'https', 'http' ), true ) ) {
+            throw new \RuntimeException( 'LLM request URL must use http or https scheme.' );
+        }
+        // For Ollama (localhost/private addresses), skip hostname validation.
+        $is_ollama = 'ollama' === $this->settings->get( 'llm_provider', '' );
+        if ( ! $is_ollama && ! in_array( $parsed['host'], self::ALLOWED_API_HOSTS, true ) ) {
+            throw new \RuntimeException(
+                sprintf(
+                    'LLM request to disallowed host "%s". Allowed: %s',
+                    $parsed['host'],
+                    implode( ', ', self::ALLOWED_API_HOSTS )
+                )
+            );
+        }
         $default_headers = array(
             'Content-Type' => 'application/json',
         );
