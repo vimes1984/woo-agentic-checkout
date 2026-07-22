@@ -43,6 +43,16 @@ class SignalCollector {
             return false;
         }
 
+        // Validate measurement ID format (G-XXXXXXXXXX).
+        if ( ! preg_match( '/^G-[A-Z0-9]+$/i', $measurement_id ) ) {
+            return false;
+        }
+
+        // Validate API secret (alphanumeric only).
+        if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $api_secret ) ) {
+            return false;
+        }
+
         $payload = array(
             'client_id' => md5( session_id() ?: uniqid( 'ga4_', true ) ),
             'events'    => array(
