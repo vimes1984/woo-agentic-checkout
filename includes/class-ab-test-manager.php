@@ -534,6 +534,23 @@ class ABTestManager {
             ? $control['conversions'] / $control['impressions']
             : 0;
 
+        // Include control variant as baseline for reference.
+        $results[] = array(
+            'variant_key'      => $control['variant_key'],
+            'variant_name'     => $control['variant_name'] . ' (control)',
+            'impressions'      => (int) $control['impressions'],
+            'conversions'      => (int) $control['conversions'],
+            'cr'               => round( $control_cr * 100, 2 ),
+            'control_cr'       => round( $control_cr * 100, 2 ),
+            'lift'             => 0.0,
+            'prob_better'      => 50.0,
+            'prob_threshold'   => 0.0,
+            'bonferroni_pass'  => true,
+            'revenue'          => (float) $control['revenue'],
+            'is_significant'   => false,
+            'is_control'       => true,
+        );
+
         foreach ( $variants as $v ) {
             // Skip control in the comparison list (it always has 50% prob vs itself).
             if ( $v['is_control'] ) {
@@ -570,6 +587,7 @@ class ABTestManager {
                 'bonferroni_pass'  => ( $prob_better * 100 ) >= $prob_threshold,
                 'revenue'          => (float) $v['revenue'],
                 'is_significant'   => ( $prob_better * 100 ) >= 95.0,
+                'is_control'       => false,
             );
         }
 
