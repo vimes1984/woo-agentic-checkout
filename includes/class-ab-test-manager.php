@@ -391,9 +391,25 @@ class ABTestManager {
      * @param string $key
      * @param string $value
      */
+    /**
+     * Cookie lifetime in seconds (30 days).
+     */
+    const COOKIE_TTL = 2592000; // 30 * 24 * 60 * 60
+
     private function set_variant_cookie( string $key, string $value ) {
         if ( ! headers_sent() ) {
-            setcookie( $key, $value, time() + DAY_IN_SECONDS * 30, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            setcookie(
+                $key,
+                $value,
+                array(
+                    'expires'  => time() + self::COOKIE_TTL,
+                    'path'     => COOKIEPATH,
+                    'domain'   => COOKIE_DOMAIN,
+                    'secure'   => is_ssl(),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                )
+            );
         }
     }
 
