@@ -43,9 +43,23 @@ class ConversionAnalyzer {
      * @return array Analysis results.
      */
     public function run(): array {
-        $signals = $this->services['signals'];
-        $llm     = $this->services['llm'];
-        $logger  = $this->services['logger'];
+        $signals = $this->services['signals'] ?? null;
+        $llm     = $this->services['llm'] ?? null;
+        $logger  = $this->services['logger'] ?? null;
+
+        // Guard: missing required services.
+        if ( ! $signals || ! $llm ) {
+            $msg = 'Missing required services: signals or LLM.';
+            if ( $logger ) {
+                $logger->error( 'conversion_analyzer_missing_services', array( 'note' => $msg ) );
+            }
+            return array(
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array( $msg ),
+                'summary' => $msg,
+            );
+        }
 
         // Gather data.
         $orders_24h  = $signals->get_recent_orders( 24 );

@@ -39,10 +39,19 @@ class ABOptimizer {
      * Execute agent run.
      */
     public function run(): array {
-        $ab      = $this->services['ab'];
-        $llm     = $this->services['llm'];
-        $logger  = $this->services['logger'];
-        $signals = $this->services['signals'];
+        $ab      = $this->services['ab'] ?? null;
+        $llm     = $this->services['llm'] ?? null;
+        $logger  = $this->services['logger'] ?? null;
+        $signals = $this->services['signals'] ?? null;
+
+        if ( ! $ab || ! $logger ) {
+            return array(
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array( 'Missing required services: AB or Logger.' ),
+                'summary' => 'Missing required services.',
+            );
+        }
 
         $results = array(
             'experiments_analysed' => 0,
@@ -113,6 +122,10 @@ class ABOptimizer {
             if ( $max_impressions >= $min_sample * count( $variants ) ) {
                 // Check if all variants have similar conversion rates (within 5% relative).
                 $crs = array_column( $bayesian, 'cr' );
+                // Guard against empty/zero CRs.
+                if ( empty( $crs ) ) {
+                    continue;
+                }
                 $max_cr = max( $crs );
                 $min_cr = min( $crs );
 

@@ -40,10 +40,19 @@ class ErrorDetector {
      * @return array Detected issues.
      */
     public function run(): array {
-        $signals  = $this->services['signals'];
-        $logger   = $this->services['logger'];
-        $llm      = $this->services['llm'];
+        $signals  = $this->services['signals'] ?? null;
+        $logger   = $this->services['logger'] ?? null;
+        $llm      = $this->services['llm'] ?? null;
         $notifier = new \WooAgenticCheckout\Notifier();
+
+        if ( ! $signals || ! $logger ) {
+            return array(
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array( 'Missing required services: signals or logger.' ),
+                'summary' => 'Error detector could not initialise due to missing service dependencies.',
+            );
+        }
 
         $issues = array();
 

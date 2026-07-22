@@ -109,7 +109,7 @@ class CheckoutModifier {
     }
 
     /**
-     * Maybe override the checkout template.
+     * Maybe override the checkout template with a variant's custom template path.
      */
     public function maybe_override_template() {
         $config = $this->get_session_variant_config();
@@ -118,15 +118,24 @@ class CheckoutModifier {
             return;
         }
 
-        $template_name = $config['template'];
-        $custom_template = get_option( "wac_template_{$template_name}", '' );
+        $template_key  = sanitize_key( $config['template'] );
+        $custom_path   = get_option( "wac_template_path_{$template_key}", '' );
+        $template_file = get_option( "wac_template_file_{$template_key}", '' );
 
-        if ( ! empty( $custom_template ) ) {
-            add_filter( 'woocommerce_locate_template', function ( $template, $template_name, $template_path ) use ( $custom_template ) {
-                // Not overriding core WooCommerce templates, just our custom ones.
-                return $template;
-            }, 10, 3 );
+        if ( empty( $custom_path ) && empty( $template_file ) ) {
+            return;
         }
+
+        add_filter( 'woocommerce_locate_template', function ( $template, $template_name, $template_path ) use ( $custom_path, $template_file, $template_key ) {
+            // Override checkout template if custom template specified.
+            if ( ! empty( $custom_path ) && file_exists( $custom_path ) ) {
+                return $custom_path;
+            }
+            if ( ! empty( $template_file ) && $template_name === $template_file && file_exists( $template_file ) ) {
+                return $template_file;
+            }
+            return $template;
+        }, 10, 3 );
     }
 
     /**

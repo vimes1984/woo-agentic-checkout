@@ -40,11 +40,20 @@ class SelfHealingAgent {
      * @return array Healing results.
      */
     public function run(): array {
-        $healer    = $this->services['healer'];
-        $signals   = $this->services['signals'];
-        $logger    = $this->services['logger'];
-        $settings  = $this->services['settings'];
-        $llm       = $this->services['llm'];
+        $healer    = $this->services['healer'] ?? null;
+        $signals   = $this->services['signals'] ?? null;
+        $logger    = $this->services['logger'] ?? null;
+        $settings  = $this->services['settings'] ?? null;
+        $llm       = $this->services['llm'] ?? null;
+
+        if ( ! $healer || ! $signals || ! $settings || ! $logger ) {
+            return array(
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array( 'Missing required dependencies: healer, signals, settings, or logger.' ),
+                'summary' => 'Self-healing agent could not initialise.',
+            );
+        }
 
         $permission = $settings->get_heal_permission();
         $notifier   = new \WooAgenticCheckout\Notifier();

@@ -44,6 +44,19 @@ class ABTestManager {
     }
 
     /**
+     * Log a database error if wpdb encountered one.
+     *
+     * @param string $context Description of the operation.
+     */
+    private function log_db_error( string $context ) {
+        global $wpdb;
+        if ( ! empty( $wpdb->last_error ) ) {
+            // Translators: %1$s is the operation context, %2$s is the database error.
+            error_log( sprintf( '[WAC ABTest] DB error in %1$s: %2$s', $context, $wpdb->last_error ) );
+        }
+    }
+
+    /**
      * Ensure a PHP session is started so session_id() is reliable.
      */
     private function maybe_start_session() {
