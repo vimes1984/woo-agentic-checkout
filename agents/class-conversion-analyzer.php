@@ -181,6 +181,8 @@ class ConversionAnalyzer {
 
     /**
      * Build the system prompt for the LLM.
+     *
+     * @return string System instructions with explicit JSON schema.
      */
     private function build_system_prompt(): string {
         return <<<'PROMPT'

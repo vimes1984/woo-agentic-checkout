@@ -123,7 +123,7 @@ class SuggestionGenerator {
             'summary'      => $summary,
             'suggestions'  => $suggestions,
             'auto_applied' => $auto_applied,
-            'context'      => array_keys( $context ),
+            'context_keys' => is_array( $context ) ? array_keys( $context ) : array(),
         );
     }
 
