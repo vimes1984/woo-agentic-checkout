@@ -479,6 +479,7 @@ class ABTestManager {
             ),
             array( '%d', '%d', '%s', '%s', '%s', '%s' )
         );
+        $this->log_db_error( 'record_conversion' );
     }
 
     /**
@@ -506,6 +507,7 @@ class ABTestManager {
             ),
             array( '%d', '%d', '%s', '%s', '%s', '%s' )
         );
+        $this->log_db_error( 'record_impression' );
     }
 
     /**
