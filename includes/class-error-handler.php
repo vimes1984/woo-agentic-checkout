@@ -342,12 +342,29 @@ class ErrorHandler {
 
         $log_file = $log_dir . '/wac-errors.log';
 
+        $context = array();
+        if ( isset( $data['file'] ) ) {
+            $context['file'] = $data['file'];
+        }
+        if ( isset( $data['line'] ) ) {
+            $context['line'] = $data['line'];
+        }
+        $context_json = '';
+        if ( ! empty( $context ) ) {
+            // Use native json_encode for maximum compatibility (WP may not be loaded yet).
+            $encoded = @json_encode( $context, JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.json_encode_json_encode
+            if ( false !== $encoded ) {
+                $context_json = ' | ' . $encoded;
+            }
+        }
+
         $line = sprintf(
-            "[%s] [%s] %s: %s\n",
+            "[%s] [%s] %s: %s%s\n",
             gmdate( 'Y-m-d\TH:i:s\Z' ),
             strtoupper( $event ),
             $data['type'] ?? 'unknown',
-            $data['message'] ?? 'No message'
+            $data['message'] ?? 'No message',
+            $context_json
         );
 
         // Suppress any PHP warnings from file writes.

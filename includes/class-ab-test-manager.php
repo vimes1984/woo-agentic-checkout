@@ -226,17 +226,31 @@ class ABTestManager {
     public function get_variants( int $experiment_id ): array {
         global $wpdb;
 
-        return $wpdb->get_results( $wpdb->prepare(
-            "SELECT v.*,
-                    (SELECT COUNT(*) FROM {$this->table_events} ev WHERE ev.variant_id = v.id AND ev.event_type = 'conversion') as conversions,
-                    (SELECT COUNT(*) FROM {$this->table_events} ev WHERE ev.variant_id = v.id AND ev.event_type = 'impression') as impressions,
-                    (SELECT COALESCE(SUM(CAST(ev.event_data->>'$.revenue' AS DECIMAL(10,2))), 0)
-                     FROM {$this->table_events} ev WHERE ev.variant_id = v.id AND ev.event_type = 'conversion') as revenue
-             FROM {$this->table_variants} v
-             WHERE v.experiment_id = %d
-             ORDER BY v.is_control DESC, v.id ASC",
-            $experiment_id
-        ), ARRAY_A );
+        // LEFT JOIN with pre-aggregated subqueries avoids 3 correlated subqueries per row.
+        $sql = "SELECT v.*,
+                       COALESCE(conv.conversions, 0)      AS conversions,
+                       COALESCE(imp.impressions, 0)       AS impressions,
+                       COALESCE(conv.revenue, 0)          AS revenue
+                FROM {$this->table_variants} v
+                LEFT JOIN (
+                    SELECT variant_id,
+                           COUNT(*)                                                         AS conversions,
+                           COALESCE(SUM(CAST(JSON_EXTRACT(event_data, '$.revenue') AS DECIMAL(10,2))), 0) AS revenue
+                    FROM {$this->table_events}
+                    WHERE event_type = 'conversion'
+                    GROUP BY variant_id
+                ) conv ON conv.variant_id = v.id
+                LEFT JOIN (
+                    SELECT variant_id,
+                           COUNT(*) AS impressions
+                    FROM {$this->table_events}
+                    WHERE event_type = 'impression'
+                    GROUP BY variant_id
+                ) imp ON imp.variant_id = v.id
+                WHERE v.experiment_id = %d
+                ORDER BY v.is_control DESC, v.id ASC";
+
+        return $wpdb->get_results( $wpdb->prepare( $sql, $experiment_id ), ARRAY_A );
     }
 
     /**
@@ -300,6 +314,13 @@ class ABTestManager {
         $variant_key = isset( $_COOKIE[ $cookie_key ] )
             ? sanitize_key( wp_unslash( $_COOKIE[ $cookie_key ] ) )
             : null;
+
+        // Fallback: check for client-generated UUID (from localStorage JS polyfill).
+        if ( null === $variant_key && ! empty( $_COOKIE['wac_client_id'] ) ) {
+            $variant_key = isset( $_COOKIE[ $cookie_key . '_ls' ] )
+                ? sanitize_key( wp_unslash( $_COOKIE[ $cookie_key . '_ls' ] ) )
+                : null;
+        }
 
         if ( $variant_key ) {
             foreach ( $variants as $v ) {

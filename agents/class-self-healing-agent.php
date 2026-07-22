@@ -256,7 +256,17 @@ For each failing check, recommend the single most effective action to restore he
 Possible actions: rollback_setting, revert_template, disable_plugin, clear_cache,
 toggle_feature, patch_javascript, patch_css, escalate.
 
-Output JSON with an array of heal actions, each with: issue_id, action, params, reasoning.
+Output ONLY valid JSON matching this exact schema:
+{
+  "actions": [
+    {
+      "issue_id": "hc_checkout_page",
+      "action": "rollback_setting",
+      "params": {"option": "woocommerce_checkout_page_id"},
+      "reasoning": "Checkout page is missing, likely deleted accidentally."
+    }
+  ]
+}
 PROMPT;
 
             try {
@@ -341,13 +351,28 @@ PROMPT;
      * Build a healing plan from recent errors using LLM.
      */
     private function build_heal_plan_from_errors( array $errors, $llm ): array {
+        // Cold start guard: if no errors, skip LLM call.
+        if ( empty( $errors ) ) {
+            return array();
+        }
+
         $system = <<<'PROMPT'
 You are a WooCommerce self-healing agent. Recent checkout errors have been detected.
 For each distinct error, recommend the single most likely fix.
 
 Prioritise non-disruptive actions first. Use 'escalate' only for unknown errors.
 
-Output JSON with array of: issue_id, action, params, reasoning.
+Output ONLY valid JSON matching this exact schema:
+{
+  "actions": [
+    {
+      "issue_id": "err_gateway_timeout_abc",
+      "action": "clear_cache",
+      "params": {"cache_group": "api_responses"},
+      "reasoning": "Payment gateway timeout suggests stale API cache."
+    }
+  ]
+}
 PROMPT;
 
         try {
