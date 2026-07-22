@@ -40,6 +40,19 @@ function wac_autoload( $class ) {
         return; // Prevent recursion if require_once triggers another autoload.
     }
     $autoloading = true;
+    try {
+        wac_autoload_execute( $class );
+    } finally {
+        $autoloading = false;
+    }
+}
+
+/**
+ * Internal autoload logic — separated so recursion guard can use try/finally.
+ *
+ * @param string $class Class name being loaded.
+ */
+function wac_autoload_execute( $class ) {
     $prefix = 'WooAgenticCheckout\\';
     $len    = strlen( $prefix );
 
