@@ -138,6 +138,14 @@ class ABTestManager {
             if ( empty( $variant['key'] ) || empty( $variant['name'] ) ) {
                 return 0;
             }
+            // Validate variant key max length (DB column is VARCHAR(64)).
+            if ( strlen( $variant['key'] ) > 64 ) {
+                return 0;
+            }
+            // Validate variant name max length (DB column is VARCHAR(255)).
+            if ( strlen( $variant['name'] ) > 255 ) {
+                return 0;
+            }
             // Validate config_snapshot is valid JSON if provided.
             if ( isset( $variant['config'] ) && ! is_array( $variant['config'] ) ) {
                 return 0;
