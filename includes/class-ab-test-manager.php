@@ -1290,6 +1290,12 @@ class ABTestManager {
     public function get_cumulative_data( int $experiment_id, string $granularity = 'day' ): array {
         global $wpdb;
 
+        // Validate granularity to prevent SQL injection via DATE_FORMAT string.
+        $allowed_granularities = array( 'hour', 'day', 'week' );
+        if ( ! in_array( $granularity, $allowed_granularities, true ) ) {
+            return array();
+        }
+
         $date_format = ( 'hour' === $granularity ) ? '%Y-%m-%d %H:00:00' : ( 'week' === $granularity ? '%Y-%u' : '%Y-%m-%d' );
 
         $results = $wpdb->get_results( $wpdb->prepare(
