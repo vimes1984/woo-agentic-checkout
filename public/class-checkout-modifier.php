@@ -11,7 +11,7 @@ use WooAgenticCheckout\ABTestManager;
  *
  * @since 0.1.0-alpha
  */
-class CheckoutModifier {
+class CheckoutModifier /* A/B Checkout Modifier */ {
 
     /**
      * @var ABTestManager
