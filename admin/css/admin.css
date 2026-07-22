@@ -535,9 +535,20 @@
     transition: width 0.4s ease;
 }
 
-.wac-progress-bar--success { --wac-progress-color: var(--wac-success-text); }
-.wac-progress-bar--warning { --wac-progress-color: var(--wac-warning-text); }
-.wac-progress-bar--error   { --wac-progress-color: var(--wac-error-text); }
+.wac-progress-bar--success {
+    --wac-progress-color: var(--wac-success-text);
+    background-image: linear-gradient(90deg, #2e7b32, #4caf50);
+}
+
+.wac-progress-bar--warning {
+    --wac-progress-color: var(--wac-warning-text);
+    background-image: linear-gradient(90deg, #856404, #ffc107);
+}
+
+.wac-progress-bar--error {
+    --wac-progress-color: var(--wac-error-text);
+    background-image: linear-gradient(90deg, #721c24, #dc3545);
+}
 
 .wac-progress-bar--sm { height: 4px; min-width: 40px; }
 .wac-progress-bar--lg { height: 12px; min-width: 80px; }
@@ -828,6 +839,36 @@
     content: " ↓";
     opacity: 1;
     color: var(--wac-theme);
+}
+
+/* ─── Form Controls ─────────────────────────── */
+
+.wac-settings-form select,
+.wac-settings-form input[type="text"],
+.wac-settings-form input[type="password"],
+.wac-settings-form input[type="email"],
+.wac-settings-form input[type="url"],
+.wac-settings-form input[type="number"] {
+    max-width: 400px;
+}
+
+.wac-settings-form .form-table th {
+    width: 200px;
+}
+
+@media (max-width: 782px) {
+    .wac-settings-form .form-table th {
+        width: auto;
+    }
+
+    .wac-settings-form select,
+    .wac-settings-form input[type="text"],
+    .wac-settings-form input[type="password"],
+    .wac-settings-form input[type="email"],
+    .wac-settings-form input[type="url"],
+    .wac-settings-form input[type="number"] {
+        max-width: 100%;
+    }
 }
 
 /* ─── Filter Controls ───────────────────────── */

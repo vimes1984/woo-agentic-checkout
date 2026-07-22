@@ -76,6 +76,9 @@
             // Start auto-refresh if on dashboard.
             this.startAutoRefresh();
 
+            // Pause refresh when tab goes background.
+            this.handleVisibilityChange();
+
             // Clean up on page unload to prevent orphaned timers.
             var self = this;
             $(window).on('beforeunload', function () {
@@ -512,6 +515,19 @@
                 var isVisible = $rows.first().is(':visible');
                 $link.text(isVisible ? 'Hide Details' : 'View');
                 $link.attr('aria-expanded', isVisible ? 'true' : 'false');
+            });
+
+            // Click on experiment table row to toggle details.
+            $(document).on('click', '#wac-experiments-table tbody tr[data-exp-id]', function (e) {
+                // Don't toggle if clicking a button or link inside the row.
+                if ($(e.target).is('button, a, .wac-badge, .wac-action-link')) {
+                    return;
+                }
+                var $row = $(this);
+                var $viewBtn = $row.find('.wac-view-exp');
+                if ($viewBtn.length) {
+                    $viewBtn.trigger('click');
+                }
             });
 
             // Debounced pause
@@ -1029,6 +1045,21 @@
         },
 
         // ─── Auto-Refresh / Polling ──────────────────────────
+
+        /**
+         * Handle page visibility changes — pause auto-refresh when tab is hidden.
+         */
+        handleVisibilityChange: function () {
+            var self = this;
+            $(document).on('visibilitychange', function () {
+                if (document.hidden) {
+                    self.stopAutoRefresh();
+                } else {
+                    self.startAutoRefresh();
+                    self.announce('Dashboard resumed', 'polite');
+                }
+            });
+        },
 
         /**
          * Start a polling interval to auto-refresh dashboard stats.
