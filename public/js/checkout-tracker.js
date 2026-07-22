@@ -104,6 +104,8 @@
 
         init: function () {
             if (typeof wacBeacon === 'undefined') return;
+            // Clear stale _fieldTimes to prevent memory leaks from abandoned fields.
+            this._fieldTimes = {};
 
             this._pageLoadTime = Date.now();
             this.trackStep('checkout_started');
