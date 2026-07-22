@@ -288,12 +288,16 @@ class SelfHealer {
 
         $rollback_id = 'heal_' . uniqid();
 
+        // Sanitize inputs before DB insertion.
+        $safe_issue_id = substr( sanitize_text_field( $issue_id ), 0, 128 );
+        $safe_action   = sanitize_key( $action );
+
         $wpdb->insert(
             $wpdb->prefix . 'wac_heal_log',
             array(
                 'rollback_id'   => $rollback_id,
-                'issue_id'      => $issue_id,
-                'action'        => $action,
+                'issue_id'      => $safe_issue_id,
+                'action'        => $safe_action,
                 'params'        => wp_json_encode( $params ),
                 'rollback_data' => wp_json_encode( $params ), // Store original state for undo
                 'result'        => $result['message'] ?? 'OK',

@@ -107,58 +107,58 @@ class ConversionAnalyzer {
             $funnel      = $signals->get_funnel_data( 24 );
             $experiments = $this->services['ab']->get_active_experiments();
 
-        // Cold start / no-data guard.
-        $empty_order = static function ( $orders ): bool {
-            return empty( $orders ) || ! isset( $orders['total_orders'] ) || (int) $orders['total_orders'] < 1;
-        };
+            // Cold start / no-data guard.
+            $empty_order = static function ( $orders ): bool {
+                return empty( $orders ) || ! isset( $orders['total_orders'] ) || (int) $orders['total_orders'] < 1;
+            };
 
-        $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
+            $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
 
-        if ( $is_cold_start ) {
-            $logger->info( 'conversion_analysis_cold_start', array(
-                'note' => 'No order data available yet — returning baseline.',
-            ) );
-            return array(
-                'success'             => true,
-                'actions'             => 0,
-                'errors'              => array(),
-                'summary'             => 'No order data available yet. This is normal during cold start (e.g., first 24h after install).',
-                'conversion_rate_24h' => 0,
-                'conversion_rate_7d'  => 0,
-                'revenue_24h'         => 0,
-                'analysis'            => array(
-                    'verdict'         => 'no_data',
-                    'cr_assessment'   => 'No orders recorded in the analysis window.',
-                    'funnel_issues'   => array(),
-                    'likely_cause'    => 'Insufficient data — plugin may be newly installed or no traffic.',
-                    'recommendations' => array( 'Wait for data to accumulate before acting on this analysis.' ),
-                ),
-                'funnel'              => $funnel,
+            if ( $is_cold_start ) {
+                $logger->info( 'conversion_analysis_cold_start', array(
+                    'note' => 'No order data available yet — returning baseline.',
+                ) );
+                $release();
+                return array(
+                    'success'             => true,
+                    'actions'             => 0,
+                    'errors'              => array(),
+                    'summary'             => 'No order data available yet. This is normal during cold start (e.g., first 24h after install).',
+                    'conversion_rate_24h' => 0,
+                    'conversion_rate_7d'  => 0,
+                    'revenue_24h'         => 0,
+                    'analysis'            => array(
+                        'verdict'         => 'no_data',
+                        'cr_assessment'   => 'No orders recorded in the analysis window.',
+                        'funnel_issues'   => array(),
+                        'likely_cause'    => 'Insufficient data — plugin may be newly installed or no traffic.',
+                        'recommendations' => array( 'Wait for data to accumulate before acting on this analysis.' ),
+                    ),
+                    'funnel'              => $funnel,
+                );
+            }
+
+            $analysis_data = array(
+                'last_24h' => $orders_24h,
+                'last_7d'  => $orders_7d,
+                'funnel'   => $funnel,
+                'active_experiments' => count( $experiments ),
             );
-        }
 
-        $analysis_data = array(
-            'last_24h' => $orders_24h,
-            'last_7d'  => $orders_7d,
-            'funnel'   => $funnel,
-            'active_experiments' => count( $experiments ),
-        );
+            // Send to LLM for analysis.
+            $system_prompt = $this->build_system_prompt();
+            $user_prompt   = $this->build_user_prompt( $analysis_data );
+            $schema        = $this->get_output_schema();
 
-        // Send to LLM for analysis.
-        $system_prompt = $this->build_system_prompt();
-        $user_prompt   = $this->build_user_prompt( $analysis_data );
-        $schema        = $this->get_output_schema();
+            // Token budget check: warn if prompt is approaching context window limits.
+            $combined_len = strlen( $system_prompt ) + strlen( $user_prompt );
+            if ( $combined_len > 80000 ) {
+                $logger->warning( 'conversion_analyzer_large_prompt', array(
+                    'char_length' => $combined_len,
+                    'note'        => 'Prompt is large; may approach context window limit.',
+                ) );
+            }
 
-        // Token budget check: warn if prompt is approaching context window limits.
-        $combined_len = strlen( $system_prompt ) + strlen( $user_prompt );
-        if ( $combined_len > 80000 ) {
-            $logger->warning( 'conversion_analyzer_large_prompt', array(
-                'char_length' => $combined_len,
-                'note'        => 'Prompt is large; may approach context window limit.',
-            ) );
-        }
-
-        try {
             $result = $llm->analyze( $system_prompt, $user_prompt, $schema );
 
             // Guard: ensure result is an array before accessing keys.
@@ -174,6 +174,7 @@ class ConversionAnalyzer {
                 'analysis'     => $result,
             ) );
 
+            $release();
             return array(
                 'success'             => true,
                 'actions'             => 1,
@@ -186,6 +187,7 @@ class ConversionAnalyzer {
                 'funnel'              => $funnel,
             );
         } catch ( \Exception $e ) {
+            $release();
             // Sanitize error message to prevent information disclosure (file paths, API keys, tokens).
             $raw_msg   = $e->getMessage();
             $sanitized = sanitize_text_field( substr( $raw_msg, 0, 500 ) );

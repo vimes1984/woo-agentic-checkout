@@ -94,19 +94,35 @@ class Settings {
     }
 
     /**
+     * Allowed agent keys — must match this set exactly.
+     */
+    const ALLOWED_AGENT_KEYS = array(
+        'conversion_analyzer',
+        'ab_optimizer',
+        'error_detector',
+        'suggestion_generator',
+        'self_healing',
+        'self_healing_agent',
+    );
+
+    /**
      * Check if a specific agent is enabled.
+     *
+     * Only accepts keys from ALLOWED_AGENT_KEYS to prevent
+     * option name injection through crafted agent identifiers.
      *
      * @param string $agent_key
      *
      * @return bool
      */
     public function is_agent_enabled( string $agent_key ): bool {
-        $option_key = 'agent_' . str_replace( '-', '_', $agent_key ) . '_enabled';
-        $option_key = str_replace( ' ', '_', $option_key );
+        if ( ! in_array( $agent_key, self::ALLOWED_AGENT_KEYS, true ) ) {
+            return false;
+        }
 
         // Map agent keys to option keys.
         $map = array(
-            'conversion_analyzer' => 'agent_conversion_analyzer_enabled',
+            'conversion_analyzer'  => 'agent_conversion_analyzer_enabled',
             'ab_optimizer'        => 'agent_ab_optimizer_enabled',
             'error_detector'      => 'agent_error_detector_enabled',
             'suggestion_generator' => 'agent_suggestion_generator_enabled',
@@ -114,7 +130,7 @@ class Settings {
             'self_healing_agent'  => 'agent_self_healing_enabled',
         );
 
-        $option_key = $map[ $agent_key ] ?? $option_key;
+        $option_key = $map[ $agent_key ] ?? 'agent_' . $agent_key . '_enabled';
         return 'yes' === $this->get( $option_key, 'yes' );
     }
 
