@@ -819,6 +819,13 @@ class AdminUI {
     private function render_logs_tab() {
         $logger = new \WooAgenticCheckout\Logger();
         $level  = isset( $_GET['log_level'] ) ? sanitize_key( wp_unslash( $_GET['log_level'] ) ) : '';
+
+        // Whitelist: only known log levels are passed to the logger.
+        $valid_levels = array( 'error', 'warning', 'info', 'debug' );
+        if ( ! empty( $level ) && ! in_array( $level, $valid_levels, true ) ) {
+            $level = '';
+        }
+
         $logs   = $logger->get_logs( array( 'level' => $level, 'limit' => 200 ) );
         ?>
         <h2>📝 Event Log</h2>
