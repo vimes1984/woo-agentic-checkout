@@ -180,19 +180,11 @@ class SelfHealer {
      * @return int
      */
     public function get_total_heals(): int {
-<<<<<<< Updated upstream
         // Request-level cache for frequently-called dashboard metric.
-=======
-        // Request-level cache — heal count queried in dashboard panels.
->>>>>>> Stashed changes
         static $cached = null;
         if ( null !== $cached ) {
             return $cached;
         }
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
         global $wpdb;
         $cached = (int) $wpdb->get_var(
             $wpdb->prepare(

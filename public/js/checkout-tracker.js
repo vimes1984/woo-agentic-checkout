@@ -111,7 +111,6 @@
             this.trackStep('checkout_started');
             this.bindEvents();
             this.trackFieldInteractions();
-<<<<<<< Updated upstream
             this._trackSessionDuration();
         },
 
@@ -123,31 +122,6 @@
                     duration: Date.now() - self._pageLoadTime
                 });
             }, 30000);
-=======
-            this._trackUnload();
-
-            // Sync localStorage client ID for cookie-less fallback.
-            this._syncClientId();
-        },
-
-        /**
-         * Generate and sync a client ID for cookie-less fallback support.
-         */
-        _syncClientId: function () {
-            try {
-                var ls = window.localStorage;
-                if (!ls) return;
-                var cid = ls.getItem('wac_client_id');
-                if (!cid) {
-                    cid = 'wac_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    ls.setItem('wac_client_id', cid);
-                }
-                document.cookie = 'wac_client_id=' + encodeURIComponent(cid) +
-                    '; path=/; max-age=2592000; samesite=lax';
-            } catch (e) {
-                // localStorage unavailable.
-            }
->>>>>>> Stashed changes
         },
 
         /**
@@ -362,12 +336,10 @@
 
         /**
          * Send an event to the server via AJAX (unthrottled — use _sendThrottled or _enqueueBatched instead).
-         * Falls back to navigator.sendBeacon on page unload for reliable delivery.
          */
         _sendRaw: function (event, data) {
             if (!this.sessionId) return;
 
-<<<<<<< Updated upstream
             $.ajax({
                 url: wacBeacon.ajaxUrl,
                 type: 'POST',
@@ -383,68 +355,8 @@
                     // Silently log, don't disrupt checkout.
                     if (window.console && console.warn) {
                         console.warn('WAC beacon error:', textStatus, errorThrown);
-=======
-            var payload = {
-                action: 'wac_beacon',
-                nonce: wacBeacon.nonce || '',
-                event: event,
-                session: this.sessionId,
-                data: JSON.stringify(data || {})
-            };
-
-            // Use sendBeacon for unload-sensitive events (fired during page hide).
-            if (event === 'checkout_tab_hidden' || event === 'batch_events') {
-                if (navigator.sendBeacon) {
-                    var formData = new FormData();
-                    for (var key in payload) {
-                        if (payload.hasOwnProperty(key)) {
-                            formData.append(key, payload[key]);
-                        }
->>>>>>> Stashed changes
                     }
-                    navigator.sendBeacon(wacBeacon.ajaxUrl, formData);
-                    return;
                 }
-            }
-
-            var retryCount = 0;
-            var self = this;
-
-            function doAjax() {
-                $.ajax({
-                    url: wacBeacon.ajaxUrl,
-                    type: 'POST',
-                    data: payload,
-                    timeout: 3000,
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        if (retryCount < self._maxRetries && textStatus !== 'timeout') {
-                            retryCount++;
-                            setTimeout(doAjax, 500 * retryCount);
-                            return;
-                        }
-                        if (window.console && console.warn) {
-                            console.warn('WAC beacon error:', textStatus, errorThrown);
-                        }
-                    }
-                });
-            }
-
-            doAjax();
-        },
-
-        /**
-         * Track page unload events with sendBeacon for reliable delivery.
-         */
-        _trackUnload: function () {
-            var self = this;
-            var eventsToSend = this.steps.errors.slice(-3);
-
-            window.addEventListener('beforeunload', function () {
-                self._sendRaw('checkout_unloaded', {
-                    step: self.steps.current,
-                    timeOnPage: Date.now() - (self.steps.timings.checkout_started || Date.now()),
-                    recentErrors: eventsToSend
-                });
             });
         }
     };
