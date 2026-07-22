@@ -245,7 +245,7 @@ class AdminUI {
         ?>
         <div class="wac-dashboard-grid">
             <div class="wac-card">
-                <h3>🤖 Agent Status <button class="wac-refresh-btn" data-target="wac-status" title="Refresh agent status" aria-label="Refresh agent status"><span class="dashicons dashicons-update" aria-hidden="true"></span></button></h3>
+                <h3><span role="img" aria-label="Agent">🤖</span> Agent Status <button class="wac-refresh-btn" data-target="wac-status" title="Refresh agent status" aria-label="Refresh agent status"><span class="dashicons dashicons-update" aria-hidden="true"></span></button></h3>
                 <?php if ( empty( $status ) ) : ?>
                     <div class="wac-empty-state" style="padding:20px;">
                         <span class="wac-empty-state__icon" aria-hidden="true">🤖</span>
@@ -284,7 +284,7 @@ class AdminUI {
             </div>
 
             <div class="wac-card">
-                <h3>🧪 Active Experiments</h3>
+                <h3><span role="img" aria-label="Experiments">🧪</span> Active Experiments</h3>
                 <?php if ( empty( $experiments ) ) : ?>
                     <div class="wac-empty-state" style="padding:20px;">
                         <span class="wac-empty-state__icon" aria-hidden="true">🧪</span>
@@ -312,7 +312,7 @@ class AdminUI {
             </div>
 
             <div class="wac-card">
-                <h3>💡 Pending Suggestions</h3>
+                <h3><span role="img" aria-label="Suggestions">💡</span> Pending Suggestions</h3>
                 <p class="wac-number" aria-label="<?php echo esc_attr( sprintf( __( '%d pending suggestions', 'woo-agentic-checkout' ), $suggestions ) ); ?>">
                     <?php echo esc_html( $suggestions ); ?>
                 </p>
@@ -333,9 +333,10 @@ class AdminUI {
             </div>
 
             <div class="wac-card">
-                <h3>⚡ Quick Actions</h3>
-                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <h3><span role="img" aria-label="Actions">⚡</span> Quick Actions</h3>
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wac-quick-action-form" novalidate>
                     <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
+                    <?php wp_nonce_field( 'wac_quick_action', 'wac_quick_nonce' ); ?>
                     <input type="hidden" name="action" value="wac_manual_agent">
                     <p>
                         <label for="wac-quick-agent-select"><?php esc_html_e( 'Run agent:', 'woo-agentic-checkout' ); ?></label>
@@ -348,9 +349,9 @@ class AdminUI {
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="submit" class="button button-secondary" title="Run selected agent now">
+                        <button type="submit" class="button button-secondary run-agent-btn" title="Run selected agent now">
                             <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
-                            ▶ <?php esc_html_e( 'Run Agent Now', 'woo-agentic-checkout' ); ?>
+                            <span role="img" aria-label="Run">▶</span> <?php esc_html_e( 'Run Agent Now', 'woo-agentic-checkout' ); ?>
                         </button>
                     </p>
                 </form>
@@ -664,9 +665,10 @@ class AdminUI {
                             <input type="password" id="wac_llm_api_key" name="wac_llm_api_key"
                                    value="<?php echo esc_attr( get_option( 'wac_llm_api_key', '' ) ); ?>"
                                    class="regular-text" autocomplete="off"
+                                   aria-describedby="wac-api-key-desc"
                                    data-wac-validate="required-if-provider-not-ollama"
                                    data-wac-provider-field="wac_llm_provider" />
-                            <p class="description"><?php esc_html_e( 'Required for OpenAI/Anthropic/OpenRouter. Leave blank for local Ollama.', 'woo-agentic-checkout' ); ?></p>
+                            <p class="description" id="wac-api-key-desc"><?php esc_html_e( 'Required for OpenAI/Anthropic/OpenRouter. Leave blank for local Ollama.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -686,13 +688,13 @@ class AdminUI {
                     <tr>
                         <th scope="row"><label for="wac_heal_permission_level"><?php esc_html_e( 'Permission Level', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
-                            <select id="wac_heal_permission_level" name="wac_heal_permission_level">
+                            <select id="wac_heal_permission_level" name="wac_heal_permission_level" aria-describedby="wac-heal-desc">
                                 <option value="monitor" <?php selected( get_option( 'wac_heal_permission_level' ), 'monitor' ); ?>><?php esc_html_e( 'Monitor — Log only, no actions', 'woo-agentic-checkout' ); ?></option>
                                 <option value="suggest" <?php selected( get_option( 'wac_heal_permission_level' ), 'suggest' ); ?>><?php esc_html_e( 'Suggest — Recommend fixes, require approval', 'woo-agentic-checkout' ); ?></option>
                                 <option value="auto_patch" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_patch' ); ?>><?php esc_html_e( 'Auto-Patch — Safe CSS/JS/template fixes', 'woo-agentic-checkout' ); ?></option>
                                 <option value="auto_full" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_full' ); ?>><?php esc_html_e( 'Auto-Full — Rollback settings, disable plugins', 'woo-agentic-checkout' ); ?></option>
                             </select>
-                            <p class="description"><strong><?php esc_html_e( 'Suggest', 'woo-agentic-checkout' ); ?></strong> <?php esc_html_e( 'is recommended for initial use. Upgrade to auto when trusted.', 'woo-agentic-checkout' ); ?></p>
+                            <p class="description" id="wac-heal-desc"><strong><?php esc_html_e( 'Suggest', 'woo-agentic-checkout' ); ?></strong> <?php esc_html_e( 'is recommended for initial use. Upgrade to auto when trusted.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                 </table>
