@@ -45,12 +45,21 @@ class SuggestionEngine {
         $user_prompt   = $this->build_user_prompt( $context );
         $schema        = $this->get_suggestion_schema();
 
+        // Cold start / no-data guard — if context shows no orders and no traffic.
+        $meta = $context['_meta'] ?? array();
+        if ( ! empty( $meta['is_cold_start'] ) ) {
+            do_action( 'wac_log_info', 'suggestion_cold_start', 'No data available — skipping LLM generation.' );
+            return array();
+        }
+
         try {
             $response = $this->llm->analyze( $system_prompt, $user_prompt, $schema );
             $suggestions = $response['suggestions'] ?? array();
 
             $saved = array();
             foreach ( $suggestions as $suggestion ) {
+                // Normalize score to 0–1 range.
+                $suggestion['score'] = $this->normalize_score( $suggestion['score'] ?? 0.5 );
                 $saved[] = $this->save_suggestion( $suggestion );
             }
 

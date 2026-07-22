@@ -19,11 +19,18 @@ class CheckoutModifier {
     private $ab;
 
     /**
-     * Cached variant config for the current session.
+     * Cached merged variant configs for the current session (across all experiments).
      *
      * @var array|null
      */
     private $session_config = null;
+
+    /**
+     * Track which experiments have already applied configs.
+     *
+     * @var array<string, bool>
+     */
+    private $applied_experiments = array();
 
     /**
      * @param ABTestManager $ab
@@ -91,7 +98,7 @@ class CheckoutModifier {
     }
 
     /**
-     * Get variant config for current session.
+     * Get merged variant config for current session across all active experiments.
      *
      * @return array|null
      */
@@ -109,24 +116,44 @@ class CheckoutModifier {
 
         // Get the full variant config from AB test manager.
         $experiments = $this->ab->get_active_experiments();
+        $merged      = array();
+        $found_any   = false;
 
         foreach ( $experiments as $exp ) {
-            $assigned_key = $variants[ $exp['name'] ] ?? null;
-            if ( $assigned_key ) {
-                foreach ( $exp['variants'] as $variant ) {
-                    if ( $variant['variant_key'] === $assigned_key ) {
-                        $decoded = json_decode( $variant['config_snapshot'], true );
-                        if ( is_array( $decoded ) ) {
-                            $this->session_config = $decoded;
-                            return $this->session_config;
+            $exp_name     = $exp['name'];
+            $assigned_key = $variants[ $exp_name ] ?? null;
+            if ( ! $assigned_key ) {
+                continue;
+            }
+
+            foreach ( $exp['variants'] as $variant ) {
+                if ( $variant['variant_key'] === $assigned_key ) {
+                    $decoded = json_decode( $variant['config_snapshot'], true );
+                    if ( is_array( $decoded ) ) {
+                        // Merge config arrays (experiment-scoped keys like field_order, remove_fields merge).
+                        foreach ( $decoded as $config_key => $config_value ) {
+                            if ( isset( $merged[ $config_key ] ) && is_array( $merged[ $config_key ] ) && is_array( $config_value ) ) {
+                                // Deep-merge arrays for cumulative configs.
+                                $merged[ $config_key ] = array_merge( $merged[ $config_key ], $config_value );
+                            } else {
+                                $merged[ $config_key ] = $config_value;
+                            }
                         }
+                        $this->applied_experiments[ $exp_name ] = true;
+                        $found_any = true;
                     }
+                    break;
                 }
             }
         }
 
-        $this->session_config = array();
-        return null;
+        if ( ! $found_any ) {
+            $this->session_config = array();
+            return null;
+        }
+
+        $this->session_config = $merged;
+        return $this->session_config;
     }
 
     /**

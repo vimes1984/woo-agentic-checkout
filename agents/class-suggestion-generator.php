@@ -114,18 +114,43 @@ class SuggestionGenerator {
         $signals = $this->services['signals'];
         $ab      = $this->services['ab'];
 
+        $orders_24h    = $signals->get_recent_orders( 24 );
+        $orders_7d     = $signals->get_recent_orders( 168 );
+        $funnel        = $signals->get_funnel_data( 168 );
+        $experiments   = $ab->get_experiments( '', 10 );
+        $recent_errors = $signals->get_recent_errors( 24, 20 );
+
+        // Annotate cold-start / no-data state.
+        $has_orders = is_array( $orders_7d ) && isset( $orders_7d['total_orders'] ) && (int) $orders_7d['total_orders'] > 0;
+        $has_errors = ! empty( $recent_errors );
+        $has_traffic = false;
+        if ( is_array( $funnel ) && ! empty( $funnel ) ) {
+            foreach ( $funnel as $v ) {
+                if ( (int) $v > 0 ) {
+                    $has_traffic = true;
+                    break;
+                }
+            }
+        }
+
         $context = array(
-            'orders_24h'      => $signals->get_recent_orders( 24 ),
-            'orders_7d'       => $signals->get_recent_orders( 168 ),
-            'funnel'          => $signals->get_funnel_data( 168 ),
-            'experiments'     => $ab->get_experiments( '', 10 ),
-            'recent_errors'   => $signals->get_recent_errors( 24, 20 ),
-            'plugin_version'  => WAC_VERSION,
-            'wc_version'      => defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown',
-            'wp_version'      => get_bloginfo( 'version' ),
-            'currency'        => get_woocommerce_currency(),
-            'country'         => get_option( 'woocommerce_default_country', '' ),
-            'site_url'        => home_url(),
+            'orders_24h'            => $orders_24h,
+            'orders_7d'             => $orders_7d,
+            'funnel'                => $funnel,
+            'experiments'           => $experiments,
+            'recent_errors'         => $recent_errors,
+            'plugin_version'        => WAC_VERSION,
+            'wc_version'            => defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown',
+            'wp_version'            => get_bloginfo( 'version' ),
+            'currency'              => get_woocommerce_currency(),
+            'country'               => get_option( 'woocommerce_default_country', '' ),
+            'site_url'              => home_url(),
+            '_meta'                 => array(
+                'has_orders'  => $has_orders,
+                'has_errors'  => $has_errors,
+                'has_traffic' => $has_traffic,
+                'is_cold_start' => ! $has_orders && ! $has_errors && ! $has_traffic,
+            ),
         );
 
         return $context;

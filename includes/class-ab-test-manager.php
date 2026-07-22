@@ -105,7 +105,10 @@ class ABTestManager {
             return 0;
         }
 
-        $wpdb->insert(
+        // Use transaction to ensure experiment + variants are inserted atomically.
+        $wpdb->query( 'START TRANSACTION' );
+
+        $inserted = $wpdb->insert(
             $this->table_experiments,
             array(
                 'name'         => $name,
@@ -118,11 +121,16 @@ class ABTestManager {
             array( '%s', '%s', '%s', '%d', '%s', '%s' )
         );
 
+        if ( ! $inserted ) {
+            $wpdb->query( 'ROLLBACK' );
+            return 0;
+        }
+
         $experiment_id = $wpdb->insert_id;
 
         foreach ( $variants as $i => $variant ) {
             $config = isset( $variant['config'] ) ? $variant['config'] : array();
-            $wpdb->insert(
+            $inserted = $wpdb->insert(
                 $this->table_variants,
                 array(
                     'experiment_id'    => $experiment_id,
@@ -136,7 +144,14 @@ class ABTestManager {
                 ),
                 array( '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
             );
+
+            if ( ! $inserted ) {
+                $wpdb->query( 'ROLLBACK' );
+                return 0;
+            }
         }
+
+        $wpdb->query( 'COMMIT' );
 
         return $experiment_id;
     }
