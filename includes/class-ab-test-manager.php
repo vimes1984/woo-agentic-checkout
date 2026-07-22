@@ -296,7 +296,11 @@ class ABTestManager {
         }
 
         // Assign based on traffic_pct threshold and variant weighting.
-        $hash = crc32( $cookie_key . $this->get_session_id() );
+        // Use multiple entropy sources to avoid bias when session/cookies are unavailable.
+        $entropy  = $cookie_key . $this->get_session_id();
+        $entropy .= $_SERVER['REMOTE_ADDR'] ?? '';
+        $entropy .= $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $hash = crc32( $entropy );
         $mod  = abs( $hash ) % 100;
 
         // If outside experiment traffic percentage, show control.
