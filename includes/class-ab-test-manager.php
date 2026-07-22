@@ -485,8 +485,16 @@ class ABTestManager {
     }
 
     /**
+     * Number of non-control variants (cached for correction).
+     *
+     * @var int|null
+     */
+    private $non_control_count = null;
+
+    /**
      * Compute simple Bayesian probability of each variant being best.
      * Winner is the variant with highest probability of being superior to control.
+     * Applies Bonferroni correction when more than 2 variants exist.
      *
      * @param int $experiment_id
      *
@@ -513,11 +521,25 @@ class ABTestManager {
             return $results;
         }
 
+        $non_control = 0;
+        foreach ( $variants as $v ) {
+            if ( ! $v['is_control'] ) {
+                $non_control++;
+            }
+        }
+        $this->non_control_count = $non_control;
+        $bonferroni_alpha = $non_control > 1 ? ( 0.05 / $non_control ) : 0.05;
+
         $control_cr = $control['impressions'] > 0
             ? $control['conversions'] / $control['impressions']
             : 0;
 
         foreach ( $variants as $v ) {
+            // Skip control in the comparison list (it always has 50% prob vs itself).
+            if ( $v['is_control'] ) {
+                continue;
+            }
+
             $variant_cr = $v['impressions'] > 0
                 ? $v['conversions'] / $v['impressions']
                 : 0;
@@ -530,18 +552,24 @@ class ABTestManager {
                 $control['impressions'] - $control['conversions'] + 1
             );
 
+            // Adjusted threshold: Bonferroni correction for multiple comparisons.
+            $prob_threshold = $bonferroni_alpha * 100;
+
             $results[] = array(
-                'variant_key'   => $v['variant_key'],
-                'variant_name'  => $v['variant_name'],
-                'impressions'   => (int) $v['impressions'],
-                'conversions'   => (int) $v['conversions'],
-                'cr'            => round( $variant_cr * 100, 2 ),
-                'control_cr'    => round( $control_cr * 100, 2 ),
-                'lift'          => $control_cr > 0
+                'variant_key'      => $v['variant_key'],
+                'variant_name'     => $v['variant_name'],
+                'impressions'      => (int) $v['impressions'],
+                'conversions'      => (int) $v['conversions'],
+                'cr'               => round( $variant_cr * 100, 2 ),
+                'control_cr'       => round( $control_cr * 100, 2 ),
+                'lift'             => $control_cr > 0
                     ? round( ( ( $variant_cr - $control_cr ) / $control_cr ) * 100, 2 )
                     : 0,
-                'prob_better'   => round( $prob_better * 100, 2 ),
-                'revenue'       => (float) $v['revenue'],
+                'prob_better'      => round( $prob_better * 100, 2 ),
+                'prob_threshold'   => round( $prob_threshold, 2 ),
+                'bonferroni_pass'  => ( $prob_better * 100 ) >= $prob_threshold,
+                'revenue'          => (float) $v['revenue'],
+                'is_significant'   => ( $prob_better * 100 ) >= 95.0,
             );
         }
 

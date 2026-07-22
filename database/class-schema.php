@@ -38,7 +38,8 @@ class Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_level (level),
             INDEX idx_event (event),
-            INDEX idx_created (created_at)
+            INDEX idx_created (created_at),
+            INDEX idx_level_created (level, created_at)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Experiments ──────────────────────────────────
@@ -54,7 +55,8 @@ class Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             ended_at DATETIME DEFAULT NULL,
             INDEX idx_status (status),
-            INDEX idx_created (created_at)
+            INDEX idx_created (created_at),
+            INDEX idx_exp_var_event (experiment_id, variant_id, event_type)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Variants ─────────────────────────────────────
@@ -71,7 +73,8 @@ class Schema {
             winner_flag TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_experiment (experiment_id),
-            INDEX idx_status (status)
+            INDEX idx_status (status),
+            INDEX idx_experiment_status (experiment_id, status)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Events ───────────────────────────────────────
@@ -88,7 +91,9 @@ class Schema {
             INDEX idx_experiment (experiment_id),
             INDEX idx_type (event_type),
             INDEX idx_session (session_id),
-            INDEX idx_created (created_at)
+            INDEX idx_created (created_at),
+            INDEX idx_session_event (session_id, event),
+            INDEX idx_session_created (session_id, created_at)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Beacon Events (checkout telemetry) ──────────────
@@ -102,7 +107,8 @@ class Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_session (session_id),
             INDEX idx_event (event),
-            INDEX idx_created (created_at)
+            INDEX idx_created (created_at),
+            INDEX idx_issue_created (issue_id, created_at)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Suggestions ──────────────────────────────────────
@@ -122,7 +128,8 @@ class Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_status (status),
             INDEX idx_category (category),
-            INDEX idx_score (score DESC)
+            INDEX idx_score (score DESC),
+            INDEX idx_status_score (status, score DESC)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Healing Log ──────────────────────────────────────
