@@ -175,6 +175,9 @@ class Core {
      * Show admin notices for wac_msg query params.
      *
      * Notices are is-dismissible and rendered only on the wac-dashboard page.
+     * These are PHP fallback notices — the JS toast system also interprets
+     * the wac_msg param, so we use a suppression flag to avoid double-rendering
+     * when JS already handled it.
      */
     public function admin_notices() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
@@ -185,6 +188,11 @@ class Core {
         // We permit notices without nonce since they're read-only display.
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
         if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) {
+            return;
+        }
+
+        // Suppress PHP notices if the JS flag is present — JS will show toasts instead.
+        if ( isset( $_GET['wac_js'] ) && '1' === $_GET['wac_js'] ) {
             return;
         }
 
@@ -224,6 +232,28 @@ class Core {
                 esc_attr( $msg ),
                 esc_html( $n['text'] )
             );
+
+            // Output inline script to auto-dismiss the PHP notice after JS replaces it.
+            ?>
+            <script>
+            (function() {
+                var notice = document.querySelector('.wac-notice[data-wac-msg="<?php echo esc_js( $msg ); ?>"]');
+                if (notice && typeof window.WACAdmin !== 'undefined') {
+                    setTimeout(function() {
+                        if (notice && notice.parentNode) {
+                            notice.style.transition = 'opacity 0.3s';
+                            notice.style.opacity = '0';
+                            setTimeout(function() {
+                                if (notice && notice.parentNode) {
+                                    notice.parentNode.removeChild(notice);
+                                }
+                            }, 300);
+                        }
+                    }, 2000);
+                }
+            })();
+            </script>
+            <?php
         }
     }
 
@@ -239,14 +269,23 @@ class Core {
     /**
      * Enqueue admin CSS/JS.
      *
+     * Uses filemtime for asset versioning to bust caches after updates
+     * without requiring a plugin version bump.
+     *
      * @param string $hook The current admin page hook.
      */
     public function enqueue_admin_assets( $hook ) {
         if ( ! str_contains( $hook, 'wac-' ) ) {
             return;
         }
-        wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), WAC_VERSION );
-        wp_enqueue_script( 'wac-admin', WAC_URL . 'admin/js/admin.js', array( 'jquery', 'wp-util' ), WAC_VERSION, true );
+
+        $css_file = WAC_PATH . 'admin/css/admin.css';
+        $css_ver  = file_exists( $css_file ) ? filemtime( $css_file ) : WAC_VERSION;
+        wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), $css_ver );
+
+        $js_file = WAC_PATH . 'admin/js/admin.js';
+        $js_ver  = file_exists( $js_file ) ? filemtime( $js_file ) : WAC_VERSION;
+        wp_enqueue_script( 'wac-admin', WAC_URL . 'admin/js/admin.js', array( 'jquery', 'wp-util' ), $js_ver, true );
 
         $ab_service     = $this->get_service( 'ab' );
         $active_tests   = $ab_service ? $ab_service->get_active_experiments() : array();
@@ -264,6 +303,7 @@ class Core {
             'activeExperiments'   => count( $active_tests ),
             'totalSelfHeals'      => (int) $total_heals,
             'pluginUrl'           => WAC_URL,
+            'wacJsFlag'           => '1',
             'strings'             => array(
                 'confirmPause'    => __( 'Pause this experiment? Visitors will see the control variant.', 'woo-agentic-checkout' ),
                 'confirmResume'   => __( 'Resume this experiment?', 'woo-agentic-checkout' ),
@@ -275,6 +315,15 @@ class Core {
                 'rejecting'       => __( 'Rejecting…', 'woo-agentic-checkout' ),
                 'errorGeneric'    => __( 'Something went wrong. Please try again.', 'woo-agentic-checkout' ),
                 'errorNetwork'    => __( 'Network error. Please check your connection.', 'woo-agentic-checkout' ),
+                'successNotice'   => __( 'Action completed successfully.', 'woo-agentic-checkout' ),
+                'appliedNotice'   => __( 'Suggestion applied successfully!', 'woo-agentic-checkout' ),
+                'rejectedNotice'  => __( 'Suggestion rejected.', 'woo-agentic-checkout' ),
+                'errorNotice'     => __( 'Action failed. Please try again.', 'woo-agentic-checkout' ),
+                'noAgentNotice'   => __( 'No agent selected.', 'woo-agentic-checkout' ),
+                'expPlaceholder'  => __( 'Experiment creation wizard coming soon!', 'woo-agentic-checkout' ),
+                'serviceUnavailable' => __( 'Service unavailable. Please refresh and try again.', 'woo-agentic-checkout' ),
+                'agentSuccess'    => __( "Agent '%s' completed successfully.", 'woo-agentic-checkout' ),
+                'agentError'      => __( "Agent '%s' encountered an error.", 'woo-agentic-checkout' ),
             ),
         ) );
     }

@@ -143,7 +143,7 @@ class AdminHandlers {
         $agent_key = isset( $_POST['agent_key'] ) ? sanitize_key( wp_unslash( $_POST['agent_key'] ) ) : '';
 
         if ( empty( $agent_key ) ) {
-            wp_safe_redirect( add_query_arg( 'wac_msg', 'no_agent', wp_get_referer() ) );
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'no_agent', 'wac_js' => '1' ), wp_get_referer() ) );
             exit;
         }
 
@@ -152,7 +152,7 @@ class AdminHandlers {
 
         if ( ! $agent_manager ) {
             $this->logger->warning( 'manual_agent_service_unavailable', array( 'agent' => $agent_key ) );
-            wp_safe_redirect( add_query_arg( 'wac_msg', 'service_unavailable', wp_get_referer() ) );
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'service_unavailable', 'wac_js' => '1' ), wp_get_referer() ) );
             exit;
         }
 
@@ -164,7 +164,7 @@ class AdminHandlers {
         ) );
 
         $status = isset( $result['error'] ) ? 'error' : 'success';
-        wp_safe_redirect( add_query_arg( array( 'wac_msg' => $status, 'wac_agent' => $agent_key ), wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => $status, 'wac_agent' => $agent_key, 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
@@ -192,16 +192,16 @@ class AdminHandlers {
                         'id'    => $suggestion_id,
                         'error' => $result->get_error_message(),
                     ) );
-                    wp_safe_redirect( add_query_arg( 'wac_msg', 'error', wp_get_referer() ) );
+                    wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
                     exit;
                 }
                 $this->logger->info( 'suggestion_applied', array( 'id' => $suggestion_id ) );
-                wp_safe_redirect( add_query_arg( 'wac_msg', 'applied', wp_get_referer() ) );
+                wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'applied', 'wac_js' => '1' ), wp_get_referer() ) );
                 exit;
             }
         }
 
-        wp_safe_redirect( add_query_arg( 'wac_msg', 'error', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
@@ -232,7 +232,7 @@ class AdminHandlers {
             }
         }
 
-        wp_safe_redirect( add_query_arg( 'wac_msg', 'rejected', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'rejected', 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
@@ -249,7 +249,7 @@ class AdminHandlers {
         }
 
         // Placeholder — full experiment creation wizard coming in Phase 3.
-        wp_safe_redirect( add_query_arg( 'wac_msg', 'exp_placeholder', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'exp_placeholder', 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
@@ -265,7 +265,7 @@ class AdminHandlers {
             wp_die( 'Insufficient permissions.' );
         }
 
-        wp_safe_redirect( add_query_arg( 'wac_msg', 'success', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'success', 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
