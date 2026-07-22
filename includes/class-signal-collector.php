@@ -362,6 +362,12 @@ class SignalCollector {
 
         // Sign with private key.
         $private_key = $credentials['private_key'];
+
+        // Validate private key format before signing.
+        if ( ! str_contains( $private_key, '-----BEGIN' ) ) {
+            return null;
+        }
+
         $signature   = '';
 
         // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
