@@ -517,8 +517,10 @@ class ABTestManager {
             );
         }
 
-        // Mark experiment as winner.
-        $wpdb->update(
+        // Wrap all mutations in a transaction for atomicity.
+        $wpdb->query( 'START TRANSACTION' );
+
+        $updated = $wpdb->update(
             $this->table_experiments,
             array(
                 'status'    => self::STATUS_WINNER,
@@ -530,8 +532,13 @@ class ABTestManager {
             array( '%d' )
         );
 
+        if ( false === $updated ) {
+            $wpdb->query( 'ROLLBACK' );
+            return;
+        }
+
         // Mark winning variant.
-        $wpdb->update(
+        $updated = $wpdb->update(
             $this->table_variants,
             array( 'winner_flag' => 1 ),
             array(
@@ -542,14 +549,26 @@ class ABTestManager {
             array( '%d', '%s' )
         );
 
+        if ( false === $updated ) {
+            $wpdb->query( 'ROLLBACK' );
+            return;
+        }
+
         // Mark all other variants as concluded.
-        $wpdb->query( $wpdb->prepare(
+        $updated = $wpdb->query( $wpdb->prepare(
             "UPDATE {$this->table_variants}
              SET status = 'concluded'
              WHERE experiment_id = %d AND variant_key != %s",
             $experiment_id,
             $variant_key
         ) );
+
+        if ( false === $updated ) {
+            $wpdb->query( 'ROLLBACK' );
+            return;
+        }
+
+        $wpdb->query( 'COMMIT' );
 
         // Log the winner declaration.
         do_action( 'wac_ab_test_winner', $experiment_id, $variant_key );
