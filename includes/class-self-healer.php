@@ -214,10 +214,10 @@ class SelfHealer {
         ), ARRAY_A );
 
         // Strict type casting for numeric fields.
-        foreach ( $rows as &\$row ) {
-            \$row["id"] = (int) \$row["id"];
+        foreach ( $rows as &$row ) {
+            $row['id'] = (int) $row['id'];
         }
-        unset( \$row );
+        unset( $row );
 
         return \$rows;
     }

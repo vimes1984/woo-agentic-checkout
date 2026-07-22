@@ -571,7 +571,7 @@
                                     .addClass('wac-badge-paused')
                                     .text('paused');
                                 $link.replaceWith(
-                                    '<button class="wac-action-link wac-resume-exp" data-id="' + id + '" title="Resume this experiment">Resume</button>'
+                                    '<button class="wac-action-link wac-resume-exp" data-id="' + self.escHtml(String(id)) + '" title="Resume this experiment">Resume</button>'
                                 );
                             } else {
                                 self.showToast(response.data && response.data.message
@@ -618,7 +618,7 @@
                                     .addClass('wac-badge-active')
                                     .text('active');
                                 $link.replaceWith(
-                                    '<button class="wac-action-link wac-pause-exp" data-id="' + id + '" title="Pause this experiment">Pause</button>'
+                                    '<button class="wac-action-link wac-pause-exp" data-id="' + self.escHtml(String(id)) + '" title="Pause this experiment">Pause</button>'
                                 );
                             } else {
                                 self.showToast(response.data && response.data.message
