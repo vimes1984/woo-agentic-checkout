@@ -126,31 +126,6 @@ class SelfHealingAgent {
             }
         }
 
-        // ─── Recent Error Response ─────────────────────────────
-
-        $recent_errors = $signals->get_recent_errors( 1, 10 );
-
-        if ( ! empty( $recent_errors ) && empty( $failing ) ) {
-            $heal_plan = $this->build_heal_plan_from_errors( $recent_errors, $llm );
-
-            foreach ( $heal_plan as $plan ) {
-                $result = $healer->attempt_heal(
-                    $plan['issue_id'] ?? uniqid( 'heal_' ),
-                    $plan['action'],
-                    $plan['params'] ?? array(),
-                    $permission
-                );
-
-                if ( $result['success'] ) {
-                    $results['healed']++;
-                } else {
-                    $results['failed']++;
-                }
-
-                $results['actions'][] = $result;
-            }
-        }
-
         $logger->info( 'self_heal_run', array(
             'health_checked' => count( $health_checks ),
             'health_passing' => count( $health_checks ) - count( $failing ),
