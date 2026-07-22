@@ -160,13 +160,23 @@ class ErrorDetector {
             }
         }
 
-        // 5. Send notifications for critical issues.
+        // 5. Send notifications for critical issues (with data truncation for safety).
         foreach ( $critical as $issue ) {
-            $notifier->critical(
-                $issue['event'] ?? 'Checkout Error Detected',
-                $issue['details'] ?? $issue['event'] ?? 'Unknown critical issue',
-                $issue
-            );
+            $safe_event   = sanitize_text_field( $issue['event'] ?? 'Checkout Error Detected' );
+            $safe_details = sanitize_text_field( substr( $issue['details'] ?? $issue['event'] ?? 'Unknown critical issue', 0, 500 ) );
+            // Truncate sample messages to prevent oversized payloads containing stack traces.
+            $safe_issue = $issue;
+            if ( isset( $safe_issue['samples'] ) && is_array( $safe_issue['samples'] ) ) {
+                foreach ( $safe_issue['samples'] as $idx => $sample ) {
+                    if ( isset( $sample['message'] ) ) {
+                        $safe_issue['samples'][ $idx ]['message'] = substr( $sample['message'], 0, 500 );
+                    }
+                    if ( isset( $sample['context'] ) ) {
+                        unset( $safe_issue['samples'][ $idx ]['context'] );
+                    }
+                }
+            }
+            $notifier->critical( $safe_event, $safe_details, $safe_issue );
         }
 
         // Logging moved to return block.
