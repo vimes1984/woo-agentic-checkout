@@ -313,7 +313,7 @@ class SuggestionEngine {
             'action_type' => sanitize_key( $suggestion['action_type'] ?? 'css' ),
             'action_data' => wp_json_encode( $suggestion['action_data'] ?? array() ),
             'score'       => $score,
-            'expected_lift' => $suggestion['expected_lift'] ?? null,
+            'expected_lift' => isset( $suggestion['expected_lift'] ) ? min( 100.0, max( -100.0, (float) $suggestion['expected_lift'] ) ) : null,
             'category'    => sanitize_key( $suggestion['category'] ?? 'general' ),
             'status'      => self::STATUS_PENDING,
             'created_at'  => current_time( 'mysql' ),
