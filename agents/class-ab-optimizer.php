@@ -111,6 +111,7 @@ class ABOptimizer {
             $logger->info( 'ab_optimizer_no_experiments', array(
                 'note' => 'No active experiments to analyse.',
             ) );
+            delete_transient( $lock_key );
             return array(
                 'success'    => true,
                 'actions'    => 0,
@@ -243,6 +244,8 @@ class ABOptimizer {
         }
 
         $logger->info( 'ab_optimizer_run', $results );
+
+        delete_transient( $lock_key );
 
         // Normalize to standardized result format.
         return array(

@@ -153,7 +153,6 @@ class Notifier {
         {$context_html}
         <p style="margin:16px 0 0;font-size:11px;color:#8c8f94;">
             Woo Agentic Checkout &mdash; <a href="
-        </p>
     </div>
 </body>
 </html>
