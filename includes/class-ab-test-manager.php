@@ -111,8 +111,8 @@ class ABTestManager {
         $inserted = $wpdb->insert(
             $this->table_experiments,
             array(
-                'name'         => $name,
-                'description'  => $description,
+                'name'         => sanitize_text_field( $name ),
+                'description'  => sanitize_textarea_field( $description ),
                 'status'       => self::STATUS_ACTIVE,
                 'traffic_pct'  => min( 100, max( 1, $traffic_pct ) ),
                 'created_at'   => current_time( 'mysql' ),
@@ -134,8 +134,8 @@ class ABTestManager {
                 $this->table_variants,
                 array(
                     'experiment_id'    => $experiment_id,
-                    'variant_key'      => $variant['key'],
-                    'variant_name'     => $variant['name'],
+                    'variant_key'      => sanitize_key( $variant['key'] ),
+                    'variant_name'     => sanitize_text_field( $variant['name'] ),
                     'is_control'       => 0 === $i ? 1 : 0,
                     'traffic_percent'  => $variant['traffic_percent'] ?? floor( 100 / count( $variants ) ),
                     'config_snapshot'  => wp_json_encode( $config ),

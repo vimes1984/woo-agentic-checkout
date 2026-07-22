@@ -60,6 +60,12 @@ class SuggestionEngine {
             foreach ( $suggestions as $suggestion ) {
                 // Normalize score to 0–1 range.
                 $suggestion['score'] = $this->normalize_score( $suggestion['score'] ?? 0.5 );
+
+                // Deduplicate: skip if a pending suggestion with same title + action_type already exists.
+                if ( $this->suggestion_exists( $suggestion['title'] ?? '', $suggestion['action_type'] ?? '' ) ) {
+                    continue;
+                }
+
                 $saved[] = $this->save_suggestion( $suggestion );
             }
 
@@ -68,6 +74,29 @@ class SuggestionEngine {
             do_action( 'wac_log_error', 'suggestion_generation_failed', $e->getMessage() );
             return array();
         }
+    }
+
+    /**
+     * Check if a suggestion with similar title + action_type already exists (pending state).
+     *
+     * @param string $title
+     * @param string $action_type
+     * @return bool
+     */
+    private function suggestion_exists( string $title, string $action_type ): bool {
+        if ( empty( $title ) || empty( $action_type ) ) {
+            return false;
+        }
+        global $wpdb;
+        $count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_suggestions
+             WHERE status = 'pending'
+             AND action_type = %s
+             AND title = %s",
+            $action_type,
+            $title
+        ) );
+        return $count > 0;
     }
 
     /**
