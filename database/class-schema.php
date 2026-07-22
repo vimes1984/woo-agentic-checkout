@@ -308,7 +308,7 @@ class Schema {
         // Single query: get all table stats at once.
         $placeholders = implode( ',', array_fill( 0, count( $full_names ), '%s' ) );
         $results      = $wpdb->get_results( $wpdb->prepare(
-            "SELECT TABLE_NAME, TABLE_ROWS
+            "SELECT TABLE_NAME, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH, ENGINE
              FROM information_schema.TABLES
              WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN ({$placeholders})",
             array_merge( array( DB_NAME ), $full_names )
@@ -316,14 +316,23 @@ class Schema {
 
         foreach ( $tables as $short => $full_name ) {
             if ( isset( $results[ $full_name ] ) ) {
+                $t = $results[ $full_name ];
                 $info[ $short ] = array(
-                    'exists' => true,
-                    'rows'   => (int) $results[ $full_name ]->TABLE_ROWS,
+                    'exists'       => true,
+                    'rows'         => (int) $t->TABLE_ROWS,
+                    'data_size'    => (int) $t->DATA_LENGTH,
+                    'index_size'   => (int) $t->INDEX_LENGTH,
+                    'total_size'   => (int) $t->DATA_LENGTH + (int) $t->INDEX_LENGTH,
+                    'engine'       => $t->ENGINE,
                 );
             } else {
                 $info[ $short ] = array(
-                    'exists' => false,
-                    'rows'   => 0,
+                    'exists'       => false,
+                    'rows'         => 0,
+                    'data_size'    => 0,
+                    'index_size'   => 0,
+                    'total_size'   => 0,
+                    'engine'       => null,
                 );
             }
         }
