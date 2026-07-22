@@ -384,12 +384,15 @@ class Core {
     public function ajax_beacon() {
         check_ajax_referer( 'wac_beacon', 'nonce' );
 
-        $event   = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
+        $event    = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
         $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
 
-        // Limit raw data to 10KB to prevent oversized payload storage.
-        if ( is_string( $raw_data ) && strlen( $raw_data ) > 10240 ) {
-            $raw_data = substr( $raw_data, 0, 10240 );
+        // Limit raw data to 10KB for storage safety. Sanitize the raw input.
+        if ( is_string( $raw_data ) ) {
+            $raw_data = sanitize_textarea_field( $raw_data );
+            if ( strlen( $raw_data ) > 10240 ) {
+                $raw_data = substr( $raw_data, 0, 10240 );
+            }
         }
 
         $data    = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
