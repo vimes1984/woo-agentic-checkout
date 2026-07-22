@@ -144,6 +144,19 @@
                 self.trackStep('payment_selected');
             });
 
+            // Coupon applied
+            $(document.body).on('applied_coupon', function (e, coupon) {
+                self.trackStep('coupon_applied', { coupon: coupon });
+            });
+            $(document.body).on('removed_coupon', function (e, coupon) {
+                self.trackStep('coupon_removed', { coupon: coupon });
+            });
+
+            // Shipping method changed
+            $(document.body).on('updated_shipping_method', function () {
+                self.trackStep('shipping_method_changed');
+            });
+
             // Place order click
             $(document.body).on('checkout_place_order', function () {
                 self.trackStep('place_order_clicked');

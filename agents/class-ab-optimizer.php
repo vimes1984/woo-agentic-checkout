@@ -333,12 +333,14 @@ PROMPT;
                             'traffic_percent' => array( 'type' => 'integer', 'minimum' => 10, 'maximum' => 100 ),
                             'config'          => array( 'type' => 'object' ),
                         ),
-                        'required' => array( 'key', 'name', 'traffic_percent', 'config' ),
+                        'required'   => array( 'key', 'name', 'traffic_percent', 'config' ),
+                        'additionalProperties' => false,
                     ),
                     'minItems' => 2,
                 ),
             ),
             'required'   => array( 'name', 'hypothesis', 'description', 'variants' ),
+            'additionalProperties' => false,
         );
     }
 }

@@ -217,19 +217,29 @@ PROMPT;
     }
 
     /**
-     * JSON output schema.
+     * JSON output schema for structured LLM response.
      */
     private function get_output_schema(): array {
         return array(
             'type'       => 'object',
             'properties' => array(
-                'verdict'         => array( 'type' => 'string', 'enum' => array( 'healthy', 'declining', 'critical' ) ),
+                'verdict'         => array(
+                    'type' => 'string',
+                    'enum' => array( 'healthy', 'declining', 'critical', 'no_data' ),
+                ),
                 'cr_assessment'   => array( 'type' => 'string' ),
-                'funnel_issues'   => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                'funnel_issues'   => array(
+                    'type'  => 'array',
+                    'items' => array( 'type' => 'string' ),
+                ),
                 'likely_cause'    => array( 'type' => 'string' ),
-                'recommendations' => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                'recommendations' => array(
+                    'type'  => 'array',
+                    'items' => array( 'type' => 'string' ),
+                ),
             ),
             'required'   => array( 'verdict', 'cr_assessment', 'recommendations' ),
+            'additionalProperties' => false,
         );
     }
 }
