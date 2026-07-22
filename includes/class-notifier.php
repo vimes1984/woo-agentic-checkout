@@ -139,14 +139,17 @@ class Notifier {
                 . '</pre>';
         }
 
+        $safe_title   = esc_html( $title );
+        $safe_message = esc_html( $message );
+
         return <<<HTML
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:20px;">
     <div style="border-left:4px solid {$color};padding:12px 20px;background:#f9f9f9;border-radius:4px;">
-        <h2 style="margin:0 0 8px;font-size:18px;color:#1d2327;">{$title}</h2>
-        <p style="margin:0 0 16px;color:#50575e;font-size:14px;white-space:pre-wrap;">{$message}</p>
+        <h2 style="margin:0 0 8px;font-size:18px;color:#1d2327;">{$safe_title}</h2>
+        <p style="margin:0 0 16px;color:#50575e;font-size:14px;white-space:pre-wrap;">{$safe_message}</p>
         {$context_html}
         <p style="margin:16px 0 0;font-size:11px;color:#8c8f94;">
             Woo Agentic Checkout &mdash; <a href="{$this->get_dashboard_url()}" style="color:#2271b1;">View Dashboard</a>

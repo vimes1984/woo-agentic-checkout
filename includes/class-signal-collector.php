@@ -275,7 +275,7 @@ class SignalCollector {
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
         return $wpdb->get_results( $wpdb->prepare(
-            "SELECT id, event, message, context, created_at
+            "SELECT id, event, context, created_at
              FROM {$wpdb->prefix}wac_logs
              WHERE level = 'error'
              AND created_at >= %s
