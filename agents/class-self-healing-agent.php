@@ -40,6 +40,23 @@ class SelfHealingAgent {
     }
 
     /**
+     * Agent capabilities for introspection.
+     *
+     * @return array
+     */
+    public function get_capabilities(): array {
+        return array(
+            'id'             => 'self_healing',
+            'label'          => $this->get_label(),
+            'revision'       => self::REVISION,
+            'llm_dependent'  => true,
+            'schedule'       => 'continuous',
+            'data_sources'   => array( 'errors', 'wc_health' ),
+            'description'    => 'Performs autonomous healing actions within configured permission boundaries, runs passive health scans.',
+        );
+    }
+
+    /**
      * Execute agent run — health scan + try to fix anything broken.
      *
      * @return array Standardised result (success, actions, errors, summary, healed, failed).

@@ -301,10 +301,16 @@ class AgentManager {
         $status = array();
         foreach ( $this->agents as $key => $agent ) {
             $status[ $key ] = array(
-                'enabled' => $this->services['settings']->is_agent_enabled( $key ),
-                'lastRun' => $this->services['logger']->get_last_run( $key ),
-                'label'   => $agent->get_label(),
+                'enabled'  => $this->services['settings']->is_agent_enabled( $key ),
+                'lastRun'  => $this->services['logger']->get_last_run( $key ),
+                'label'    => $agent->get_label(),
+                'failures' => $this->get_failure_count( $key ),
             );
+
+            // Include capabilities if method exists.
+            if ( method_exists( $agent, 'get_capabilities' ) ) {
+                $status[ $key ]['capabilities'] = $agent->get_capabilities();
+            }
         }
         return $status;
     }
