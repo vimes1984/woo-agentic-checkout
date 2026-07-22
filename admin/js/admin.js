@@ -68,6 +68,7 @@
             this.bindBatchDismiss();
             this.bindTabFocus();
             this.bindUnsavedChangesWarning();
+            this.bindResponsiveResize();
             this.addAriaLiveRegion();
 
             // Auto-focus the first filter input on page load for quicker keyboard nav.
@@ -1191,6 +1192,20 @@
         },
 
         /**
+         * Debounced window resize handler for responsive adjustments.
+         */
+        bindResponsiveResize: function () {
+            var resizeTimer;
+            $(window).on('resize.wacResponsive', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    // Close tooltips / popovers that may be out of position.
+                    $('.wac-tooltip').remove();
+                }, 250);
+            });
+        },
+
+        /**
          * Auto-focus the first visible filter input for keyboard users.
          * Only activates on desktop (>= 782px) to avoid virtual keyboard issues.
          */
@@ -1262,6 +1277,19 @@
                     return self.__('unsavedWarning') || 'You have unsaved changes.';
                 }
             });
+        },
+
+        /**
+         * Focus an element and optionally set caret position.
+         */
+        focusAndCaret: function ($el) {
+            if ($el && $el.length) {
+                $el.focus();
+                if ($el.is('input, textarea')) {
+                    var len = $el.val().length;
+                    $el[0].setSelectionRange(len, len);
+                }
+            }
         },
 
         /**

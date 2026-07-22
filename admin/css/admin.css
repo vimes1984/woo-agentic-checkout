@@ -1100,6 +1100,21 @@ details.wac-card[open] summary {
     width: 200px;
 }
 
+@media (max-width: 960px) {
+    .wac-welcome-card__links {
+        flex-direction: column;
+    }
+
+    .wac-welcome-card__links .button {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .wac-suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 782px) {
     .wac-settings-form .form-table th {
         width: auto;
