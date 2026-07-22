@@ -70,10 +70,11 @@ class SuggestionEngine {
      */
     public function get_pending( int $limit = 20 ): array {
         global $wpdb;
-        return $wpdb->get_results(
-            "SELECT * FROM {$wpdb->prefix}wac_suggestions WHERE status = 'pending' ORDER BY score DESC LIMIT " . intval( $limit ),
-            ARRAY_A
-        );
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}wac_suggestions WHERE status = %s ORDER BY score DESC LIMIT %d",
+            self::STATUS_PENDING,
+            $limit
+        ), ARRAY_A );
     }
 
     /**
@@ -83,9 +84,10 @@ class SuggestionEngine {
      */
     public function get_pending_count(): int {
         global $wpdb;
-        return (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_suggestions WHERE status = 'pending'"
-        );
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_suggestions WHERE status = %s",
+            self::STATUS_PENDING
+        ) );
     }
 
     /**
