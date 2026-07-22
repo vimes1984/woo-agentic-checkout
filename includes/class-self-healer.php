@@ -204,10 +204,18 @@ class SelfHealer {
      */
     public function get_heal_log( int $limit = 50 ): array {
         global $wpdb;
-        return $wpdb->get_results( $wpdb->prepare(
+        $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}wac_heal_log ORDER BY created_at DESC LIMIT %d",
             $limit
         ), ARRAY_A );
+
+        // Strict type casting for numeric fields.
+        foreach ( $rows as &\$row ) {
+            \$row["id"] = (int) \$row["id"];
+        }
+        unset( \$row );
+
+        return \$rows;
     }
 
     // ─── Action Implementations ──────────────────────────────────
