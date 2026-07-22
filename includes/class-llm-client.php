@@ -319,7 +319,10 @@ class LLMClient {
     public function clear_cache() {
         global $wpdb;
         $wpdb->query(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wac_llm_%'"
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $wpdb->esc_like( '_transient_wac_llm_' ) . '%'
+            )
         );
     }
 
