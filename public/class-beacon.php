@@ -98,7 +98,13 @@ class Beacon {
 
         $event   = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
         $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
-        $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '{}';
+        $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+
+        // Limit raw data to 10KB to prevent oversized payload storage.
+        if ( is_string( $raw_data ) && strlen( $raw_data ) > 10240 ) {
+            $raw_data = substr( $raw_data, 0, 10240 );
+        }
+
         $data    = json_decode( $raw_data, true );
 
         if ( ! is_array( $data ) ) {
@@ -107,6 +113,10 @@ class Beacon {
 
         if ( empty( $event ) || empty( $session ) ) {
             wp_send_json_error( array( 'message' => 'Missing required fields.' ), 400 );
+        }
+
+        if ( strlen( $event ) > 100 || strlen( $session ) > 64 ) {
+            wp_send_json_error( array( 'message' => 'Invalid field length.' ), 400 );
         }
 
         /**
