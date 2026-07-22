@@ -167,6 +167,12 @@ class Settings {
         if ( is_string( $value ) ) {
             return sanitize_text_field( $value );
         }
-        return $value;
+        if ( is_array( $value ) ) {
+            return array_map( array( $this, 'sanitize' ), $value );
+        }
+        if ( is_numeric( $value ) ) {
+            return intval( $value );
+        }
+        return sanitize_text_field( (string) $value );
     }
 }
