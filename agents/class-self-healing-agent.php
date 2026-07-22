@@ -265,12 +265,14 @@ class SelfHealingAgent {
         }
 
         // 5. Database engines are InnoDB.
-        global $wpdb;
         $engine_check = $wpdb->get_results(
-            "SELECT TABLE_NAME, ENGINE
-             FROM information_schema.TABLES
-             WHERE TABLE_SCHEMA = DATABASE()
-             AND TABLE_NAME LIKE '" . $wpdb->esc_like( $wpdb->prefix . 'wac_' ) . "%'"
+            $wpdb->prepare(
+                "SELECT TABLE_NAME, ENGINE
+                 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE()
+                 AND TABLE_NAME LIKE %s",
+                $wpdb->esc_like( $wpdb->prefix . 'wac_' ) . '%'
+            )
         );
         $all_innodb = true;
         foreach ( $engine_check as $t ) {

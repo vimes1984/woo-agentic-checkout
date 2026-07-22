@@ -228,11 +228,26 @@ class SelfHealer {
      * Rollback a plugin setting to a previous value.
      */
     private function do_rollback_setting( array $params ): array {
-        $option_name = $params['option'] ?? '';
+        $option_name = sanitize_key( $params['option'] ?? '' );
         $prev_value  = $params['previous_value'] ?? '';
 
         if ( empty( $option_name ) ) {
             throw new \InvalidArgumentException( 'Setting name required for rollback.' );
+        }
+
+        // Whitelist allowed option names to prevent arbitrary option writes.
+        $allowed_options = array(
+            'wac_agent_failure_counts',
+            'wac_notify_email',
+            'wac_slack_webhook',
+            'wac_notify_email_enabled',
+            'wac_notify_slack_enabled',
+            'wac_auto_heal_permission',
+            'wac_agent_enabled',
+        );
+
+        if ( ! in_array( $option_name, $allowed_options, true ) ) {
+            throw new \InvalidArgumentException( 'Setting name not in allowed list for rollback.' );
         }
 
         update_option( $option_name, $prev_value );

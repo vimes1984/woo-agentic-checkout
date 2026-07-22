@@ -284,7 +284,10 @@ class Core {
      * @param string $hook The current admin page hook.
      */
     public function enqueue_admin_assets( $hook ) {
-        if ( ! str_contains( $hook, 'wac-' ) ) {
+        // Use strict suffix matching rather than str_contains to prevent
+        // false-positive enqueue on hooks like 'evil-wac-backdoor'.
+        $safe_hook = is_string( $hook ) ? $hook : '';
+        if ( ! str_ends_with( $safe_hook, '-wac-dashboard' ) && ! str_ends_with( $safe_hook, '-wac-settings' ) && ! str_ends_with( $safe_hook, '-wac-experiments' ) && ! str_ends_with( $safe_hook, '-wac-logs' ) ) {
             return;
         }
 
