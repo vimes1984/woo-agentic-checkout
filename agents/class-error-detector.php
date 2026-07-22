@@ -110,6 +110,7 @@ class ErrorDetector {
                 'note'         => 'Zero errors in the last hour (cold start or clean state).',
             ) );
 
+            $release();
             return array(
                 'success'        => true,
                 'actions'        => 0,
@@ -204,6 +205,7 @@ class ErrorDetector {
             'critical'     => count( $critical ),
         ) );
 
+        $release();
         return array(
             'success'        => count( $critical ) === 0,
             'actions'        => count( $critical ),
@@ -215,6 +217,21 @@ class ErrorDetector {
             'critical_count' => count( $critical ),
             'total_errors'   => count( $errors ),
         );
+        } catch ( \Exception $e ) {
+            $release();
+            $logger->error( 'error_detector_run_failed', array(
+                'error' => sanitize_text_field( substr( $e->getMessage(), 0, 500 ) ),
+            ) );
+            return array(
+                'success'        => false,
+                'actions'        => 0,
+                'errors'         => array( sanitize_text_field( substr( $e->getMessage(), 0, 500 ) ) ),
+                'summary'        => 'Error detector encountered an exception.',
+                'issues'         => array(),
+                'critical_count' => 0,
+                'total_errors'   => 0,
+            );
+        }
     }
 
     /**
