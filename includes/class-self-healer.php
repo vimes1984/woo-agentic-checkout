@@ -182,7 +182,10 @@ class SelfHealer {
     public function get_total_heals(): int {
         global $wpdb;
         return (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log"
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log WHERE 1 = %d",
+                1
+            )
         );
     }
 

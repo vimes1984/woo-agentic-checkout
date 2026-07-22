@@ -226,13 +226,13 @@ class SuggestionEngine {
         $score = $this->normalize_score( $suggestion['score'] ?? 0.5 );
 
         $data = array(
-            'title'       => $suggestion['title'] ?? 'Untitled Suggestion',
-            'description' => $suggestion['description'] ?? '',
-            'action_type' => $suggestion['action_type'] ?? 'css',
+            'title'       => sanitize_text_field( $suggestion['title'] ?? 'Untitled Suggestion' ),
+            'description' => sanitize_textarea_field( $suggestion['description'] ?? '' ),
+            'action_type' => sanitize_key( $suggestion['action_type'] ?? 'css' ),
             'action_data' => wp_json_encode( $suggestion['action_data'] ?? array() ),
             'score'       => $score,
             'expected_lift' => $suggestion['expected_lift'] ?? null,
-            'category'    => $suggestion['category'] ?? 'general',
+            'category'    => sanitize_key( $suggestion['category'] ?? 'general' ),
             'status'      => self::STATUS_PENDING,
             'created_at'  => current_time( 'mysql' ),
         );

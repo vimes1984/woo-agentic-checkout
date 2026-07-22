@@ -64,7 +64,7 @@ $tables = array(
 
 foreach ( $tables as $table ) {
     $table_name = sanitize_key( $wpdb->prefix . $table );
-    $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
+    $wpdb->query( $wpdb->prepare( "DROP TABLE IF EXISTS `%s`", $table_name ) );
 }
 
 // Clear cron hooks.

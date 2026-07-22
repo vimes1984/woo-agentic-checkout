@@ -325,6 +325,8 @@ class ABTestManager {
         if ( $variant_key ) {
             foreach ( $variants as $v ) {
                 if ( $v['variant_key'] === $variant_key ) {
+                    // Refresh cookie TTL on each visit to extend session.
+                    $this->refresh_variant_cookie( $cookie_key, $variant_key );
                     $this->record_impression( $v['id'], $experiment['id'] );
                     return $v;
                 }
@@ -511,6 +513,16 @@ class ABTestManager {
                 setcookie( $ls_key, $value, $options );
             }
         }
+    }
+
+    /**
+     * Refresh the variant assignment cookie TTL on repeat visits.
+     */
+    private function refresh_variant_cookie( string $key, string $value ) {
+        if ( headers_sent() ) {
+            return;
+        }
+        $this->set_variant_cookie( $key, $value );
     }
 
     /**
