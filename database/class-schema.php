@@ -172,7 +172,8 @@ class Schema {
         );
 
         foreach ( $tables as $table ) {
-            $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" );
+            $table_name = sanitize_key( $wpdb->prefix . $table );
+            $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" );
         }
 
         delete_option( self::DB_VERSION_KEY );
@@ -206,9 +207,10 @@ class Schema {
             ) );
 
             if ( $exists ) {
+                $safe_name = sanitize_key( $full_name );
                 $info[ $table ] = array(
                     'exists' => true,
-                    'rows'   => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$full_name}" ),
+                    'rows'   => (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$safe_name}`" ),
                 );
             } else {
                 $info[ $table ] = array(

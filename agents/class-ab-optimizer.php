@@ -163,8 +163,31 @@ Focus on:
 Provide: experiment name, hypothesis, description, and 2-3 variants (including control)
 with specific config snapshots for each.
 
-Output JSON with: name, hypothesis, description, traffic_pct, and variants array.
-Each variant needs: key, name, traffic_percent, and config object.
+Output ONLY valid JSON matching this exact schema:
+{
+  "name": "Experiment title",
+  "hypothesis": "If we do X, then Y will happen because Z",
+  "description": "Detailed experiment description",
+  "traffic_pct": 50,
+  "variants": [
+    {
+      "key": "control",
+      "name": "Current Checkout",
+      "traffic_percent": 50,
+      "config": {}
+    },
+    {
+      "key": "variant_a",
+      "name": "Simplified Checkout",
+      "traffic_percent": 50,
+      "config": {
+        "field_order": ["billing_first_name", "billing_email", ...]
+      }
+    }
+  ]
+}
+
+If the checkout data shows zero orders or empty funnel, return name "insufficient_data" and hypothesis "Not enough data to propose a meaningful experiment yet."
 PROMPT;
 
         try {

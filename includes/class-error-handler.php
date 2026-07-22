@@ -358,7 +358,6 @@ class ErrorHandler {
             'database',
             'cart',
             'order',
-            'checkout',
             'subscription',
             'refund',
             'capture',
