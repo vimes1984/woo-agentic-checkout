@@ -293,6 +293,70 @@
     font-style: italic;
 }
 
+/* ─── Status Dot Indicator ───────────────────── */
+
+.wac-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.wac-status-dot--active {
+    background: #2e7b32;
+    box-shadow: 0 0 4px rgba(46, 123, 50, 0.6);
+}
+
+.wac-status-dot--inactive {
+    background: #ccc;
+}
+
+.wac-status-dot--warning {
+    background: #856404;
+    animation: wac-pulse 2s ease-in-out infinite;
+}
+
+.wac-status-dot--error {
+    background: #721c24;
+    animation: wac-pulse 1s ease-in-out infinite;
+}
+
+@keyframes wac-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ─── Field Validation States ───────────────── */
+
+.wac-field-error {
+    border-color: var(--wac-error-text) !important;
+    box-shadow: 0 0 0 1px var(--wac-error-text) !important;
+}
+
+.wac-field-error:focus {
+    box-shadow: 0 0 0 1px var(--wac-error-text), 0 0 0 3px rgba(114, 28, 36, 0.15) !important;
+}
+
+.wac-field-error-message {
+    color: var(--wac-error-text);
+    font-size: 12px;
+    margin: 4px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wac-field-valid {
+    border-color: var(--wac-success-text) !important;
+}
+
+.wac-field-valid:focus {
+    box-shadow: 0 0 0 1px var(--wac-success-text), 0 0 0 3px rgba(46, 123, 50, 0.15) !important;
+}
+
 /* ─── Number display ────────────────────────── */
 
 .wac-number {
