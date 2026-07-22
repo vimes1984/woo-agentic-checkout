@@ -308,7 +308,8 @@ class Schema {
         // Single query: get all table stats at once.
         $placeholders = implode( ',', array_fill( 0, count( $full_names ), '%s' ) );
         $results      = $wpdb->get_results( $wpdb->prepare(
-            "SELECT TABLE_NAME, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH, ENGINE
+            "SELECT TABLE_NAME, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH, ENGINE,
+                    AUTO_INCREMENT, TABLE_COLLATION
              FROM information_schema.TABLES
              WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN ({$placeholders})",
             array_merge( array( DB_NAME ), $full_names )
@@ -318,21 +319,25 @@ class Schema {
             if ( isset( $results[ $full_name ] ) ) {
                 $t = $results[ $full_name ];
                 $info[ $short ] = array(
-                    'exists'       => true,
-                    'rows'         => (int) $t->TABLE_ROWS,
-                    'data_size'    => (int) $t->DATA_LENGTH,
-                    'index_size'   => (int) $t->INDEX_LENGTH,
-                    'total_size'   => (int) $t->DATA_LENGTH + (int) $t->INDEX_LENGTH,
-                    'engine'       => $t->ENGINE,
+                    'exists'          => true,
+                    'rows'            => (int) $t->TABLE_ROWS,
+                    'data_size'       => (int) $t->DATA_LENGTH,
+                    'index_size'      => (int) $t->INDEX_LENGTH,
+                    'total_size'      => (int) $t->DATA_LENGTH + (int) $t->INDEX_LENGTH,
+                    'engine'          => $t->ENGINE,
+                    'auto_increment'  => (int) $t->AUTO_INCREMENT,
+                    'collation'       => $t->TABLE_COLLATION,
                 );
             } else {
                 $info[ $short ] = array(
-                    'exists'       => false,
-                    'rows'         => 0,
-                    'data_size'    => 0,
-                    'index_size'   => 0,
-                    'total_size'   => 0,
-                    'engine'       => null,
+                    'exists'          => false,
+                    'rows'            => 0,
+                    'data_size'       => 0,
+                    'index_size'      => 0,
+                    'total_size'      => 0,
+                    'engine'          => null,
+                    'auto_increment'  => 0,
+                    'collation'       => null,
                 );
             }
         }
