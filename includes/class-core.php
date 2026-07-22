@@ -135,6 +135,16 @@ class Core {
      * Activation: create/upgrade DB tables.
      */
     public function activate() {
+        // Check WooCommerce dependency at activation time.
+        if ( ! class_exists( 'WooCommerce' ) ) {
+            deactivate_plugins( WAC_BASENAME, true );
+            wp_die(
+                esc_html__( 'Woo Agentic Checkout requires WooCommerce to be installed and activated.', 'woo-agentic-checkout' ),
+                esc_html__( 'Plugin Activation Error', 'woo-agentic-checkout' ),
+                array( 'back_link' => true )
+            );
+        }
+
         $schema = new Schema();
         $schema->create_tables();
 
