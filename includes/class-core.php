@@ -288,6 +288,11 @@ class Core {
             return;
         }
 
+        // Only load assets for users who can access the admin page.
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            return;
+        }
+
         $css_file = WAC_PATH . 'admin/css/admin.css';
         $css_ver  = file_exists( $css_file ) ? filemtime( $css_file ) : WAC_VERSION;
         wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), $css_ver );
