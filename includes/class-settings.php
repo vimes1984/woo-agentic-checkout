@@ -51,6 +51,12 @@ class Settings {
         'ab_confidence_threshold' => 0.95,
         'ab_max_concurrent'       => 3,
 
+        // Notifications
+        'slack_webhook'           => '',
+        'notify_email'            => '',
+        'notify_email_enabled'    => 'no',
+        'notify_slack_enabled'    => 'no',
+
         // General
         'auto_suggest_enabled'    => 'yes',
         'debug_mode'              => 'no',

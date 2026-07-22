@@ -43,6 +43,10 @@ $options = array(
     'wac_field_order',
     'wac_removed_fields',
     'wac_setting_rollbacks',
+    'wac_slack_webhook',
+    'wac_notify_email',
+    'wac_notify_email_enabled',
+    'wac_notify_slack_enabled',
 );
 
 foreach ( $options as $option ) {
