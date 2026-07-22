@@ -103,7 +103,12 @@ class CheckoutModifier {
     private function unvalidate_removed_fields() {
         add_filter( 'woocommerce_checkout_posted_data', function ( $data ) {
             foreach ( $this->removed_field_keys as $key ) {
-                unset( $data[ $key ] );
+                // Handle both "billing_city" and "billing/city" formats.
+                foreach ( array_keys( $data ) as $data_key ) {
+                    if ( $data_key === $key || str_ends_with( $data_key, '_' . $key ) || str_contains( $data_key, $key ) ) {
+                        unset( $data[ $data_key ] );
+                    }
+                }
             }
             return $data;
         }, 20 );
@@ -117,6 +122,18 @@ class CheckoutModifier {
             }
             return $message;
         }, 20, 2 );
+
+        // Filter out validation errors for removed fields.
+        add_filter( 'woocommerce_checkout_process', function () {
+            foreach ( $this->removed_field_keys as $key ) {
+                add_filter( 'woocommerce_checkout_field_is_required', function ( $required, $field_key ) use ( $key ) {
+                    if ( $field_key === $key || str_ends_with( $field_key, '_' . $key ) ) {
+                        return false;
+                    }
+                    return $required;
+                }, 20, 2 );
+            }
+        }, 5 );
     }
 
     /**
