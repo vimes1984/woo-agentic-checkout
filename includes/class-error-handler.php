@@ -291,7 +291,18 @@ class ErrorHandler {
      */
     private static function file_log( string $event, array $data ) {
         $log_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
-        $log_file = rtrim( $log_dir, '/' ) . '/wac-errors.log';
+        $log_dir = rtrim( $log_dir, '/' );
+
+        // Ensure the log directory exists and is writable.
+        if ( ! is_dir( $log_dir ) ) {
+            // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+            @mkdir( $log_dir, 0755, true );
+        }
+        if ( ! is_writable( $log_dir ) ) {
+            return; // Cannot write logs, bail silently.
+        }
+
+        $log_file = $log_dir . '/wac-errors.log';
 
         $line = sprintf(
             "[%s] [%s] %s: %s\n",

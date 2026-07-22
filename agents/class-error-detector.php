@@ -50,6 +50,29 @@ class ErrorDetector {
         // 1. Check PHP/JS errors from last hour.
         $errors = $signals->get_recent_errors( 1, 50 );
 
+        // Cold start: no errors at all is healthy — skip heavy processing.
+        if ( empty( $errors ) ) {
+            $funnel    = $signals->get_funnel_data( 24 );
+            $wc_issues = $this->check_wc_health();
+
+            $logger->info( 'error_detector_run', array(
+                'total_errors' => 0,
+                'issues_found' => count( $wc_issues ),
+                'critical'     => 0,
+                'note'         => 'Zero errors in the last hour (cold start or clean state).',
+            ) );
+
+            return array(
+                'success'        => true,
+                'actions'        => 0,
+                'errors'         => array(),
+                'summary'        => 'No errors detected in the last hour.',
+                'issues'         => $wc_issues,
+                'critical_count' => 0,
+                'total_errors'   => 0,
+            );
+        }
+
         if ( ! empty( $errors ) ) {
             // Group by type.
             $by_type = $this->group_errors( $errors );
@@ -120,8 +143,20 @@ class ErrorDetector {
             'critical'     => count( $critical ),
         ) );
 
+        $logger->info( 'error_detector_run', array(
+            'total_errors' => count( $errors ),
+            'issues_found' => count( $issues ),
+            'critical'     => count( $critical ),
+        ) );
+
         return array(
-            'issues'  => $issues,
+            'success'        => count( $critical ) === 0,
+            'actions'        => count( $critical ),
+            'errors'         => array_column( $critical, 'event' ),
+            'summary'        => count( $critical ) > 0
+                ? count( $critical ) . ' critical issues found, root cause analysis performed, self-healing triggered.'
+                : 'No critical issues detected.',
+            'issues'         => $issues,
             'critical_count' => count( $critical ),
             'total_errors'   => count( $errors ),
         );
