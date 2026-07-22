@@ -326,14 +326,8 @@
         bindSuggestionActions: function () {
             var self = this;
 
-            // Apply suggestion
-            $(document).on('click', '.wac-apply-suggestion', function (e) {
-                e.preventDefault();
-                var $btn = $(this);
-                var id = $btn.data('id');
-                var $card = $btn.closest('.wac-suggestion-card');
-                var $row = $btn.closest('tr');
-
+            // Debounced apply to prevent double-clicks.
+            var applyDebounced = this.debounce(function ($btn, id, $card, $row) {
                 self.confirmAction(self.__('confirmApply'), function () {
                     self.showLoading($btn);
                     $btn.closest('.wac-suggestion-card__actions, td')
@@ -369,16 +363,53 @@
                         }
                     });
                 });
-            });
+            }, 500);
 
-            // Reject suggestion
-            $(document).on('click', '.wac-reject-suggestion', function (e) {
+            // Apply suggestion
+            $(document).on('click', '.wac-apply-suggestion', function (e) {
                 e.preventDefault();
                 var $btn = $(this);
                 var id = $btn.data('id');
                 var $card = $btn.closest('.wac-suggestion-card');
                 var $row = $btn.closest('tr');
 
+                applyDebounced($btn, id, $card, $row);
+            });
+
+                    $.ajax({
+                        url: wacData.restUrl + '/suggestions/' + id + '/apply',
+                        type: 'POST',
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-WP-Nonce', wacData.nonce);
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                self.showToast(self.__('appliedNotice') || 'Suggestion applied successfully!', 'success');
+                                if ($card.length) {
+                                    $card.fadeOut(300, function () { $(this).remove(); });
+                                } else if ($row.length) {
+                                    $row.fadeOut(300, function () { $(this).remove(); });
+                                }
+                            } else {
+                                self.showToast(response.message || self.__('errorGeneric'), 'error');
+                                self.hideLoading($btn);
+                            }
+                        },
+                        error: function (jqXHR) {
+                            var msg = self.__('errorNetwork');
+                            try {
+                                var resp = JSON.parse(jqXHR.responseText);
+                                msg = resp.message || msg;
+                            } catch (e) { /* use default */ }
+                            self.showToast(msg, 'error');
+                            self.hideLoading($btn);
+                        }
+                    });
+                });
+            });
+
+            // Debounced reject to prevent double-clicks.
+            var rejectDebounced = this.debounce(function ($btn, id, $card, $row) {
                 self.confirmAction(self.__('confirmReject'), function () {
                     var reason = prompt(self.__('rejectReason')) || '';
                     self.showLoading($btn);
@@ -411,6 +442,17 @@
                         }
                     });
                 });
+            }, 500);
+
+            // Reject suggestion
+            $(document).on('click', '.wac-reject-suggestion', function (e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var id = $btn.data('id');
+                var $card = $btn.closest('.wac-suggestion-card');
+                var $row = $btn.closest('tr');
+
+                rejectDebounced($btn, id, $card, $row);
             });
         },
 
@@ -435,12 +477,8 @@
                 $link.attr('aria-expanded', isVisible ? 'true' : 'false');
             });
 
-            // Pause experiment
-            $(document).on('click', '.wac-pause-exp', function (e) {
-                e.preventDefault();
-                var $link = $(this);
-                var id = $link.data('id');
-
+            // Debounced pause
+            var pauseDebounced = this.debounce(function ($link, id) {
                 self.confirmAction(self.__('confirmPause'), function () {
                     self.showLoading($link);
 
@@ -476,14 +514,18 @@
                         }
                     });
                 });
-            });
+            }, 500);
 
-            // Resume experiment
-            $(document).on('click', '.wac-resume-exp', function (e) {
+            // Pause experiment
+            $(document).on('click', '.wac-pause-exp', function (e) {
                 e.preventDefault();
                 var $link = $(this);
                 var id = $link.data('id');
+                pauseDebounced($link, id);
+            });
 
+            // Debounced resume
+            var resumeDebounced = this.debounce(function ($link, id) {
                 self.confirmAction(self.__('confirmResume'), function () {
                     self.showLoading($link);
 
@@ -519,6 +561,14 @@
                         }
                     });
                 });
+            }, 500);
+
+            // Resume experiment
+            $(document).on('click', '.wac-resume-exp', function (e) {
+                e.preventDefault();
+                var $link = $(this);
+                var id = $link.data('id');
+                resumeDebounced($link, id);
             });
         },
 
@@ -530,15 +580,30 @@
         bindAgentRun: function () {
             var self = this;
 
-            // Admin-post form submission.
-            $(document).on('submit', 'form[action*="admin-post"][name]', function () {
+            // Admin-post form submission — show inline spinners.
+            $(document).on('submit', 'form[action*="admin-post"]', function () {
                 var $form = $(this);
-                self.showLoading($form.find(':submit'));
+                var $submitBtn = $form.find(':submit');
+                self.showLoading($submitBtn);
+                // Show any inline spinners.
+                $form.find('.wac-spinner').show();
                 self.showToast('Running agent...', 'info', 0);
 
                 setTimeout(function () {
-                    self.hideLoading($form.find(':submit'));
+                    self.hideLoading($submitBtn);
+                    $form.find('.wac-spinner').hide();
                 }, 60000);
+            });
+
+            // Settings form submission — show loading on save button.
+            $(document).on('submit', '.wac-settings-form', function () {
+                var $form = $(this);
+                var $submitBtn = $form.find(':submit');
+                self.showLoading($submitBtn);
+                // Timeout to restore after normal form submission reload.
+                setTimeout(function () {
+                    self.hideLoading($submitBtn);
+                }, 30000);
             });
 
             // AJAX agent run.
