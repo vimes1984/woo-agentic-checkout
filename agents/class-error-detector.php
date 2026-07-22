@@ -116,6 +116,8 @@ class ErrorDetector {
         } );
 
         if ( ! empty( $critical ) ) {
+            // Redact sensitive fields from samples before sending to LLM.
+            $critical = $this->redact_samples( $critical );
             $analysis = $this->llm_root_cause_analysis( $critical, $llm );
 
             foreach ( $analysis as $analysed ) {

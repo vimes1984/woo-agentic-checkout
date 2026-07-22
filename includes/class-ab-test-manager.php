@@ -32,6 +32,13 @@ class ABTestManager {
     private $table_events;
 
     /**
+     * Request-level cache for frequently-called queries.
+     *
+     * @var array
+     */
+    private static $cache = array();
+
+    /**
      * Constructor.
      */
     public function __construct() {
@@ -190,9 +197,13 @@ class ABTestManager {
      * @return array
      */
     public function get_active_experiments(): array {
+        if ( isset( self::$cache['active_experiments'] ) ) {
+            return self::$cache['active_experiments'];
+        }
+
         global $wpdb;
 
-        return $wpdb->get_results( $wpdb->prepare(
+        $results = $wpdb->get_results( $wpdb->prepare(
             "SELECT e.*, 
                     (SELECT COUNT(*) FROM {$this->table_variants} v WHERE v.experiment_id = e.id) as variant_count
              FROM {$this->table_experiments} e
@@ -252,6 +263,12 @@ class ABTestManager {
      * @return array
      */
     public function get_variants( int $experiment_id ): array {
+        // Return cached result if available (request-level).
+        $cache_key = 'variants_' . $experiment_id;
+        if ( isset( self::$cache[ $cache_key ] ) ) {
+            return self::$cache[ $cache_key ];
+        }
+
         global $wpdb;
 
         // LEFT JOIN with pre-aggregated subqueries avoids 3 correlated subqueries per row.
@@ -278,7 +295,9 @@ class ABTestManager {
                 WHERE v.experiment_id = %d
                 ORDER BY v.is_control DESC, v.id ASC";
 
-        return $wpdb->get_results( $wpdb->prepare( $sql, $experiment_id ), ARRAY_A );
+        $results = $wpdb->get_results( $wpdb->prepare( $sql, $experiment_id ), ARRAY_A );
+        self::$cache[ $cache_key ] = $results;
+        return $results;
     }
 
     /**

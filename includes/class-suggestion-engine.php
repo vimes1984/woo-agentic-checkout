@@ -214,20 +214,33 @@ class SuggestionEngine {
      * Reject a suggestion.
      *
      * @param int    $id
-     * @param string $reason
+     * @param string $reason Optional rejection reason.
+     *
+     * @return bool True if rejection succeeded.
      */
-    public function reject_suggestion( int $id, string $reason = '' ) {
+    public function reject_suggestion( int $id, string $reason = '' ): bool {
         global $wpdb;
-        $wpdb->update(
+
+        if ( $id < 1 ) {
+            return false;
+        }
+
+        $updated = $wpdb->update(
             $wpdb->prefix . 'wac_suggestions',
             array(
-                'status'       => self::STATUS_REJECTED,
-                'reject_reason' => $reason,
+                'status'        => self::STATUS_REJECTED,
+                'reject_reason' => sanitize_text_field( $reason ),
             ),
             array( 'id' => $id ),
             array( '%s', '%s' ),
             array( '%d' )
         );
+
+        if ( $updated ) {
+            do_action( 'wac_suggestion_rejected', $id, $reason );
+        }
+
+        return (bool) $updated;
     }
 
     /**

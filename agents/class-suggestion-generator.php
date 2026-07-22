@@ -133,12 +133,22 @@ class SuggestionGenerator {
             }
         }
 
+        // Strip potentially sensitive data from error context before sending to LLM.
+        $safe_errors = array_map( function ( $err ) {
+            return array(
+                'id'         => $err['id'] ?? 0,
+                'event'      => $err['event'] ?? '',
+                'level'      => $err['level'] ?? '',
+                'created_at' => $err['created_at'] ?? '',
+            );
+        }, $recent_errors );
+
         $context = array(
             'orders_24h'            => $orders_24h,
             'orders_7d'             => $orders_7d,
             'funnel'                => $funnel,
             'experiments'           => $experiments,
-            'recent_errors'         => $recent_errors,
+            'recent_errors'         => $safe_errors,
             'plugin_version'        => WAC_VERSION,
             'wc_version'            => defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown',
             'wp_version'            => get_bloginfo( 'version' ),
@@ -152,6 +162,14 @@ class SuggestionGenerator {
                 'is_cold_start' => ! $has_orders && ! $has_errors && ! $has_traffic,
             ),
         );
+
+        /**
+         * Filter the context data sent to the LLM for suggestion generation.
+         * Use this to redact or add additional data before it reaches the AI provider.
+         *
+         * @param array $context The context array.
+         */
+        $context = apply_filters( 'wac_suggestion_context', $context );
 
         return $context;
     }

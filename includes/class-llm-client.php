@@ -46,9 +46,25 @@ class LLMClient {
     const TOKEN_RATIO = 0.38;
 
     /**
+     * Latency threshold in seconds before logging a slow-call warning.
+     */
+    const SLOW_CALL_THRESHOLD = 15.0;
+
+    /**
      * @var int Hourly call counter (tracked via transient).
      */
     private $call_count = -1;
+
+    /**
+     * Running latency stats for the current request cycle.
+     *
+     * @var array{count: int, total_sec: float, max_sec: float}
+     */
+    private $latency_stats = array(
+        'count'    => 0,
+        'total_sec' => 0.0,
+        'max_sec'   => 0.0,
+    );
 
     /**
      * @param Settings $settings
@@ -165,6 +181,20 @@ class LLMClient {
 
         // ── Log timing metrics ──────────────────────────────────────
         $elapsed = microtime( true ) - $start_time;
+        $this->latency_stats['count']++;
+        $this->latency_stats['total_sec'] += $elapsed;
+        $this->latency_stats['max_sec']    = max( $this->latency_stats['max_sec'], $elapsed );
+
+        // Warn if call was unusually slow.
+        if ( $elapsed > self::SLOW_CALL_THRESHOLD ) {
+            do_action( 'wac_llm_slow_call', array(
+                'provider'   => $provider,
+                'model'      => $model,
+                'elapsed'    => round( $elapsed, 4 ),
+                'est_tokens' => $est_tokens,
+            ) );
+        }
+
         do_action( 'wac_llm_timing', array(
             'provider'   => $provider,
             'model'      => $model,
@@ -536,5 +566,20 @@ class LLMClient {
      */
     public function get_remaining_calls(): int {
         return max( 0, self::MAX_CALLS_PER_HOUR - $this->get_hourly_call_count() );
+    }
+
+    /**
+     * Get latency statistics for the current request cycle.
+     *
+     * @return array{count: int, avg_sec: float, max_sec: float, total_sec: float}
+     */
+    public function get_latency_stats(): array {
+        $count = $this->latency_stats['count'];
+        return array(
+            'count'     => $count,
+            'avg_sec'   => $count > 0 ? round( $this->latency_stats['total_sec'] / $count, 4 ) : 0.0,
+            'max_sec'   => round( $this->latency_stats['max_sec'], 4 ),
+            'total_sec' => round( $this->latency_stats['total_sec'], 4 ),
+        );
     }
 }
