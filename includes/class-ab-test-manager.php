@@ -531,12 +531,18 @@ class ABTestManager {
     const MIN_SAMPLE_SIZE = 100;
 
     /**
+     * Minimum duration in seconds before a winner can be declared (7 days).
+     * Prevents peeking at results before the experiment has had time to stabilize.
+     */
+    const MIN_DURATION = 604800; // 7 days.
+
+    /**
      * Declare a winner for an experiment.
      *
      * @param int    $experiment_id
      * @param string $variant_key
      *
-     * @throws \RuntimeException If minimum sample size not met.
+     * @throws \RuntimeException If minimum sample size not met or experiment too young.
      */
     public function declare_winner( int $experiment_id, string $variant_key ) {
         global $wpdb;
@@ -548,6 +554,27 @@ class ABTestManager {
 
         // Enforce minimum sample size.
         $min_ok = $this->check_minimum_sample_size( $experiment );
+        if ( ! $min_ok ) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Cannot declare winner: minimum sample size of %d impressions per variant not met.',
+                    self::MIN_SAMPLE_SIZE
+                )
+            );
+        }
+
+        // Enforce minimum duration (anti-peeking guard).
+        $created_at = strtotime( $experiment['created_at'] );
+        if ( $created_at && ( time() - $created_at ) < self::MIN_DURATION ) {
+            $remaining = human_time_diff( time(), $created_at + self::MIN_DURATION );
+            throw new \RuntimeException(
+                sprintf(
+                    'Cannot declare winner: experiment must run for at least %d days. %s remaining.',
+                    self::MIN_DURATION / DAY_IN_SECONDS,
+                    $remaining
+                )
+            );
+        }
         if ( ! $min_ok ) {
             throw new \RuntimeException(
                 sprintf(
@@ -742,6 +769,37 @@ class ABTestManager {
     }
 
     /**
+     * Number of Monte Carlo samples to draw for Bayesian inference.
+     *
+     * @var int
+     */
+    private $mc_samples = 10000;
+
+    /**
+     * Set the number of Monte Carlo samples for Bayesian inference.
+     *
+     * @param int $samples
+     */
+    public function set_mc_samples( int $samples ) {
+        $this->mc_samples = max( 100, min( 1000000, $samples ) );
+    }
+
+    /**
+     * Compute the Bayes Factor (BF10) for variant vs control using the Savage-Dickey ratio.
+     * BF10 > 3 indicates moderate evidence, > 10 strong evidence.
+     *
+     * @param float $prob_better P(variant > control).
+     *
+     * @return float Bayes Factor.
+     */
+    private function compute_bayes_factor( float $prob_better ): float {
+        // BF10 = P(variant > control) / (1 - P(variant > control)).
+        // A flat Beta(1,1) prior gives equal weight; the BF expresses evidence update.
+        $odds = $prob_better / max( 1e-10, ( 1.0 - $prob_better ) );
+        return round( $odds, 4 );
+    }
+
+    /**
      * Monte Carlo approximation of P(variant > control) using Beta distributions.
      *
      * @param int $a1 Variant alpha.
@@ -752,7 +810,7 @@ class ABTestManager {
      * @return float Probability (0-1).
      */
     private function probability_beat_control( int $a1, int $b1, int $a2, int $b2 ): float {
-        $samples  = 10000;
+        $samples  = $this->mc_samples;
         $wins     = 0;
         $mt_state = wp_rand( 0, PHP_INT_MAX );
 

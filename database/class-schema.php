@@ -213,6 +213,54 @@ class Schema {
     }
 
     /**
+     * Schedule the daily log purge cron job (runs on plugin activation).
+     */
+    public function schedule_purge_cron() {
+        if ( ! wp_next_scheduled( 'wac_daily_log_purge' ) ) {
+            wp_schedule_event( time(), 'daily', 'wac_daily_log_purge' );
+        }
+    }
+
+    /**
+     * Unschedule the daily log purge cron job (runs on plugin deactivation).
+     */
+    public function unschedule_purge_cron() {
+        $timestamp = wp_next_scheduled( 'wac_daily_log_purge' );
+        if ( $timestamp ) {
+            wp_unschedule_event( $timestamp, 'wac_daily_log_purge' );
+        }
+    }
+
+    /**
+     * Handler for wac_daily_log_purge cron hook.
+     * Purges log entries older than 30 days in chunks to avoid long-running queries.
+     */
+    public static function handle_purge_cron() {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'wac_logs';
+        $threshold = gmdate( 'Y-m-d H:i:s', time() - ( 30 * DAY_IN_SECONDS ) );
+
+        // Chunked delete: 1000 rows at a time to avoid table locks on large datasets.
+        $total = 0;
+        do {
+            $deleted = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$table} WHERE created_at < %s LIMIT 1000",
+                $threshold
+            ) );
+            $total += $deleted;
+        } while ( $deleted > 0 );
+
+        // Also purge stale beacon events (> 90 days).
+        $beacon_table = $wpdb->prefix . 'wac_beacon_events';
+        $beacon_threshold = gmdate( 'Y-m-d H:i:s', time() - ( 90 * DAY_IN_SECONDS ) );
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$beacon_table} WHERE created_at < %s",
+            $beacon_threshold
+        ) );
+    }
+
+    /**
      * Drop all plugin tables (for uninstall).
      */
     public function drop_tables() {
