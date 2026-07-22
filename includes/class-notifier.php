@@ -173,6 +173,18 @@ HTML;
     private function send_slack( string $severity, string $title, string $message, array $context ): bool {
         $webhook_url = get_option( 'wac_slack_webhook', '' );
 
+        // Validate webhook URL to prevent SSRF.
+        if ( ! empty( $webhook_url ) ) {
+            $parsed = wp_parse_url( $webhook_url );
+            if ( ! in_array( $parsed['scheme'] ?? '', array( 'https' ), true ) ) {
+                $webhook_url = '';
+            }
+            $host = $parsed['host'] ?? '';
+            if ( ! str_ends_with( $host, '.slack.com' ) ) {
+                $webhook_url = '';
+            }
+        }
+
         if ( empty( $webhook_url ) ) {
             return false;
         }
