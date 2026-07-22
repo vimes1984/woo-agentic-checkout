@@ -270,8 +270,13 @@ class ErrorDetector {
         );
 
         $prev = 0;
+        $any_positive = false;
         foreach ( $steps as $i => $step ) {
-            $current = isset( $funnel[ $step ] ) ? (int) $funnel[ $step ] : 0;
+            $current = isset( $funnel[ $step ] ) ? absint( $funnel[ $step ] ) : 0;
+
+            if ( $current > 0 ) {
+                $any_positive = true;
+            }
 
             if ( $i > 0 && $prev > 0 && $current > 0 ) {
                 $dropoff = ( ( $prev - $current ) / $prev ) * 100;
@@ -287,6 +292,17 @@ class ErrorDetector {
                 }
             }
             $prev = $current;
+        }
+
+        // Edge case: funnel data exists but all zero → not an anomaly, just cold start.
+        if ( ! $any_positive ) {
+            $issues[] = array(
+                'event'    => 'funnel_no_traffic',
+                'severity' => 'info',
+                'count'    => 1,
+                'details'  => 'Funnel data exists but all steps show zero traffic (cold start or GA4 delay).',
+                'samples'  => array(),
+            );
         }
 
         return $issues;

@@ -205,11 +205,14 @@ class AgentManager {
                 }
 
                 $results[ $key ] = array(
-                    'success'          => false,
-                    'actions'          => 0,
-                    'errors'           => array( $e->getMessage() ),
-                    'summary'          => "Agent '{$key}' failed after " . round( $elapsed ?? 0, 4 ) . 's: ' . $e->getMessage(),
-                    'consecutive_fails' => $fail_count,
+                    'success'           => false,
+                    'actions'           => 0,
+                    'errors'            => array( $e->getMessage() ),
+                    'summary'           => "Agent '{$key}' failed after " . round( $elapsed ?? 0, 4 ) . 's: ' . $e->getMessage(),
+                    'consecutive_fails'  => $fail_count,
+                    'error_timestamp'    => gmdate( 'Y-m-d H:i:s' ),
+                    'error_class'        => get_class( $e ),
+                    'error_code'         => $e->getCode(),
                 );
             } finally {
                 $this->running_agents[ $key ] = false;
