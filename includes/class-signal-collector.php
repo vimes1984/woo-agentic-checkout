@@ -264,7 +264,7 @@ class SignalCollector {
      */
     public function get_recent_conversion_rate( int $period = DAY_IN_SECONDS ): float {
         $data = $this->get_recent_orders( $period / HOUR_IN_SECONDS );
-        return $data['conversion_rate'];
+        return isset( $data['conversion_rate'] ) ? (float) $data['conversion_rate'] : 0.0;
     }
 
     /**
