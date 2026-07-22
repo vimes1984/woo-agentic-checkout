@@ -136,12 +136,7 @@ class ErrorDetector {
             );
         }
 
-        // 6. Log what's happening.
-        $logger->info( 'error_detector_run', array(
-            'total_errors' => count( $errors ),
-            'issues_found' => count( $issues ),
-            'critical'     => count( $critical ),
-        ) );
+        // Logging moved to return block.
 
         $logger->info( 'error_detector_run', array(
             'total_errors' => count( $errors ),

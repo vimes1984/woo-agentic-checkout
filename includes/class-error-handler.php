@@ -302,7 +302,7 @@ class ErrorHandler {
             return; // Cannot write logs, bail silently.
         }
 
-        $log_file = $log_dir . '/wac-errors.log';
+        $log_file = $log_dir . '/wac-errors.log'; // Already rtrim'd above.
 
         $line = sprintf(
             "[%s] [%s] %s: %s\n",
