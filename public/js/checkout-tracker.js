@@ -16,6 +16,9 @@
         /** Active experiment variants */
         experiments: window._wacExperiments || [],
 
+        /** Nonce from PHP */
+        _nonce: window._wacNonce || wacBeacon.nonce || '',
+
         /** Checkout step tracking */
         steps: {
             current: 'checkout_started',
@@ -322,7 +325,7 @@
                 type: 'POST',
                 data: {
                     action: 'wac_beacon',
-                    nonce: wacBeacon.nonce || '',
+                    nonce: this._nonce,
                     event: event,
                     session: this.sessionId,
                     data: JSON.stringify(data || {})
