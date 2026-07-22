@@ -137,7 +137,7 @@ class ErrorHandler {
 
         self::safe_log( $event, array(
             'type'    => $level,
-            'message' => $errstr,
+            'message' => substr( $errstr, 0, 500 ),
             'file'    => self::short_path( $errfile ),
             'line'    => $errline,
         ) );
@@ -208,7 +208,7 @@ class ErrorHandler {
 
         self::safe_log( 'uncaught_exception', array(
             'type'    => 'exception',
-            'message' => $exception->getMessage(),
+            'message' => substr( $exception->getMessage(), 0, 500 ),
             'file'    => self::short_path( $exception->getFile() ),
             'line'    => $exception->getLine(),
         ) );
