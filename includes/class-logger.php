@@ -70,6 +70,11 @@ class Logger {
     private function log( string $level, string $event, $context ) {
         global $wpdb;
 
+        // Validate event name length (DB column is VARCHAR(255)).
+        if ( strlen( $event ) > 100 ) {
+            $event = substr( $event, 0, 100 );
+        }
+
         $valid_levels = array( 'info', 'warning', 'error', 'debug' );
         if ( ! in_array( $level, $valid_levels, true ) ) {
             $level = 'info';
