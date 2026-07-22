@@ -195,22 +195,47 @@ class SuggestionEngine {
      *
      * @return array
      */
+    /**
+     * Normalize a suggestion score to the 0–1 range.
+     * Handles percentage strings ("85%"), raw floats >1, and null values.
+     *
+     * @param mixed $score Raw score from LLM.
+     * @return float Normalized 0.0–1.0.
+     */
+    private function normalize_score( $score ): float {
+        if ( is_string( $score ) && strpos( $score, '%' ) !== false ) {
+            $score = (float) str_replace( '%', '', $score ) / 100;
+        }
+        $score = (float) $score;
+        if ( $score > 1.0 ) {
+            $score = $score / 100; // Assume it's a percentage.
+        }
+        return max( 0.0, min( 1.0, $score ) );
+    }
+
+    /**
+     * Save a generated suggestion to the database.
+     *
+     * @param array $suggestion
+     *
+     * @return array
+     */
     private function save_suggestion( array $suggestion ): array {
         global $wpdb;
+
+        $score = $this->normalize_score( $suggestion['score'] ?? 0.5 );
 
         $data = array(
             'title'       => $suggestion['title'] ?? 'Untitled Suggestion',
             'description' => $suggestion['description'] ?? '',
             'action_type' => $suggestion['action_type'] ?? 'css',
             'action_data' => wp_json_encode( $suggestion['action_data'] ?? array() ),
-            'score'       => $suggestion['score'] ?? 0.5,
+            'score'       => $score,
             'expected_lift' => $suggestion['expected_lift'] ?? null,
             'category'    => $suggestion['category'] ?? 'general',
             'status'      => self::STATUS_PENDING,
             'created_at'  => current_time( 'mysql' ),
         );
-
-        $data['score'] = min( 1.0, max( 0.0, (float) $data['score'] ) );
 
         $wpdb->insert( $wpdb->prefix . 'wac_suggestions', $data );
 

@@ -23,6 +23,72 @@
             errors: []
         },
 
+        /** Rate limiter state */
+        _lastEventTime: {},
+        _eventQueue: [],
+        _flushTimer: null,
+
+        /**
+         * Throttled send — max 1 event per event type per 200ms, batch heavy events.
+         */
+        _sendThrottled: function (event, data) {
+            if (!this.sessionId) return;
+
+            var now = Date.now();
+            var key = event;
+            var last = this._lastEventTime[key] || 0;
+
+            // Skip duplicate event types within 200ms.
+            if (now - last < 200) {
+                return;
+            }
+            this._lastEventTime[key] = now;
+
+            // Rate-limit field_interaction events to one per 2 seconds max.
+            if (event === 'field_interaction') {
+                if (now - (this._lastEventTime['_field_interaction_last'] || 0) < 2000) {
+                    return;
+                }
+                this._lastEventTime['_field_interaction_last'] = now;
+            }
+
+            this._sendRaw(event, data);
+        },
+
+        /**
+         * Batch low-priority events and flush periodically.
+         */
+        _enqueueBatched: function (event, data) {
+            this._eventQueue.push({ event: event, data: data, time: Date.now() });
+
+            if (this._eventQueue.length >= 5) {
+                this._flushBatch();
+                return;
+            }
+
+            if (!this._flushTimer) {
+                var self = this;
+                this._flushTimer = setTimeout(function () {
+                    self._flushBatch();
+                }, 3000);
+            }
+        },
+
+        /**
+         * Flush batched events in a single AJAX call.
+         */
+        _flushBatch: function () {
+            if (this._flushTimer) {
+                clearTimeout(this._flushTimer);
+                this._flushTimer = null;
+            }
+
+            if (this._eventQueue.length === 0) return;
+
+            var batch = this._eventQueue.splice(0, this._eventQueue.length);
+            this._sendRaw('batch_events', { events: batch });
+        },
+
         /**
          * Initialize beacon.
          */

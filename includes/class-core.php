@@ -286,8 +286,10 @@ class Core {
     public function ajax_beacon() {
         check_ajax_referer( 'wac_beacon', 'nonce' );
 
-        $event = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
-        $data  = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array();
+        $event   = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
+        $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+        $data    = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
+        $data    = is_array( $data ) ? $data : array();
         $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
 
         do_action( 'wac_beacon_event', $event, $data, $session );

@@ -157,6 +157,27 @@ function wac_register_error_handler() {
 add_action( 'plugins_loaded', 'wac_register_error_handler', 1 );
 
 /**
+ * Uninstall cleanup -- drop all plugin tables and remove options.
+ */
+register_uninstall_hook( __FILE__, 'wac_uninstall' );
+function wac_uninstall() {
+    if ( class_exists( 'WooAgenticCheckout\\Schema' ) ) {
+        $schema = new \WooAgenticCheckout\Schema();
+        $schema->drop_tables();
+    }
+
+    // Remove all plugin options.
+    delete_option( 'wac_db_version' );
+    delete_option( 'wac_settings' );
+    delete_option( 'wac_llm_calls_hourly' );
+
+    // Clear all scheduled cron events.
+    wp_clear_scheduled_hook( 'wac_agent_tick' );
+    wp_clear_scheduled_hook( 'wac_daily_agent_run' );
+    wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+}
+
+/**
  * Deactivation cleanup.
  */
 register_deactivation_hook( __FILE__, function () {
