@@ -468,6 +468,23 @@ class ABTestManager {
     }
 
     /**
+     * Check that all variants meet the minimum sample size threshold.
+     *
+     * @param array $experiment
+     *
+     * @return bool
+     */
+    private function check_minimum_sample_size( array $experiment ): bool {
+        $variants = $experiment['variants'] ?? $this->get_variants( $experiment['id'] );
+        foreach ( $variants as $v ) {
+            if ( (int) $v['impressions'] < self::MIN_SAMPLE_SIZE ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Compute simple Bayesian probability of each variant being best.
      * Winner is the variant with highest probability of being superior to control.
      *
