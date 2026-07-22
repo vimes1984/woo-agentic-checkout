@@ -303,6 +303,7 @@ class SignalCollector {
         global $wpdb;
 
         $hours     = min( 168, max( 1, $hours ) );
+        $limit     = min( 500, max( 1, $limit ) );
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
         return $wpdb->get_results( $wpdb->prepare(
