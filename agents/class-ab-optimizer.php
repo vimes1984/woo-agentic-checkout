@@ -203,11 +203,24 @@ class ABOptimizer {
                 // If auto_patch or higher, auto-create the experiment.
                 $permission = $settings->get_heal_permission();
                 if ( in_array( $permission, array( 'auto_patch', 'auto_full' ), true ) ) {
+                    // Sanitize LLM output before creating experiment (prompt injection defense).
+                    $exp_name        = sanitize_text_field( $new_exp['name'] );
+                    $exp_description = sanitize_textarea_field( $new_exp['description'] );
+                    $exp_traffic     = min( 100, max( 10, absint( $new_exp['traffic_pct'] ?? 50 ) ) );
+                    $exp_variants    = array();
+                    foreach ( $new_exp['variants'] as $v ) {
+                        $exp_variants[] = array(
+                            'key'             => sanitize_key( $v['key'] ?? '' ),
+                            'name'            => sanitize_text_field( $v['name'] ?? '' ),
+                            'traffic_percent' => min( 100, max( 0, absint( $v['traffic_percent'] ?? 50 ) ) ),
+                            'config'          => $v['config'] ?? array(),
+                        );
+                    }
                     $ab->create_experiment(
-                        $new_exp['name'],
-                        $new_exp['description'],
-                        $new_exp['variants'],
-                        $new_exp['traffic_pct'] ?? 50
+                        $exp_name,
+                        $exp_description,
+                        $exp_variants,
+                        $exp_traffic
                     );
                 }
             }
