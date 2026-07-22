@@ -98,6 +98,14 @@ class LLMClient {
      * @throws \InvalidArgumentException On missing required parameters.
      */
     public function analyze( string $system_prompt, string $user_prompt, array $response_schema = array(), int $cache_ttl = null ): array {
+        // Input validation.
+        if ( '' === trim( $system_prompt ) ) {
+            throw new \InvalidArgumentException( 'System prompt cannot be empty.' );
+        }
+        if ( '' === trim( $user_prompt ) ) {
+            throw new \InvalidArgumentException( 'User prompt cannot be empty.' );
+        }
+
         $cache_ttl = $cache_ttl ?? $this->cache_ttl;
         $start_time = microtime( true );
 
@@ -308,14 +316,19 @@ class LLMClient {
 
         $body = array(
             'model'    => $model,
-            'system'   => $system,
+            'system'   => $system . "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code fences, no extra text.",
             'prompt'   => $user,
             'stream'   => false,
+            'format'   => 'json',
             'options'  => array(
                 'temperature' => 0.3,
+                'num_predict' => 4096,
             ),
-            'format'   => empty( $schema ) ? '' : 'json',
         );
+
+        if ( ! empty( $schema ) ) {
+            $body['format'] = $schema;
+        }
 
         return $this->http_post(
             "{$base_url}/api/generate",

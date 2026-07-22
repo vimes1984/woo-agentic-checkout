@@ -144,6 +144,30 @@
                 self.trackStep('place_order_clicked');
             });
 
+            // Order submission time (from click to success/error).
+            var placeOrderTime = null;
+            $(document.body).on('checkout_place_order', function () {
+                placeOrderTime = Date.now();
+            });
+            $(document.body).on('checkout_error', function () {
+                if (placeOrderTime) {
+                    self._sendThrottled('checkout_submit_duration', {
+                        result: 'error',
+                        durationMs: Date.now() - placeOrderTime
+                    });
+                    placeOrderTime = null;
+                }
+            });
+            $(document.body).on('checkout_place_order_success checkout_processed', function () {
+                if (placeOrderTime) {
+                    self._sendThrottled('checkout_submit_duration', {
+                        result: 'success',
+                        durationMs: Date.now() - placeOrderTime
+                    });
+                    placeOrderTime = null;
+                }
+            });
+
             // Order success (redirect)
             if ($('.woocommerce-order').length) {
                 self.trackStep('order_placed', {

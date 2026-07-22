@@ -278,7 +278,7 @@ class Schema {
 
         foreach ( $tables as $table ) {
             $table_name = sanitize_key( $wpdb->prefix . $table );
-            $wpdb->query( $wpdb->prepare( "DROP TABLE IF EXISTS `%s`", $table_name ) );
+            $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         }
 
         delete_option( self::DB_VERSION_KEY );
