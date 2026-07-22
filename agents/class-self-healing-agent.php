@@ -142,14 +142,26 @@ class SelfHealingAgent {
             $heal_plan = $this->build_heal_plan( $failing, $llm );
 
             foreach ( $heal_plan as $plan ) {
+                $issue_id = $plan['issue_id'] ?? uniqid( 'heal_' );
+
+                // Skip if this issue is in heal cooldown.
+                if ( $this->is_heal_cooldown( $issue_id ) ) {
+                    $logger->info( 'self_heal_cooldown_hc', array(
+                        'issue_id' => $issue_id,
+                        'note'     => 'Skipping health-check heal for recently-healed issue.',
+                    ) );
+                    continue;
+                }
+
                 $result = $healer->attempt_heal(
-                    $plan['issue_id'] ?? uniqid( 'heal_' ),
+                    $issue_id,
                     $plan['action'],
                     $plan['params'] ?? array(),
                     $permission
                 );
 
-                $results['actions'][] = $result;
+                $this->set_heal_cooldown( $issue_id );
+                $results['actions_taken'][] = $result;
                 $notifier->heal_applied( $result );
             }
         }
@@ -162,8 +174,19 @@ class SelfHealingAgent {
             $heal_plan = $this->build_heal_plan_from_errors( $heal_errors, $llm );
 
             foreach ( $heal_plan as $plan ) {
+                $issue_id = $plan['issue_id'] ?? uniqid( 'heal_' );
+
+                // Skip if this issue is in heal cooldown.
+                if ( $this->is_heal_cooldown( $issue_id ) ) {
+                    $logger->info( 'self_heal_cooldown', array(
+                        'issue_id' => $issue_id,
+                        'note'     => 'Skipping heal for recently-healed issue.',
+                    ) );
+                    continue;
+                }
+
                 $result = $healer->attempt_heal(
-                    $plan['issue_id'] ?? uniqid( 'heal_' ),
+                    $issue_id,
                     $plan['action'],
                     $plan['params'] ?? array(),
                     $permission
@@ -171,6 +194,7 @@ class SelfHealingAgent {
 
                 if ( $result['success'] ) {
                     $results['healed']++;
+                    $this->set_heal_cooldown( $issue_id );
                 } else {
                     $results['failed']++;
                 }
@@ -381,6 +405,43 @@ PROMPT;
     /**
      * Build a healing plan from recent errors using LLM.
      */
+    /**
+     * Cooldown key prefix for preventing repeated healing of the same issue.
+     */
+    const HEAL_COOLDOWN_SECONDS = 300; // 5 minutes
+
+    /**
+     * Track heal cooldowns per issue to prevent thrashing.
+     *
+     * @var array<string, float>
+     */
+    private static $heal_cooldowns = array();
+
+    /**
+     * Check if an issue is in heal cooldown.
+     *
+     * @param string $issue_id
+     * @return bool
+     */
+    private function is_heal_cooldown( string $issue_id ): bool {
+        $key = 'wac_heal_cooldown_' . md5( $issue_id );
+        $last = (float) get_transient( $key );
+        if ( 0.0 === $last ) {
+            return false;
+        }
+        return ( microtime( true ) - $last ) < self::HEAL_COOLDOWN_SECONDS;
+    }
+
+    /**
+     * Set heal cooldown for an issue.
+     *
+     * @param string $issue_id
+     */
+    private function set_heal_cooldown( string $issue_id ): void {
+        $key = 'wac_heal_cooldown_' . md5( $issue_id );
+        set_transient( $key, microtime( true ), self::HEAL_COOLDOWN_SECONDS );
+    }
+
     private function build_heal_plan_from_errors( array $errors, $llm ): array {
         // Cold start guard: if no errors, skip LLM call.
         if ( empty( $errors ) ) {
