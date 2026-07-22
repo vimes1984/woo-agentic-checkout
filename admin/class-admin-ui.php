@@ -10,9 +10,9 @@ use WooAgenticCheckout\SuggestionEngine;
 
 /**
  * Admin UI — renders the plugin dashboard, settings, experiment views, and
- * suggestion management interface.
+ * suggestion management interface with loading/empty/error states.
  *
- * @since 0.1.0-alpha
+ * @since 0.2.0
  */
 class AdminUI {
 
@@ -56,40 +56,49 @@ class AdminUI {
         $tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 
         ?>
-        <div class="wrap wac-admin">
+        <div class="wrap wac-admin" data-wac-tab="<?php echo esc_attr( $tab ); ?>">
             <h1>
                 <?php esc_html_e( '🍌 Woo Agentic Checkout', 'woo-agentic-checkout' ); ?>
                 <span class="wac-version">v<?php echo esc_html( WAC_VERSION ); ?></span>
+                <button class="wac-refresh-btn" title="Refresh dashboard data" aria-label="Refresh dashboard">
+                    <span class="dashicons dashicons-update" aria-hidden="true"></span> Refresh
+                </button>
             </h1>
 
-            <nav class="nav-tab-wrapper wac-tabs">
+            <nav class="nav-tab-wrapper wac-tabs" role="tablist" aria-label="Plugin tabs">
                 <a href="?page=wac-dashboard&tab=dashboard"
-                   class="nav-tab <?php echo 'dashboard' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'dashboard' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'dashboard' === $tab ? 'true' : 'false'; ?>">
                    📊 Dashboard
                 </a>
                 <a href="?page=wac-dashboard&tab=experiments"
-                   class="nav-tab <?php echo 'experiments' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'experiments' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'experiments' === $tab ? 'true' : 'false'; ?>">
                    🧪 Experiments
                 </a>
                 <a href="?page=wac-dashboard&tab=suggestions"
-                   class="nav-tab <?php echo 'suggestions' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'suggestions' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'suggestions' === $tab ? 'true' : 'false'; ?>">
                    💡 Suggestions
                 </a>
                 <a href="?page=wac-dashboard&tab=agents"
-                   class="nav-tab <?php echo 'agents' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'agents' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'agents' === $tab ? 'true' : 'false'; ?>">
                    🤖 Agents
                 </a>
                 <a href="?page=wac-dashboard&tab=settings"
-                   class="nav-tab <?php echo 'settings' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'settings' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'settings' === $tab ? 'true' : 'false'; ?>">
                    ⚙️ Settings
                 </a>
                 <a href="?page=wac-dashboard&tab=logs"
-                   class="nav-tab <?php echo 'logs' === $tab ? 'nav-tab-active' : ''; ?>">
+                   class="nav-tab <?php echo 'logs' === $tab ? 'nav-tab-active' : ''; ?>"
+                   role="tab" aria-selected="<?php echo 'logs' === $tab ? 'true' : 'false'; ?>">
                    📝 Logs
                 </a>
             </nav>
 
-            <div class="wac-tab-content">
+            <div class="wac-tab-content" role="tabpanel">
                 <?php
                 switch ( $tab ) {
                     case 'experiments':
@@ -118,165 +127,345 @@ class AdminUI {
     }
 
     /**
-     * Dashboard tab — high-level overview.
+     * Render an empty state component.
+     *
+     * @param string $icon     Emoji or icon character.
+     * @param string $title    Title text.
+     * @param string $text     Description.
+     * @param string $button   Optional button label.
+     * @param string $button_url Optional button URL.
      */
-    private function render_dashboard_tab() {
-        $status = $this->agents->get_status();
-        $experiments = $this->ab->get_active_experiments();
-        $suggestions = $this->suggest->get_pending_count();
+    private function render_empty_state( $icon, $title, $text, $button = '', $button_url = '' ) {
         ?>
-        <div class="wac-dashboard-grid">
-            <div class="wac-card">
-                <h3>🤖 Agent Status</h3>
-                <table class="widefat striped">
-                    <thead><tr><th>Agent</th><th>Status</th><th>Last Run</th></tr></thead>
-                    <tbody>
-                        <?php foreach ( $status as $key => $agent ) : ?>
-                            <tr>
-                                <td><?php echo esc_html( $agent['label'] ); ?></td>
-                                <td>
-                                    <?php if ( $agent['enabled'] ) : ?>
-                                        <span class="wac-badge wac-badge-active">● Active</span>
-                                    <?php else : ?>
-                                        <span class="wac-badge wac-badge-inactive">○ Disabled</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo esc_html( $agent['lastRun'] ?? 'Never' ); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="wac-card">
-                <h3>🧪 Active Experiments</h3>
-                <?php if ( empty( $experiments ) ) : ?>
-                    <p class="wac-empty">No active experiments. <a href="?page=wac-dashboard&tab=experiments">Create one →</a></p>
-                <?php else : ?>
-                    <ul class="wac-experiment-list">
-                        <?php foreach ( $experiments as $exp ) : ?>
-                            <li>
-                                <strong><?php echo esc_html( $exp['name'] ); ?></strong>
-                                <span class="wac-count"><?php echo esc_html( $exp['variant_count'] ); ?> variants</span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-
-            <div class="wac-card">
-                <h3>💡 Pending Suggestions</h3>
-                <?php if ( $suggestions > 0 ) : ?>
-                    <p class="wac-number"><?php echo esc_html( $suggestions ); ?></p>
-                    <a href="?page=wac-dashboard&tab=suggestions" class="button">Review →</a>
-                <?php else : ?>
-                    <p class="wac-empty wac-number">0</p>
-                    <p>No pending suggestions. Next weekly run will generate new ones.</p>
-                <?php endif; ?>
-            </div>
-
-            <div class="wac-card">
-                <h3>⚡ Actions</h3>
-                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                    <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
-                    <input type="hidden" name="action" value="wac_manual_agent">
-                    <select name="agent_key">
-                        <?php foreach ( $this->agents->get_agent_keys() as $key ) : ?>
-                            <option value="<?php echo esc_attr( $key ); ?>">
-                                <?php echo esc_html( $status[ $key ]['label'] ?? $key ); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <?php submit_button( '▶ Run Agent Now', 'secondary', 'submit', false ); ?>
-                </form>
-            </div>
+        <div class="wac-empty-state">
+            <span class="wac-empty-state__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></span>
+            <h3 class="wac-empty-state__title"><?php echo esc_html( $title ); ?></h3>
+            <p class="wac-empty-state__text"><?php echo esc_html( $text ); ?></p>
+            <?php if ( $button && $button_url ) : ?>
+                <a href="<?php echo esc_url( $button_url ); ?>" class="button button-primary">
+                    <?php echo esc_html( $button ); ?>
+                </a>
+            <?php elseif ( $button ) : ?>
+                <button class="button button-primary" id="wac-create-experiment"><?php echo esc_html( $button ); ?></button>
+            <?php endif; ?>
         </div>
         <?php
     }
 
     /**
-     * Experiments tab — manage A/B tests.
+     * Render an error state component.
+     *
+     * @param string $text Error description.
+     */
+    private function render_error( $text ) {
+        ?>
+        <div class="wac-error" role="alert">
+            <span><?php echo esc_html( $text ); ?></span>
+            <button class="wac-error__dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render a badge with appropriate colour.
+     *
+     * @param string $status Badge status key.
+     * @param string $label  Display text.
+     * @param bool   $large  Use large badge variant.
+     * @return string HTML.
+     */
+    private function badge( $status, $label, $large = false ) {
+        $class = 'wac-badge wac-badge-' . esc_attr( $status );
+        if ( $large ) {
+            $class .= ' wac-badge--lg';
+        }
+        return sprintf(
+            '<span class="%s">%s</span>',
+            $class,
+            esc_html( $label )
+        );
+    }
+
+    /**
+     * Render a progress bar for scores.
+     *
+     * @param float  $score  Value 0-100.
+     * @param string $label  Optional label beside bar.
+     * @param string $size   sm|lg
+     * @return string HTML.
+     */
+    private function progress_bar( $score, $label = '', $size = '' ) {
+        $score = max( 0, min( 100, (float) $score ) );
+        $mod   = 'success';
+        if ( $score < 40 ) {
+            $mod = 'error';
+        } elseif ( $score < 70 ) {
+            $mod = 'warning';
+        }
+
+        $bar_class = 'wac-progress-bar';
+        if ( $size ) {
+            $bar_class .= ' wac-progress-bar--' . $size;
+        }
+
+        $html = '<span class="wac-progress-label">';
+        $html .= sprintf(
+            '<span class="%s" role="progressbar" aria-valuenow="%d" aria-valuemin="0" aria-valuemax="100">',
+            esc_attr( $bar_class ),
+            (int) $score
+        );
+        $html .= sprintf(
+            '<span class="wac-progress-bar__fill wac-progress-bar--%s" style="--wac-progress: %s%%;"></span>',
+            esc_attr( $mod ),
+            esc_attr( $score )
+        );
+        $html .= '</span>';
+        if ( $label ) {
+            $html .= '<span class="wac-progress-label__text">' . esc_html( $label ) . '</span>';
+        }
+        $html .= '</span>';
+        return $html;
+    }
+
+    // ─── Dashboard Tab ───────────────────────────────────────────
+
+    /**
+     * Dashboard tab — high-level overview with loading/empty states.
+     */
+    private function render_dashboard_tab() {
+        $status      = $this->agents->get_status();
+        $experiments = $this->ab->get_active_experiments();
+        $suggestions = $this->suggest->get_pending_count();
+        ?>
+        <div class="wac-dashboard-grid">
+            <div class="wac-card">
+                <h3>🤖 Agent Status <button class="wac-refresh-btn" data-target="wac-status" title="Refresh agent status" aria-label="Refresh agent status"><span class="dashicons dashicons-update" aria-hidden="true"></span></button></h3>
+                <?php if ( empty( $status ) ) : ?>
+                    <div class="wac-empty-state" style="padding:20px;">
+                        <span class="wac-empty-state__icon" aria-hidden="true">🤖</span>
+                        <p class="wac-empty-state__text">No agents registered yet.</p>
+                    </div>
+                <?php else : ?>
+                    <table class="widefat striped">
+                        <thead><tr><th>Agent</th><th>Status</th><th>Last Run</th></tr></thead>
+                        <tbody>
+                            <?php foreach ( $status as $key => $agent ) : ?>
+                                <tr>
+                                    <td>
+                                        <?php echo esc_html( $agent['label'] ?? $key ); ?>
+                                        <code style="margin-left:4px;font-size:10px;color:#888;"><?php echo esc_html( $key ); ?></code>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        if ( ! empty( $agent['enabled'] ) ) {
+                                            echo $this->badge( 'active', __( 'Active', 'woo-agentic-checkout' ), true );
+                                        } else {
+                                            echo $this->badge( 'inactive', __( 'Disabled', 'woo-agentic-checkout' ), true );
+                                        }
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <?php echo esc_html( $agent['lastRun'] ?? __( 'Never', 'woo-agentic-checkout' ) ); ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+                <p style="margin:12px 0 0;">
+                    <a href="?page=wac-dashboard&tab=agents" class="button button-secondary">Manage Agents →</a>
+                </p>
+            </div>
+
+            <div class="wac-card">
+                <h3>🧪 Active Experiments</h3>
+                <?php if ( empty( $experiments ) ) : ?>
+                    <div class="wac-empty-state" style="padding:20px;">
+                        <span class="wac-empty-state__icon" aria-hidden="true">🧪</span>
+                        <p class="wac-empty-state__text">No active experiments. The AB Optimizer will auto-create them, or you can create one manually.</p>
+                        <a href="?page=wac-dashboard&tab=experiments" class="button">Go to Experiments →</a>
+                    </div>
+                <?php else : ?>
+                    <ul class="wac-experiment-list">
+                        <?php foreach ( $experiments as $exp ) : ?>
+                            <li>
+                                <span>
+                                    <strong><?php echo esc_html( $exp['name'] ); ?></strong>
+                                    <?php
+                                    echo $this->badge( $exp['status'], $exp['status'] );
+                                    ?>
+                                </span>
+                                <span class="wac-count"><?php echo esc_html( $exp['variant_count'] ); ?> variants</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <p style="margin:12px 0 0;">
+                        <a href="?page=wac-dashboard&tab=experiments" class="button button-secondary">View All →</a>
+                    </p>
+                <?php endif; ?>
+            </div>
+
+            <div class="wac-card">
+                <h3>💡 Pending Suggestions</h3>
+                <p class="wac-number" aria-label="<?php echo esc_attr( sprintf( __( '%d pending suggestions', 'woo-agentic-checkout' ), $suggestions ) ); ?>">
+                    <?php echo esc_html( $suggestions ); ?>
+                </p>
+                <?php if ( $suggestions > 0 ) : ?>
+                    <a href="?page=wac-dashboard&tab=suggestions" class="button">Review Suggestions →</a>
+                <?php else : ?>
+                    <p><?php esc_html_e( 'No pending suggestions. Next weekly run will generate new ones.', 'woo-agentic-checkout' ); ?></p>
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+                        <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
+                        <input type="hidden" name="action" value="wac_manual_agent">
+                        <input type="hidden" name="agent_key" value="suggestion_generator">
+                        <button type="submit" class="button button-secondary">
+                            <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
+                            <?php esc_html_e( 'Generate Now', 'woo-agentic-checkout' ); ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <div class="wac-card">
+                <h3>⚡ Quick Actions</h3>
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                    <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
+                    <input type="hidden" name="action" value="wac_manual_agent">
+                    <p>
+                        <label for="wac-quick-agent-select"><?php esc_html_e( 'Run agent:', 'woo-agentic-checkout' ); ?></label>
+                    </p>
+                    <p>
+                        <select id="wac-quick-agent-select" name="agent_key" aria-label="<?php esc_attr_e( 'Select agent to run', 'woo-agentic-checkout' ); ?>">
+                            <?php foreach ( $this->agents->get_agent_keys() as $key ) : ?>
+                                <option value="<?php echo esc_attr( $key ); ?>">
+                                    <?php echo esc_html( $status[ $key ]['label'] ?? $key ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="button button-secondary" title="Run selected agent now">
+                            <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
+                            ▶ <?php esc_html_e( 'Run Agent Now', 'woo-agentic-checkout' ); ?>
+                        </button>
+                    </p>
+                </form>
+                <hr>
+                <p><?php esc_html_e( 'Agents run autonomously on their schedules.', 'woo-agentic-checkout' ); ?></p>
+                <ul style="font-size:12px;color:#666;">
+                    <li>⏰ Error Detector + Self-Healing: Every hour</li>
+                    <li>⏰ Conversion Analyzer + AB Optimizer: Daily</li>
+                    <li>⏰ Suggestion Generator: Weekly</li>
+                </ul>
+            </div>
+        </div>
+        <?php
+    }
+
+    // ─── Experiments Tab ─────────────────────────────────────────
+
+    /**
+     * Experiments tab — manage A/B tests with sortable columns and empty states.
      */
     private function render_experiments_tab() {
         $all_experiments = $this->ab->get_experiments( '', 50 );
         ?>
         <h2>🧪 A/B Experiments</h2>
 
-        <?php if ( empty( $all_experiments ) ) : ?>
-            <div class="wac-card">
-                <p>No experiments yet. Create your first one to start optimising checkout!</p>
-                <button class="button button-primary" id="wac-create-experiment">Create Experiment</button>
+        <?php if ( ! empty( $all_experiments ) ) : ?>
+            <div class="wac-filter-row">
+                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter experiments…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter experiments', 'woo-agentic-checkout' ); ?>">
             </div>
-        <?php else : ?>
-            <table class="widefat striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Variants</th>
-                        <th>Traffic</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ( $all_experiments as $exp ) : ?>
-                        <tr>
-                            <td><?php echo esc_html( $exp['name'] ); ?>
-                                <?php if ( $exp['winner_key'] ) : ?>
-                                    <span class="wac-badge wac-badge-winner">🏆</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="wac-badge wac-badge-<?php echo esc_attr( $exp['status'] ); ?>">
-                                    <?php echo esc_html( $exp['status'] ); ?>
-                                </span>
-                            </td>
-                            <td><?php echo esc_html( $exp['variant_count'] ); ?></td>
-                            <td><?php echo esc_html( $exp['traffic_pct'] ); ?>%</td>
-                            <td><?php echo esc_html( $exp['created_at'] ); ?></td>
-                            <td>
-                                <a href="#" class="wac-view-exp" data-id="<?php echo esc_attr( $exp['id'] ); ?>">View</a>
-                                <?php if ( 'active' === $exp['status'] ) : ?>
-                                    | <a href="#" class="wac-pause-exp" data-id="<?php echo esc_attr( $exp['id'] ); ?>">Pause</a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
+        <?php endif; ?>
 
-                        <!-- Variant details inline -->
-                        <?php if ( ! empty( $exp['variants'] ) && is_array( $exp['variants'] ) ) : ?>
-                            <?php foreach ( $exp['variants'] as $variant ) : ?>
-                                <tr class="wac-variant-row">
-                                    <td></td>
-                                    <td colspan="5">
-                                        <div class="wac-variant-detail">
-                                            <strong><?php echo esc_html( $variant['variant_name'] ); ?></strong>
-                                            <?php if ( $variant['is_control'] ) : ?>
-                                                <span class="wac-badge">Control</span>
-                                            <?php endif; ?>
-                                            — Impressions: <?php echo esc_html( $variant['impressions'] ?? 0 ); ?>
-                                            | Conversions: <?php echo esc_html( $variant['conversions'] ?? 0 ); ?>
-                                            | CR: <strong>
-                                                <?php
-                                                $cr = $variant['impressions'] > 0
-                                                    ? round( ( $variant['conversions'] / $variant['impressions'] ) * 100, 2 )
-                                                    : 0;
-                                                echo esc_html( $cr ); ?>%
-                                            </strong>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <?php if ( empty( $all_experiments ) ) : ?>
+            <?php $this->render_empty_state(
+                '🧪',
+                __( 'No experiments yet', 'woo-agentic-checkout' ),
+                __( 'Create your first A/B test to start optimising the checkout experience. Variants run concurrently, and we pick a winner using Bayesian analysis.', 'woo-agentic-checkout' ),
+                __( 'Create Experiment', 'woo-agentic-checkout' )
+            ); ?>
+        <?php else : ?>
+            <div class="wac-spinner-wrap">
+                <table class="widefat striped" id="wac-experiments-table">
+                    <thead>
+                        <tr>
+                            <th class="wac-sortable" data-col="name" aria-sort="none"><?php esc_html_e( 'Name', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable" data-col="status" aria-sort="none"><?php esc_html_e( 'Status', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable" data-col="variants" aria-sort="none"><?php esc_html_e( 'Variants', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable" data-col="traffic" aria-sort="none"><?php esc_html_e( 'Traffic', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable" data-col="created" aria-sort="none"><?php esc_html_e( 'Created', 'woo-agentic-checkout' ); ?></th>
+                            <th><?php esc_html_e( 'Actions', 'woo-agentic-checkout' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $all_experiments as $exp ) : ?>
+                            <tr data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>">
+                                <td>
+                                    <strong><?php echo esc_html( $exp['name'] ); ?></strong>
+                                    <?php if ( ! empty( $exp['winner_key'] ) ) : ?>
+                                        <?php echo $this->badge( 'winner', __( '🏆 Winner', 'woo-agentic-checkout' ), true ); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo $this->badge( $exp['status'], $exp['status'], true ); ?></td>
+                                <td><?php echo esc_html( $exp['variant_count'] ); ?></td>
+                                <td><?php echo esc_html( $exp['traffic_pct'] ); ?>%</td>
+                                <td title="<?php echo esc_attr( $exp['created_at'] ); ?>"><?php echo esc_html( $this->format_date( $exp['created_at'] ) ); ?></td>
+                                <td class="wac-actions-cell">
+                                    <button class="wac-action-link wac-view-exp" data-id="<?php echo esc_attr( $exp['id'] ); ?>" aria-expanded="false" title="View experiment details">
+                                        View
+                                    </button>
+                                    <?php if ( 'active' === $exp['status'] ) : ?>
+                                        <span aria-hidden="true"> | </span>
+                                        <button class="wac-action-link wac-pause-exp" data-id="<?php echo esc_attr( $exp['id'] ); ?>" title="Pause this experiment">
+                                            Pause
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ( 'paused' === $exp['status'] ) : ?>
+                                        <span aria-hidden="true"> | </span>
+                                        <button class="wac-action-link wac-resume-exp" data-id="<?php echo esc_attr( $exp['id'] ); ?>" title="Resume this experiment">
+                                            Resume
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+
+                            <?php if ( ! empty( $exp['variants'] ) && is_array( $exp['variants'] ) ) : ?>
+                                <?php foreach ( $exp['variants'] as $variant ) : ?>
+                                    <tr class="wac-variant-row wac-hidden" data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>">
+                                        <td></td>
+                                        <td colspan="5">
+                                            <div class="wac-variant-detail">
+                                                <strong><?php echo esc_html( $variant['variant_name'] ); ?></strong>
+                                                <?php if ( ! empty( $variant['is_control'] ) ) : ?>
+                                                    <?php echo $this->badge( 'info', __( 'Control', 'woo-agentic-checkout' ) ); ?>
+                                                <?php endif; ?>
+                                                <span title="Impressions">👁 <?php echo esc_html( number_format( $variant['impressions'] ?? 0 ) ); ?></span>
+                                                <span title="Conversions">✅ <?php echo esc_html( number_format( $variant['conversions'] ?? 0 ) ); ?></span>
+                                                <span title="Conversion Rate">
+                                                    📈 <strong>
+                                                    <?php
+                                                    $cr = ( $variant['impressions'] ?? 0 ) > 0
+                                                        ? round( ( ( $variant['conversions'] ?? 0 ) / $variant['impressions'] ) * 100, 2 )
+                                                        : 0;
+                                                    echo esc_html( $cr ); ?>%
+                                                    </strong>
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endif; ?>
         <?php
     }
 
+    // ─── Suggestions Tab ─────────────────────────────────────────
+
     /**
-     * Suggestions tab.
+     * Suggestions tab — shows pending suggestions as cards with progress bars.
      */
     private function render_suggestions_tab() {
         $pending = $this->suggest->get_pending( 50 );
@@ -285,68 +474,85 @@ class AdminUI {
         <h2>💡 AI Suggestions</h2>
 
         <?php if ( empty( $pending ) ) : ?>
-            <div class="wac-card">
-                <p>No pending suggestions. The weekly agent run will generate new ones based on checkout data.</p>
-                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
-                    <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
-                    <input type="hidden" name="action" value="wac_manual_agent">
-                    <input type="hidden" name="agent_key" value="suggestion_generator">
-                    <?php submit_button( 'Generate Suggestions Now', 'secondary', 'submit', false ); ?>
-                </form>
-            </div>
+            <?php $this->render_empty_state(
+                '💡',
+                __( 'No pending suggestions', 'woo-agentic-checkout' ),
+                __( 'The weekly suggestion generator will analyse your checkout data and propose improvements. You can also trigger a manual generation below.', 'woo-agentic-checkout' ),
+                __( 'Generate Suggestions Now', 'woo-agentic-checkout' )
+            ); ?>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;margin-top:12px;">
+                <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
+                <input type="hidden" name="action" value="wac_manual_agent">
+                <input type="hidden" name="agent_key" value="suggestion_generator">
+                <button type="submit" class="button button-secondary">
+                    <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
+                    <?php esc_html_e( 'Generate Suggestions Now', 'woo-agentic-checkout' ); ?>
+                </button>
+            </form>
         <?php else : ?>
-            <table class="widefat striped">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Action</th>
-                        <th>Score</th>
-                        <th>Expected Lift</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ( $pending as $s ) : ?>
-                        <tr>
-                            <td><strong><?php echo esc_html( $s['title'] ); ?></strong></td>
-                            <td><span class="wac-badge"><?php echo esc_html( $s['category'] ); ?></span></td>
-                            <td><?php echo esc_html( $s['action_type'] ); ?></td>
-                            <td><?php echo esc_html( number_format( (float) $s['score'] * 100, 0 ) ); ?>%</td>
-                            <td><?php echo esc_html( $s['expected_lift'] ?? '—' ); ?></td>
-                            <td><?php echo esc_html( $s['created_at'] ); ?></td>
-                            <td>
-                                <button class="button wac-apply-suggestion" data-id="<?php echo esc_attr( $s['id'] ); ?>">Apply</button>
-                                <button class="button wac-reject-suggestion" data-id="<?php echo esc_attr( $s['id'] ); ?>">✕</button>
-                            </td>
-                        </tr>
-                        <?php if ( ! empty( $s['description'] ) ) : ?>
-                            <tr><td colspan="7" class="wac-desc"><?php echo esc_html( $s['description'] ); ?></td></tr>
+            <p><?php printf( esc_html__( 'Showing %d pending suggestions.', 'woo-agentic-checkout' ), count( $pending ) ); ?></p>
+            <div class="wac-filter-row">
+                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter suggestions…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter suggestions', 'woo-agentic-checkout' ); ?>">
+            </div>
+
+            <?php foreach ( $pending as $s ) : ?>
+                <div class="wac-suggestion-card" data-suggestion-id="<?php echo esc_attr( $s['id'] ); ?>">
+                    <div class="wac-suggestion-card__header">
+                        <h4 class="wac-suggestion-card__title"><?php echo esc_html( $s['title'] ); ?></h4>
+                        <div>
+                            <?php echo $this->badge( $s['category'], $s['category'] ); ?>
+                            <?php echo $this->badge( $s['action_type'], $s['action_type'] ); ?>
+                        </div>
+                    </div>
+
+                    <div class="wac-suggestion-card__meta">
+                        <?php echo $this->progress_bar( (float) $s['score'] * 100, number_format( (float) $s['score'] * 100, 0 ) . '% confidence', 'sm' ); ?>
+                        <?php if ( ! empty( $s['expected_lift'] ) ) : ?>
+                            <span title="Expected lift">🚀 <?php echo esc_html( $s['expected_lift'] ); ?></span>
                         <?php endif; ?>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                        <span title="Date">📅 <?php echo esc_html( $this->format_date( $s['created_at'] ) ); ?></span>
+                    </div>
+
+                    <?php if ( ! empty( $s['description'] ) ) : ?>
+                        <div class="wac-suggestion-card__desc"><?php echo esc_html( $s['description'] ); ?></div>
+                    <?php endif; ?>
+
+                    <div class="wac-suggestion-card__actions">
+                        <button class="button button-primary wac-apply-suggestion" data-id="<?php echo esc_attr( $s['id'] ); ?>" title="<?php esc_attr_e( 'Apply this suggestion to your checkout', 'woo-agentic-checkout' ); ?>">
+                            <?php esc_html_e( 'Apply', 'woo-agentic-checkout' ); ?>
+                        </button>
+                        <button class="button wac-reject-suggestion" data-id="<?php echo esc_attr( $s['id'] ); ?>" title="<?php esc_attr_e( 'Reject and dismiss this suggestion', 'woo-agentic-checkout' ); ?>">
+                            ✕ <?php esc_html_e( 'Reject', 'woo-agentic-checkout' ); ?>
+                        </button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         <?php endif; ?>
 
         <?php if ( ! empty( $all ) ) : ?>
-            <h3>History</h3>
-            <table class="widefat striped">
-                <thead><tr><th>Title</th><th>Status</th><th>Score</th><th>Date</th></tr></thead>
-                <tbody>
-                    <?php foreach ( $all as $s ) : ?>
-                        <tr>
-                            <td><?php echo esc_html( $s['title'] ); ?></td>
-                            <td><span class="wac-badge wac-badge-<?php echo esc_attr( $s['status'] ); ?>"><?php echo esc_html( $s['status'] ); ?></span></td>
-                            <td><?php echo esc_html( number_format( (float) $s['score'] * 100, 0 ) ); ?>%</td>
-                            <td><?php echo esc_html( $s['created_at'] ); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <details style="margin-top:24px;" class="wac-card" role="group">
+                <summary style="cursor:pointer;font-weight:600;padding:8px 0;">
+                    <?php printf( esc_html__( '📋 History (%d total)', 'woo-agentic-checkout' ), count( $all ) ); ?>
+                </summary>
+                <table class="widefat striped" style="margin-top:8px;">
+                    <thead><tr><th class="wac-sortable"><?php esc_html_e( 'Title', 'woo-agentic-checkout' ); ?></th><th class="wac-sortable"><?php esc_html_e( 'Status', 'woo-agentic-checkout' ); ?></th><th class="wac-sortable"><?php esc_html_e( 'Score', 'woo-agentic-checkout' ); ?></th><th class="wac-sortable"><?php esc_html_e( 'Date', 'woo-agentic-checkout' ); ?></th></tr></thead>
+                    <tbody>
+                        <?php foreach ( $all as $s ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( $s['title'] ); ?></td>
+                                <td><?php echo $this->badge( $s['status'], $s['status'] ); ?></td>
+                                <td><?php echo esc_html( number_format( (float) $s['score'] * 100, 0 ) ); ?>%</td>
+                                <td title="<?php echo esc_attr( $s['created_at'] ); ?>"><?php echo esc_html( $this->format_date( $s['created_at'] ) ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </details>
         <?php endif; ?>
         <?php
     }
+
+    // ─── Agents Tab ──────────────────────────────────────────────
 
     /**
      * Agents tab — status and manual control.
@@ -355,64 +561,90 @@ class AdminUI {
         $status = $this->agents->get_status();
         ?>
         <h2>🤖 Agents</h2>
-        <p>Each agent runs autonomously on its schedule. Toggle them on/off in Settings.</p>
+        <p><?php esc_html_e( 'Each agent runs autonomously on its schedule. Toggle them on/off in Settings.', 'woo-agentic-checkout' ); ?></p>
 
-        <table class="widefat striped">
-            <thead><tr><th>Agent</th><th>Status</th><th>Last Run</th><th>Run Now</th></tr></thead>
-            <tbody>
-                <?php foreach ( $status as $key => $agent ) : ?>
-                    <tr>
-                        <td><strong><?php echo esc_html( $agent['label'] ); ?></strong>
-                            <code style="margin-left:8px;color:#666;"><?php echo esc_html( $key ); ?></code>
-                        </td>
-                        <td>
-                            <?php if ( $agent['enabled'] ) : ?>
-                                <span class="wac-badge wac-badge-active">● Enabled</span>
-                            <?php else : ?>
-                                <span class="wac-badge wac-badge-inactive">○ Disabled</span>
-                            <?php endif; ?>
-                        </td>
-                        <td><?php echo esc_html( $agent['lastRun'] ?? 'Never run' ); ?></td>
-                        <td>
-                            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
-                                <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
-                                <input type="hidden" name="action" value="wac_manual_agent">
-                                <input type="hidden" name="agent_key" value="<?php echo esc_attr( $key ); ?>">
-                                <?php submit_button( '▶ Run', 'small', 'submit', false ); ?>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <?php if ( empty( $status ) ) : ?>
+            <?php $this->render_empty_state(
+                '🤖',
+                __( 'No agents available', 'woo-agentic-checkout' ),
+                __( 'Agents will be registered when the plugin is fully initialised. Check that all dependencies are loaded.', 'woo-agentic-checkout' )
+            ); ?>
+        <?php else : ?>
+            <div class="wac-spinner-wrap">
+                <table class="widefat striped">
+                    <thead>
+                        <tr>
+                            <th class="wac-sortable"><?php esc_html_e( 'Agent', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable"><?php esc_html_e( 'Status', 'woo-agentic-checkout' ); ?></th>
+                            <th class="wac-sortable"><?php esc_html_e( 'Last Run', 'woo-agentic-checkout' ); ?></th>
+                            <th><?php esc_html_e( 'Run Now', 'woo-agentic-checkout' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $status as $key => $agent ) : ?>
+                            <tr>
+                                <td>
+                                    <strong><?php echo esc_html( $agent['label'] ?? $key ); ?></strong>
+                                    <code style="margin-left:8px;color:#888;font-size:10px;"><?php echo esc_html( $key ); ?></code>
+                                </td>
+                                <td>
+                                    <?php
+                                    if ( ! empty( $agent['enabled'] ) ) {
+                                        echo $this->badge( 'active', __( 'Enabled', 'woo-agentic-checkout' ), true );
+                                    } else {
+                                        echo $this->badge( 'inactive', __( 'Disabled', 'woo-agentic-checkout' ), true );
+                                    }
+                                    ?>
+                                </td>
+                                <td><?php echo esc_html( $agent['lastRun'] ?? __( 'Never run', 'woo-agentic-checkout' ) ); ?></td>
+                                <td>
+                                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+                                        <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
+                                        <input type="hidden" name="action" value="wac_manual_agent">
+                                        <input type="hidden" name="agent_key" value="<?php echo esc_attr( $key ); ?>">
+                                        <button type="submit" class="button button-small" title="<?php esc_attr_e( 'Run this agent now', 'woo-agentic-checkout' ); ?>">
+                                            <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
+                                            ▶ <?php esc_html_e( 'Run', 'woo-agentic-checkout' ); ?>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
 
         <div class="wac-card" style="margin-top:20px;">
-            <h3>Agent Schedules</h3>
-            <ul>
-                <li>⏰ Error Detector + Self-Healing: Every hour</li>
-                <li>⏰ Conversion Analyzer + AB Optimizer: Daily</li>
-                <li>⏰ Suggestion Generator: Weekly</li>
+            <h3>⏰ Agent Schedules</h3>
+            <ul style="margin:8px 0;">
+                <li><strong>Error Detector + Self-Healing:</strong> Every hour</li>
+                <li><strong>Conversion Analyzer + AB Optimizer:</strong> Daily</li>
+                <li><strong>Suggestion Generator:</strong> Weekly</li>
             </ul>
         </div>
         <?php
     }
 
+    // ─── Settings Tab ────────────────────────────────────────────
+
     /**
-     * Settings tab.
+     * Settings tab — with client-side validation attributes.
      */
     private function render_settings_tab() {
         ?>
         <h2>⚙️ Settings</h2>
-        <form method="post" action="options.php">
+        <form method="post" action="options.php" class="wac-settings-form" novalidate>
             <?php settings_fields( 'wac_settings' ); ?>
 
             <div class="wac-card">
                 <h3>🤖 LLM Provider</h3>
                 <table class="form-table">
                     <tr>
-                        <th><label for="wac_llm_provider">Provider</label></th>
+                        <th scope="row"><label for="wac_llm_provider"><?php esc_html_e( 'Provider', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
-                            <select id="wac_llm_provider" name="wac_llm_provider">
+                            <select id="wac_llm_provider" name="wac_llm_provider" required>
+                                <option value="">— <?php esc_html_e( 'Select Provider', 'woo-agentic-checkout' ); ?> —</option>
                                 <option value="openai" <?php selected( get_option( 'wac_llm_provider' ), 'openai' ); ?>>OpenAI</option>
                                 <option value="anthropic" <?php selected( get_option( 'wac_llm_provider' ), 'anthropic' ); ?>>Anthropic Claude</option>
                                 <option value="ollama" <?php selected( get_option( 'wac_llm_provider' ), 'ollama' ); ?>>Local Ollama</option>
@@ -421,20 +653,22 @@ class AdminUI {
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_llm_api_key">API Key</label></th>
+                        <th scope="row"><label for="wac_llm_api_key"><?php esc_html_e( 'API Key', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <input type="password" id="wac_llm_api_key" name="wac_llm_api_key"
                                    value="<?php echo esc_attr( get_option( 'wac_llm_api_key', '' ) ); ?>"
-                                   class="regular-text" />
-                            <p class="description">Required for OpenAI/Anthropic/OpenRouter. Leave blank for local Ollama.</p>
+                                   class="regular-text" autocomplete="off"
+                                   data-wac-validate="required-if-provider-not-ollama"
+                                   data-wac-provider-field="wac_llm_provider" />
+                            <p class="description"><?php esc_html_e( 'Required for OpenAI/Anthropic/OpenRouter. Leave blank for local Ollama.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_llm_model">Model</label></th>
+                        <th scope="row"><label for="wac_llm_model"><?php esc_html_e( 'Model', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <input type="text" id="wac_llm_model" name="wac_llm_model"
                                    value="<?php echo esc_attr( get_option( 'wac_llm_model', 'gpt-4o' ) ); ?>"
-                                   class="regular-text" />
+                                   class="regular-text" required />
                         </td>
                     </tr>
                 </table>
@@ -444,15 +678,15 @@ class AdminUI {
                 <h3>🛡️ Self-Healing</h3>
                 <table class="form-table">
                     <tr>
-                        <th><label for="wac_heal_permission_level">Permission Level</label></th>
+                        <th scope="row"><label for="wac_heal_permission_level"><?php esc_html_e( 'Permission Level', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <select id="wac_heal_permission_level" name="wac_heal_permission_level">
-                                <option value="monitor" <?php selected( get_option( 'wac_heal_permission_level' ), 'monitor' ); ?>>Monitor — Log only, no actions</option>
-                                <option value="suggest" <?php selected( get_option( 'wac_heal_permission_level' ), 'suggest' ); ?>>Suggest — Recommend fixes, require approval</option>
-                                <option value="auto_patch" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_patch' ); ?>>Auto-Patch — Safe CSS/JS/template fixes</option>
-                                <option value="auto_full" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_full' ); ?>>Auto-Full — Rollback settings, disable plugins</option>
+                                <option value="monitor" <?php selected( get_option( 'wac_heal_permission_level' ), 'monitor' ); ?>><?php esc_html_e( 'Monitor — Log only, no actions', 'woo-agentic-checkout' ); ?></option>
+                                <option value="suggest" <?php selected( get_option( 'wac_heal_permission_level' ), 'suggest' ); ?>><?php esc_html_e( 'Suggest — Recommend fixes, require approval', 'woo-agentic-checkout' ); ?></option>
+                                <option value="auto_patch" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_patch' ); ?>><?php esc_html_e( 'Auto-Patch — Safe CSS/JS/template fixes', 'woo-agentic-checkout' ); ?></option>
+                                <option value="auto_full" <?php selected( get_option( 'wac_heal_permission_level' ), 'auto_full' ); ?>><?php esc_html_e( 'Auto-Full — Rollback settings, disable plugins', 'woo-agentic-checkout' ); ?></option>
                             </select>
-                            <p class="description"><strong>Suggest</strong> is recommended for initial use. Upgrade to auto when trusted.</p>
+                            <p class="description"><strong><?php esc_html_e( 'Suggest', 'woo-agentic-checkout' ); ?></strong> <?php esc_html_e( 'is recommended for initial use. Upgrade to auto when trusted.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                 </table>
@@ -462,16 +696,16 @@ class AdminUI {
                 <h3>📊 GA4 / Signals</h3>
                 <table class="form-table">
                     <tr>
-                        <th><label for="wac_ga4_measurement_id">GA4 Measurement ID</label></th>
+                        <th scope="row"><label for="wac_ga4_measurement_id"><?php esc_html_e( 'GA4 Measurement ID', 'woo-agentic-checkout' ); ?></label></th>
                         <td><input type="text" id="wac_ga4_measurement_id" name="wac_ga4_measurement_id"
                                    value="<?php echo esc_attr( get_option( 'wac_ga4_measurement_id', '' ) ); ?>"
-                                   class="regular-text" /></td>
+                                   class="regular-text" pattern="^G-[A-Z0-9]+$" title="<?php esc_attr_e( 'Format: G-XXXXXXXX', 'woo-agentic-checkout' ); ?>" /></td>
                     </tr>
                     <tr>
-                        <th><label for="wac_ga4_api_secret">GA4 API Secret</label></th>
+                        <th scope="row"><label for="wac_ga4_api_secret"><?php esc_html_e( 'GA4 API Secret', 'woo-agentic-checkout' ); ?></label></th>
                         <td><input type="password" id="wac_ga4_api_secret" name="wac_ga4_api_secret"
                                    value="<?php echo esc_attr( get_option( 'wac_ga4_api_secret', '' ) ); ?>"
-                                   class="regular-text" /></td>
+                                   class="regular-text" autocomplete="off" /></td>
                     </tr>
                 </table>
             </div>
@@ -480,23 +714,28 @@ class AdminUI {
                 <h3>🧪 A/B Testing</h3>
                 <table class="form-table">
                     <tr>
-                        <th><label for="wac_ab_min_sample_size">Min Sample Size</label></th>
-                        <td><input type="number" id="wac_ab_min_sample_size" name="wac_ab_min_sample_size"
-                                   value="<?php echo esc_attr( get_option( 'wac_ab_min_sample_size', 100 ) ); ?>" min="10" /> per variant</td>
-                    </tr>
-                    <tr>
-                        <th><label for="wac_ab_confidence_threshold">Confidence Threshold</label></th>
+                        <th scope="row"><label for="wac_ab_min_sample_size"><?php esc_html_e( 'Min Sample Size', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
-                            <input type="number" id="wac_ab_confidence_threshold" name="wac_ab_confidence_threshold"
-                                   value="<?php echo esc_attr( get_option( 'wac_ab_confidence_threshold', 0.95 ) ); ?>"
-                                   min="0.8" max="0.99" step="0.01" />
+                            <input type="number" id="wac_ab_min_sample_size" name="wac_ab_min_sample_size"
+                                   value="<?php echo esc_attr( get_option( 'wac_ab_min_sample_size', 100 ) ); ?>"
+                                   min="10" max="100000" required />
+                            <span class="description"><?php esc_html_e( 'per variant', 'woo-agentic-checkout' ); ?></span>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_ab_max_concurrent">Max Concurrent Tests</label></th>
+                        <th scope="row"><label for="wac_ab_confidence_threshold"><?php esc_html_e( 'Confidence Threshold', 'woo-agentic-checkout' ); ?></label></th>
+                        <td>
+                            <input type="number" id="wac_ab_confidence_threshold" name="wac_ab_confidence_threshold"
+                                   value="<?php echo esc_attr( get_option( 'wac_ab_confidence_threshold', 0.95 ) ); ?>"
+                                   min="0.8" max="0.99" step="0.01" required />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="wac_ab_max_concurrent"><?php esc_html_e( 'Max Concurrent Tests', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <input type="number" id="wac_ab_max_concurrent" name="wac_ab_max_concurrent"
-                                   value="<?php echo esc_attr( get_option( 'wac_ab_max_concurrent', 3 ) ); ?>" min="1" max="10" />
+                                   value="<?php echo esc_attr( get_option( 'wac_ab_max_concurrent', 3 ) ); ?>"
+                                   min="1" max="10" required />
                         </td>
                     </tr>
                 </table>
@@ -506,88 +745,138 @@ class AdminUI {
                 <h3>🔔 Notifications</h3>
                 <table class="form-table">
                     <tr>
-                        <th><label for="wac_notify_email_enabled">Email Notifications</label></th>
+                        <th scope="row"><label for="wac_notify_email_enabled"><?php esc_html_e( 'Email Notifications', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <label>
                                 <input type="checkbox" id="wac_notify_email_enabled" name="wac_notify_email_enabled" value="yes"
                                     <?php checked( get_option( 'wac_notify_email_enabled' ), 'yes' ); ?> />
-                                Send email alerts for critical errors and suggestions
+                                <?php esc_html_e( 'Send email alerts for critical errors and suggestions', 'woo-agentic-checkout' ); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_notify_email">Notification Email</label></th>
+                        <th scope="row"><label for="wac_notify_email"><?php esc_html_e( 'Notification Email', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <input type="email" id="wac_notify_email" name="wac_notify_email"
                                    value="<?php echo esc_attr( get_option( 'wac_notify_email', get_option( 'admin_email' ) ) ); ?>"
                                    class="regular-text" />
-                            <p class="description">Leave blank to use the WordPress admin email.</p>
+                            <p class="description"><?php esc_html_e( 'Leave blank to use the WordPress admin email.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_slack_webhook">Slack Webhook URL</label></th>
+                        <th scope="row"><label for="wac_slack_webhook"><?php esc_html_e( 'Slack Webhook URL', 'woo-agentic-checkout' ); ?></label></th>
                         <td>
                             <input type="url" id="wac_slack_webhook" name="wac_slack_webhook"
                                    value="<?php echo esc_attr( get_option( 'wac_slack_webhook', '' ) ); ?>"
                                    class="regular-text" placeholder="https://hooks.slack.com/services/..." />
                             <p class="description">
-                                Create a webhook in Slack → Apps → Incoming Webhooks.
-                                <a href="https://api.slack.com/messaging/webhooks" target="_blank">Docs</a>
+                                <?php esc_html_e( 'Create a webhook in Slack → Apps → Incoming Webhooks.', 'woo-agentic-checkout' ); ?>
+                                <a href="https://api.slack.com/messaging/webhooks" target="_blank"><?php esc_html_e( 'Docs', 'woo-agentic-checkout' ); ?></a>
                             </p>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="wac_notify_slack_enabled">Slack Notifications</label></th>
+                        <th scope="row"><?php esc_html_e( 'Slack Notifications', 'woo-agentic-checkout' ); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" id="wac_notify_slack_enabled" name="wac_notify_slack_enabled" value="yes"
                                     <?php checked( get_option( 'wac_notify_slack_enabled' ), 'yes' ); ?> />
-                                Send Slack alerts for critical issues
+                                <?php esc_html_e( 'Send Slack alerts for critical issues', 'woo-agentic-checkout' ); ?>
                             </label>
                         </td>
                     </tr>
                 </table>
             </div>
 
-            <?php submit_button( 'Save Settings' ); ?>
+            <div class="wac-card">
+                <h3>🔧 Advanced</h3>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Data Retention', 'woo-agentic-checkout' ); ?></th>
+                        <td>
+                            <p class="description"><?php esc_html_e( 'Logs and experiment data are retained automatically. Use the options below to clear data.', 'woo-agentic-checkout' ); ?></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <?php submit_button( __( 'Save Settings', 'woo-agentic-checkout' ) ); ?>
         </form>
         <?php
     }
 
+    // ─── Logs Tab ────────────────────────────────────────────────
+
     /**
-     * Logs tab.
+     * Logs tab — filterable log viewer with empty states.
      */
     private function render_logs_tab() {
         $logger = new \WooAgenticCheckout\Logger();
         $level  = isset( $_GET['log_level'] ) ? sanitize_key( wp_unslash( $_GET['log_level'] ) ) : '';
         $logs   = $logger->get_logs( array( 'level' => $level, 'limit' => 200 ) );
-
         ?>
         <h2>📝 Event Log</h2>
 
-        <div class="wac-filter-bar">
-            <a href="?page=wac-dashboard&tab=logs" class="button <?php echo empty( $level ) ? 'button-primary' : ''; ?>">All</a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=error" class="button <?php echo 'error' === $level ? 'button-primary' : ''; ?>">Errors</a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=warning" class="button <?php echo 'warning' === $level ? 'button-primary' : ''; ?>">Warnings</a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=info" class="button <?php echo 'info' === $level ? 'button-primary' : ''; ?>">Info</a>
+        <div class="wac-filter-bar" role="group" aria-label="Log level filter">
+            <a href="?page=wac-dashboard&tab=logs" class="button <?php echo empty( $level ) ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo empty( $level ) ? 'true' : 'false'; ?>"><?php esc_html_e( 'All', 'woo-agentic-checkout' ); ?></a>
+            <a href="?page=wac-dashboard&tab=logs&log_level=error" class="button <?php echo 'error' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'error' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Errors', 'woo-agentic-checkout' ); ?></a>
+            <a href="?page=wac-dashboard&tab=logs&log_level=warning" class="button <?php echo 'warning' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'warning' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Warnings', 'woo-agentic-checkout' ); ?></a>
+            <a href="?page=wac-dashboard&tab=logs&log_level=info" class="button <?php echo 'info' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'info' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Info', 'woo-agentic-checkout' ); ?></a>
         </div>
 
-        <table class="widefat striped">
-            <thead><tr><th>Level</th><th>Event</th><th>Context</th><th>Time</th></tr></thead>
-            <tbody>
-                <?php foreach ( $logs as $log ) : ?>
-                    <tr class="wac-log-<?php echo esc_attr( $log['level'] ); ?>">
-                        <td><span class="wac-badge wac-badge-<?php echo esc_attr( $log['level'] ); ?>"><?php echo esc_html( $log['level'] ); ?></span></td>
-                        <td><code><?php echo esc_html( $log['event'] ); ?></code></td>
-                        <td class="wac-log-context"><pre><?php echo esc_html( substr( $log['context'], 0, 200 ) ); ?></pre></td>
-                        <td><?php echo esc_html( $log['created_at'] ); ?></td>
+        <?php if ( empty( $logs ) ) : ?>
+            <?php $this->render_empty_state(
+                '📝',
+                __( 'No log entries', 'woo-agentic-checkout' ),
+                __( 'No events have been recorded yet. Events appear as agents run and actions occur.', 'woo-agentic-checkout' )
+            ); ?>
+        <?php else : ?>
+            <div class="wac-filter-row">
+                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter logs…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter log entries', 'woo-agentic-checkout' ); ?>">
+            </div>
+            <table class="widefat striped" id="wac-logs-table">
+                <thead>
+                    <tr>
+                        <th class="wac-sortable"><?php esc_html_e( 'Level', 'woo-agentic-checkout' ); ?></th>
+                        <th class="wac-sortable"><?php esc_html_e( 'Event', 'woo-agentic-checkout' ); ?></th>
+                        <th class="wac-sortable"><?php esc_html_e( 'Context', 'woo-agentic-checkout' ); ?></th>
+                        <th class="wac-sortable"><?php esc_html_e( 'Time', 'woo-agentic-checkout' ); ?></th>
                     </tr>
-                <?php endforeach; ?>
-                <?php if ( empty( $logs ) ) : ?>
-                    <tr><td colspan="4" class="wac-empty">No log entries found.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ( $logs as $log ) : ?>
+                        <tr class="wac-log-<?php echo esc_attr( $log['level'] ); ?>">
+                            <td><?php echo $this->badge( $log['level'], $log['level'] ); ?></td>
+                            <td><code><?php echo esc_html( $log['event'] ); ?></code></td>
+                            <td class="wac-log-context">
+                                <pre title="<?php echo esc_attr( $log['context'] ); ?>"><?php echo esc_html( substr( $log['context'], 0, 200 ) ); ?></pre>
+                            </td>
+                            <td title="<?php echo esc_attr( $log['created_at'] ); ?>"><?php echo esc_html( $this->format_date( $log['created_at'] ) ); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
         <?php
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────
+
+    /**
+     * Format a date/time string for display.
+     *
+     * @param string $date_str
+     * @return string
+     */
+    private function format_date( $date_str ) {
+        if ( empty( $date_str ) || '0000-00-00 00:00:00' === $date_str ) {
+            return '—';
+        }
+        $timestamp = strtotime( $date_str );
+        if ( false === $timestamp ) {
+            return $date_str;
+        }
+        /* translators: %s: human-readable time difference */
+        return sprintf( __( '%s ago', 'woo-agentic-checkout' ), human_time_diff( $timestamp ) );
     }
 }

@@ -1406,4 +1406,269 @@ class ABTestManager {
             $offset
         ), ARRAY_A );
     }
+
+    /**
+     * Detect novelty effect — check if conversion rate changes significantly between early and late periods.
+     *
+     * @param int $experiment_id
+     *
+     * @return array{ has_novelty: bool, early_cr: float, late_cr: float }
+     */
+    public function detect_novelty_effect( int $experiment_id ): array {
+        global $wpdb;
+
+        $cutoff = $wpdb->get_var( $wpdb->prepare(
+            "SELECT created_at FROM (
+                SELECT created_at, @rownum := @rownum + 1 AS rn
+                FROM {$this->table_events}
+                WHERE experiment_id = %d
+            ) AS e, (SELECT @rownum := 0) AS r
+            WHERE rn = (SELECT FLOOR(COUNT(*)/2) FROM {$this->table_events} WHERE experiment_id = %d)",
+            $experiment_id,
+            $experiment_id
+        ) );
+
+        if ( ! $cutoff ) {
+            return array( 'has_novelty' => false, 'early_cr' => 0, 'late_cr' => 0 );
+        }
+
+        $stats = $wpdb->get_results( $wpdb->prepare(
+            "SELECT
+                CASE WHEN created_at < %s THEN 'early' ELSE 'late' END as period,
+                v.variant_key,
+                COUNT(*) as events,
+                SUM(CASE WHEN ev.event_type = 'conversion' THEN 1 ELSE 0 END) as conversions
+             FROM {$this->table_events} ev
+             INNER JOIN {$this->table_variants} v ON v.id = ev.variant_id
+             WHERE ev.experiment_id = %d
+             GROUP BY period, v.variant_key",
+            $cutoff,
+            $experiment_id
+        ), ARRAY_A );
+
+        $this->log_db_error( 'detect_novelty_effect' );
+
+        $early_total = 0;
+        $early_conv  = 0;
+        $late_total  = 0;
+        $late_conv   = 0;
+
+        foreach ( $stats ?: array() as $row ) {
+            if ( 'early' === $row['period'] ) {
+                $early_total += (int) $row['events'];
+                $early_conv  += (int) $row['conversions'];
+            } else {
+                $late_total += (int) $row['events'];
+                $late_conv  += (int) $row['conversions'];
+            }
+        }
+
+        $early_cr = $early_total > 0 ? $early_conv / $early_total : 0;
+        $late_cr  = $late_total > 0 ? $late_conv / $late_total : 0;
+
+        return array(
+            'has_novelty' => abs( $early_cr - $late_cr ) > 0.02,
+            'early_cr'    => round( $early_cr * 100, 2 ),
+            'late_cr'     => round( $late_cr * 100, 2 ),
+            'difference'  => round( ( $early_cr - $late_cr ) * 100, 2 ),
+        );
+    }
+
+    /**
+     * Detect outliers in conversion data using IQR method.
+     *
+     * @param int $experiment_id
+     *
+     * @return array
+     */
+    public function detect_outliers( int $experiment_id ): array {
+        global $wpdb;
+
+        $revenues = $wpdb->get_col( $wpdb->prepare(
+            "SELECT CAST(JSON_EXTRACT(event_data, '$.revenue') AS DECIMAL(10,2))
+             FROM {$this->table_events}
+             WHERE experiment_id = %d AND event_type = 'conversion' AND JSON_EXTRACT(event_data, '$.revenue') > 0",
+            $experiment_id
+        ) );
+
+        if ( count( $revenues ) < 4 ) {
+            return array( 'has_outliers' => false, 'count' => 0, 'outliers' => array() );
+        }
+
+        sort( $revenues );
+        $q1 = $revenues[ (int) floor( count( $revenues ) * 0.25 ) ];
+        $q3 = $revenues[ (int) floor( count( $revenues ) * 0.75 ) ];
+        $iqr = $q3 - $q1;
+        $lower = $q1 - 1.5 * $iqr;
+        $upper = $q3 + 1.5 * $iqr;
+
+        $outliers = array();
+        foreach ( $revenues as $r ) {
+            if ( $r < $lower || $r > $upper ) {
+                $outliers[] = $r;
+            }
+        }
+
+        return array(
+            'has_outliers' => count( $outliers ) > 0,
+            'count'        => count( $outliers ),
+            'outliers'     => $outliers,
+            'q1'           => $q1,
+            'q3'           => $q3,
+            'iqr'          => $iqr,
+        );
+    }
+
+    /**
+     * Get conversion rate broken down by hour of day for each variant.
+     *
+     * @param int $experiment_id
+     *
+     * @return array
+     */
+    public function get_hourly_breakdown( int $experiment_id ): array {
+        global $wpdb;
+
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT
+                HOUR(ev.created_at) as hour,
+                v.variant_key,
+                COUNT(*) as events,
+                SUM(CASE WHEN ev.event_type = 'conversion' THEN 1 ELSE 0 END) as conversions
+             FROM {$this->table_events} ev
+             INNER JOIN {$this->table_variants} v ON v.id = ev.variant_id
+             WHERE ev.experiment_id = %d
+             GROUP BY HOUR(ev.created_at), v.variant_key
+             ORDER BY hour, v.variant_key",
+            $experiment_id
+        ), ARRAY_A ) ?: array();
+    }
+
+    /**
+     * Simulate what a variant looks like from the config perspective.
+     *
+     * @param int $variant_id
+     *
+     * @return array|null
+     */
+    public function preview_variant( int $variant_id ): ?array {
+        global $wpdb;
+
+        $variant = $wpdb->get_row( $wpdb->prepare(
+            "SELECT v.*, e.name as experiment_name
+             FROM {$this->table_variants} v
+             INNER JOIN {$this->table_experiments} e ON e.id = v.experiment_id
+             WHERE v.id = %d",
+            $variant_id
+        ), ARRAY_A );
+
+        if ( ! $variant ) {
+            return null;
+        }
+
+        $config = json_decode( $variant['config_snapshot'], true );
+
+        return array(
+            'experiment' => $variant['experiment_name'],
+            'variant'    => $variant['variant_key'],
+            'name'       => $variant['variant_name'],
+            'config'     => is_array( $config ) ? $config : array(),
+            'effects'    => array(
+                'removes_fields' => ! empty( $config['remove_fields'] ) ? $config['remove_fields'] : array(),
+                'hides_fields'   => ! empty( $config['hide_fields'] ) ? $config['hide_fields'] : array(),
+                'reorders'       => ! empty( $config['field_order'] ),
+                'changes_labels' => ! empty( $config['field_labels'] ),
+                'uses_template'  => ! empty( $config['template'] ),
+            ),
+        );
+    }
+
+    /**
+     * Run a quick A/A test — check if all variants have identical configs.
+     *
+     * @param int $experiment_id
+     *
+     * @return array{ is_aa: bool, unique_configs: int }
+     */
+    public function detect_aa_test( int $experiment_id ): array {
+        $variants = $this->get_variants( $experiment_id );
+        $configs  = array();
+
+        foreach ( $variants as $v ) {
+            $config = json_decode( $v['config_snapshot'], true );
+            $configs[ md5( wp_json_encode( $config ) ) ] = true;
+        }
+
+        $unique = count( $configs );
+
+        return array(
+            'is_aa'          => $unique <= 1 && count( $variants ) > 1,
+            'unique_configs' => $unique,
+        );
+    }
+
+    /**
+     * Get a composite score for variant performance (weighted combination of metrics).
+     *
+     * @param int    $experiment_id
+     * @param array  $weights      e.g. ['cr_weight' => 0.5, 'revenue_weight' => 0.3, 'significance_weight' => 0.2]
+     *
+     * @return array
+     */
+    public function get_composite_scores( int $experiment_id, array $weights = array() ): array {
+        $defaults = array(
+            'cr_weight'          => 0.5,
+            'revenue_weight'     => 0.3,
+            'significance_weight' => 0.2,
+        );
+        $weights  = array_merge( $defaults, $weights );
+        $analysis = $this->bayesian_analysis( $experiment_id );
+        $scores   = array();
+
+        foreach ( $analysis as $r ) {
+            if ( $r['is_control'] ) {
+                continue;
+            }
+
+            $cr_score        = ( $r['lift'] + 100 ) / 200; // Normalize -100%..inf to 0..1.
+            $revenue_score   = min( 1.0, $r['revenue'] / max( 1, $analysis[0]['revenue'] ) );
+            $significance    = $r['prob_better'] / 100.0;
+
+            $composite = ( $cr_score * $weights['cr_weight'] )
+                       + ( $revenue_score * $weights['revenue_weight'] )
+                       + ( $significance * $weights['significance_weight'] );
+
+            $scores[ $r['variant_key'] ] = array(
+                'score'      => round( $composite * 100, 2 ),
+                'components' => array(
+                    'cr_lift'     => round( $cr_score * 100, 2 ),
+                    'revenue'     => round( $revenue_score * 100, 2 ),
+                    'significance' => round( $significance * 100, 2 ),
+                ),
+            );
+        }
+
+        return $scores;
+    }
+
+    /**
+     * Compare two experiments side-by-side (useful for A/A validation or sequential tests).
+     *
+     * @param int $exp_a_id
+     * @param int $exp_b_id
+     *
+     * @return array
+     */
+    public function compare_experiments( int $exp_a_id, int $exp_b_id ): array {
+        $a = $this->export_experiment( $exp_a_id );
+        $b = $this->export_experiment( $exp_b_id );
+
+        return array(
+            'experiment_a' => $a,
+            'experiment_b' => $b,
+            'differences'  => array(
+                'impressions_diff'  => ( $a['experiment']['id'] ? $b['experiment']['id'] : 0 ),
+            ),
+        );
+    }
 }

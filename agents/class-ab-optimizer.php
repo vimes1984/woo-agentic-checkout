@@ -70,6 +70,9 @@ class ABOptimizer {
         // Get active experiments.
         $experiments = $ab->get_active_experiments();
 
+        // Guard: ensure we always have a settings reference (may be null from cold instantiation).
+        $settings = $this->services['settings'] ?? null;
+
         // Guard: if no experiments, log and return gracefully.
         if ( empty( $experiments ) || ! is_array( $experiments ) ) {
             $logger->info( 'ab_optimizer_no_experiments', array(
