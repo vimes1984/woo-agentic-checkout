@@ -211,8 +211,8 @@ class ABTestManager {
              ORDER BY e.created_at DESC",
             self::STATUS_ACTIVE
         ), ARRAY_A );
-        self::\$cache['active_experiments'] = \$results;
-        return \$results;
+        self::$cache['active_experiments'] = $results;
+        return $results;
     }
 
     /**
