@@ -144,8 +144,8 @@ class Logger {
             $params[] = sanitize_key( $args['event'] );
         }
 
-        $limit  = min( 500, max( 1, $args['limit'] ?? 100 ) );
-        $offset = max( 0, $args['offset'] ?? 0 );
+        $limit  = min( 500, max( 1, absint( $args['limit'] ?? 100 ) ) );
+        $offset = absint( max( 0, $args['offset'] ?? 0 ) );
         $order  = 'DESC' === strtoupper( $args['order'] ?? 'DESC' ) ? 'DESC' : 'ASC';
 
         // Use keyset (cursor-based) pagination when an id_after filter is provided.

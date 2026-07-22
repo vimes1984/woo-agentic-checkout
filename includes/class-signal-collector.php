@@ -320,7 +320,7 @@ class SignalCollector {
         $limit     = min( 500, max( 1, $limit ) );
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
-        return $wpdb->get_results( $wpdb->prepare(
+        $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT id, event, context, created_at
              FROM {$wpdb->prefix}wac_logs
              WHERE level = 'error'
@@ -330,6 +330,30 @@ class SignalCollector {
             $threshold,
             $limit
         ), ARRAY_A );
+
+        // Sanitize context field to prevent serialized-object injection and limit size.
+        foreach ( $rows as &$row ) {
+            if ( isset( $row['context'] ) && is_string( $row['context'] ) ) {
+                // Decode and re-encode JSON to strip any non-scalar structures.
+                $ctx = json_decode( $row['context'], true );
+                if ( JSON_ERROR_NONE === json_last_error() && is_array( $ctx ) ) {
+                    // Only keep scalar values (no nested objects/arrays).
+                    $flat = array();
+                    foreach ( $ctx as $k => $v ) {
+                        if ( is_scalar( $v ) ) {
+                            $flat[ sanitize_key( $k ) ] = substr( (string) $v, 0, 500 );
+                        }
+                    }
+                    $row['context'] = wp_json_encode( $flat );
+                } else {
+                    // Non-JSON context: treat as plain text, truncate.
+                    $row['context'] = substr( sanitize_text_field( $row['context'] ), 0, 2000 );
+                }
+            }
+        }
+        unset( $row );
+
+        return $rows;
     }
 
     /**
