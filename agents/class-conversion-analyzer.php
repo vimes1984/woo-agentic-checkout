@@ -164,12 +164,13 @@ class ConversionAnalyzer {
                 'funnel'              => $funnel,
             );
         } catch ( \Exception $e ) {
-            $logger->error( 'conversion_analyzer_failed', array( 'error' => $e->getMessage() ) );
+            $err_msg = substr( $e->getMessage(), 0, 500 );
+            $logger->error( 'conversion_analyzer_failed', array( 'error' => $err_msg ) );
             return array(
                 'success' => false,
                 'actions' => 0,
-                'errors'  => array( $e->getMessage() ),
-                'summary' => 'Conversion analysis failed: ' . $e->getMessage(),
+                'errors'  => array( $err_msg ),
+                'summary' => 'Conversion analysis failed: ' . $err_msg,
                 'fallback' => array(
                     'conversion_rate_24h' => $orders_24h['conversion_rate'],
                     'conversion_rate_7d'  => $orders_7d['conversion_rate'],
