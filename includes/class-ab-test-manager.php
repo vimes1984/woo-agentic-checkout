@@ -39,6 +39,53 @@ class ABTestManager {
         $this->table_experiments = $wpdb->prefix . 'wac_ab_experiments';
         $this->table_variants    = $wpdb->prefix . 'wac_ab_variants';
         $this->table_events      = $wpdb->prefix . 'wac_ab_events';
+
+        $this->maybe_start_session();
+    }
+
+    /**
+     * Ensure a PHP session is started so session_id() is reliable.
+     */
+    private function maybe_start_session() {
+        if ( '' !== session_id() ) {
+            return;
+        }
+        if ( headers_sent() ) {
+            return;
+        }
+        if ( PHP_SESSION_NONE === session_status() ) {
+            session_start();
+        }
+    }
+
+    /**
+     * Get a reliable session identifier, generating one if none exists.
+     *
+     * @return string
+     */
+    private function get_session_id(): string {
+        static $sid = null;
+        if ( null !== $sid ) {
+            return $sid;
+        }
+        if ( function_exists( 'WC' ) && WC()->session ) {
+            $sid = WC()->session->get_customer_id();
+            if ( ! empty( $sid ) ) {
+                return $sid;
+            }
+        }
+        $sid = session_id();
+        if ( ! empty( $sid ) ) {
+            return $sid;
+        }
+        if ( ! headers_sent() ) {
+            $this->maybe_start_session();
+            $sid = session_id();
+        }
+        if ( empty( $sid ) ) {
+            $sid = uniqid( 'wac_', true );
+        }
+        return $sid;
     }
 
     /**

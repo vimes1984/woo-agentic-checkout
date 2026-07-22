@@ -53,6 +53,36 @@ class ConversionAnalyzer {
         $funnel      = $signals->get_funnel_data( 24 );
         $experiments = $this->services['ab']->get_active_experiments();
 
+        // Cold start / no-data guard.
+        $empty_order = static function ( $orders ): bool {
+            return empty( $orders ) || ! isset( $orders['total_orders'] ) || (int) $orders['total_orders'] < 1;
+        };
+
+        $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
+
+        if ( $is_cold_start ) {
+            $logger->info( 'conversion_analysis_cold_start', array(
+                'note' => 'No order data available yet — returning baseline.',
+            ) );
+            return array(
+                'success'             => true,
+                'actions'             => 0,
+                'errors'              => array(),
+                'summary'             => 'No order data available yet. This is normal during cold start (e.g., first 24h after install).',
+                'conversion_rate_24h' => 0,
+                'conversion_rate_7d'  => 0,
+                'revenue_24h'         => 0,
+                'analysis'            => array(
+                    'verdict'         => 'no_data',
+                    'cr_assessment'   => 'No orders recorded in the analysis window.',
+                    'funnel_issues'   => array(),
+                    'likely_cause'    => 'Insufficient data — plugin may be newly installed or no traffic.',
+                    'recommendations' => array( 'Wait for data to accumulate before acting on this analysis.' ),
+                ),
+                'funnel'              => $funnel,
+            );
+        }
+
         $analysis_data = array(
             'last_24h' => $orders_24h,
             'last_7d'  => $orders_7d,
@@ -77,6 +107,10 @@ class ConversionAnalyzer {
             ) );
 
             return array(
+                'success'             => true,
+                'actions'             => 1,
+                'errors'              => array(),
+                'summary'             => $result['cr_assessment'] ?? 'Conversion analysis completed.',
                 'conversion_rate_24h' => $orders_24h['conversion_rate'],
                 'conversion_rate_7d'  => $orders_7d['conversion_rate'],
                 'revenue_24h'         => $orders_24h['revenue'],
@@ -86,7 +120,10 @@ class ConversionAnalyzer {
         } catch ( \Exception $e ) {
             $logger->error( 'conversion_analyzer_failed', array( 'error' => $e->getMessage() ) );
             return array(
-                'error'   => $e->getMessage(),
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array( $e->getMessage() ),
+                'summary' => 'Conversion analysis failed: ' . $e->getMessage(),
                 'fallback' => array(
                     'conversion_rate_24h' => $orders_24h['conversion_rate'],
                     'conversion_rate_7d'  => $orders_7d['conversion_rate'],

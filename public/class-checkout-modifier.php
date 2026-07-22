@@ -213,7 +213,8 @@ class CheckoutModifier {
     private function apply_hidden_fields( array $fields, array $hide_keys ): array {
         $css_rules = array();
         foreach ( $hide_keys as $key ) {
-            $css_rules[] = "#{$key}_field { display: none !important; }";
+            $safe_key    = sanitize_html_class( $key );
+            $css_rules[] = "#{$safe_key}_field { display: none !important; }";
         }
 
         if ( ! empty( $css_rules ) ) {
