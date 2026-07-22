@@ -195,10 +195,10 @@ class SelfHealer {
      */
     public function get_heal_log( int $limit = 50 ): array {
         global $wpdb;
-        return $wpdb->get_results(
-            "SELECT * FROM {$wpdb->prefix}wac_heal_log ORDER BY created_at DESC LIMIT " . intval( $limit ),
-            ARRAY_A
-        );
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}wac_heal_log ORDER BY created_at DESC LIMIT %d",
+            $limit
+        ), ARRAY_A );
     }
 
     // ─── Action Implementations ──────────────────────────────────

@@ -170,19 +170,26 @@ class ABTestManager {
     public function get_experiments( string $status = '', int $limit = 20 ): array {
         global $wpdb;
 
-        $where = '';
+        $params = array();
+        $where  = '';
         if ( ! empty( $status ) ) {
-            $where = $wpdb->prepare( 'WHERE e.status = %s', $status );
+            $where    = 'WHERE e.status = %s';
+            $params[] = $status;
         }
 
-        $results = $wpdb->get_results(
-            "SELECT e.*,
+        $limit    = absint( $limit );
+        $params[] = $limit;
+
+        $sql = "SELECT e.*,
                     (SELECT COUNT(*) FROM {$this->table_variants} v WHERE v.experiment_id = e.id) as variant_count,
                     (SELECT COUNT(*) FROM {$this->table_events} ev WHERE ev.experiment_id = e.id AND ev.event_type = 'impression') as total_impressions
              FROM {$this->table_experiments} e
              {$where}
              ORDER BY e.created_at DESC
-             LIMIT " . intval( $limit ),
+             LIMIT %d";
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare( $sql, $params ),
             ARRAY_A
         );
 

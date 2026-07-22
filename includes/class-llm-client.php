@@ -68,6 +68,8 @@ class LLMClient {
     /**
      * Send a prompt to the configured LLM and get structured JSON response.
      * Results are cached by content hash to avoid duplicate API calls.
+     * Includes: rate limiting, token budget estimation, retry with simpler prompt,
+     * and json_last_error() validation with fallback.
      *
      * @param string $system_prompt   System-level instructions.
      * @param string $user_prompt     User message / data.
@@ -80,15 +82,18 @@ class LLMClient {
      */
     public function analyze( string $system_prompt, string $user_prompt, array $response_schema = array(), int $cache_ttl = null ): array {
         $cache_ttl = $cache_ttl ?? $this->cache_ttl;
+        $start_time = microtime( true );
 
-        // Check cache first.
+        // ── Check cache first ───────────────────────────────────────
         if ( $cache_ttl > 0 ) {
             $cache_key = $this->build_cache_key( $system_prompt, $user_prompt, $response_schema );
             $cached    = get_transient( $cache_key );
             if ( false !== $cached ) {
+                do_action( 'wac_llm_cache_hit', $cache_key );
                 return $cached;
             }
         }
+
         $provider = $this->settings->get( 'llm_provider', 'openai' );
         $api_key  = $this->settings->get( 'llm_api_key', '' );
         $model    = $this->settings->get( 'llm_model', 'gpt-4o' );
@@ -97,23 +102,69 @@ class LLMClient {
             throw new \RuntimeException( 'LLM API key not configured.' );
         }
 
+        // ── Token budget estimation ─────────────────────────────────
+        $combined   = $system_prompt . "\n" . $user_prompt;
+        $est_tokens = $this->estimate_tokens( $combined );
+
+        if ( $est_tokens > self::MAX_PROMPT_TOKENS ) {
+            $trunc_msg = 'Combined prompt exceeds ' . self::MAX_PROMPT_TOKENS . ' estimated tokens (' . $est_tokens . '). Truncating user prompt.';
+            do_action( 'wac_log_warning', 'llm_token_budget_exceeded', $trunc_msg );
+            // Truncate user prompt to fit within budget (leave 4000 for system + overhead).
+            $max_user_chars = (int) ( ( self::MAX_PROMPT_TOKENS - 4000 ) / self::TOKEN_RATIO );
+            $user_prompt    = mb_substr( $user_prompt, 0, $max_user_chars );
+            $est_tokens     = $this->estimate_tokens( $system_prompt . "\n" . $user_prompt );
+        }
+
+        do_action( 'wac_llm_token_estimate', $est_tokens, $provider, $model );
+
+        // ── Rate limiting ───────────────────────────────────────────
+        if ( ! $this->check_rate_limit() ) {
+            throw new \RuntimeException(
+                'LLM rate limit exceeded: more than ' . self::MAX_CALLS_PER_HOUR . ' calls in the last hour.'
+            );
+        }
+
         $method = "call_{$provider}";
 
         if ( ! method_exists( $this, $method ) ) {
             throw new \RuntimeException( "Unsupported LLM provider: {$provider}" );
         }
 
+        // ── Primary call ────────────────────────────────────────────
         $response = $this->$method( $api_key, $model, $system_prompt, $user_prompt, $response_schema );
 
-        // Validate JSON.
+        // ── Validate JSON with json_last_error() ────────────────────
         $parsed = json_decode( $response, true );
         if ( JSON_ERROR_NONE !== json_last_error() ) {
-            throw new \RuntimeException(
-                'LLM returned invalid JSON: ' . json_last_error_msg()
-            );
+            $err_msg = 'LLM returned invalid JSON: ' . json_last_error_msg();
+            do_action( 'wac_log_warning', 'llm_json_parse_failed', $err_msg );
+
+            // Retry once with a simpler prompt that demands valid JSON.
+            $retry_prompt = $user_prompt . "\n\nIMPORTANT: You MUST return ONLY valid JSON. No markdown, no code fences, no extra text. Parse this request and respond with the exact schema requested.";
+            $response = $this->$method( $api_key, $model, $system_prompt, $retry_prompt, $response_schema );
+
+            $parsed = json_decode( $response, true );
+            if ( JSON_ERROR_NONE !== json_last_error() ) {
+                throw new \RuntimeException(
+                    'LLM returned invalid JSON after retry: ' . json_last_error_msg()
+                );
+            }
         }
 
-        // Store in cache.
+        // ── Track rate limit ────────────────────────────────────────
+        $this->increment_rate_limit();
+
+        // ── Log timing metrics ──────────────────────────────────────
+        $elapsed = microtime( true ) - $start_time;
+        do_action( 'wac_llm_timing', array(
+            'provider'   => $provider,
+            'model'      => $model,
+            'elapsed'    => round( $elapsed, 4 ),
+            'est_tokens' => $est_tokens,
+            'cache_ttl'  => $cache_ttl,
+        ) );
+
+        // ── Store in cache ──────────────────────────────────────────
         if ( $cache_ttl > 0 && isset( $cache_key ) ) {
             set_transient( $cache_key, $parsed, $cache_ttl );
         }
