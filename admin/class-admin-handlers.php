@@ -306,7 +306,7 @@ class AdminHandlers {
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            $this->json_error( $e->getMessage() );
+            $this->json_error( __( 'Failed to pause experiment. Please try again.', 'woo-agentic-checkout' ) );
         }
     }
 
@@ -344,7 +344,7 @@ class AdminHandlers {
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            $this->json_error( $e->getMessage() );
+            $this->json_error( __( 'Failed to resume experiment. Please try again.', 'woo-agentic-checkout' ) );
         }
     }
 
@@ -429,11 +429,7 @@ class AdminHandlers {
                 'agent' => $agent_key,
                 'error' => $e->getMessage(),
             ) );
-            $this->json_error( sprintf(
-                /* translators: %s: error message */
-                __( 'Agent run failed: %s', 'woo-agentic-checkout' ),
-                $e->getMessage()
-            ) );
+            $this->json_error( __( 'Agent run failed. Please check the logs for details.', 'woo-agentic-checkout' ) );
         }
     }
 
@@ -473,7 +469,7 @@ class AdminHandlers {
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            $this->json_error( $e->getMessage() );
+            $this->json_error( __( 'Failed to load experiment details. Please try again.', 'woo-agentic-checkout' ) );
         }
     }
 

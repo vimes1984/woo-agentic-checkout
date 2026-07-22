@@ -63,12 +63,28 @@ class ABOptimizer {
      * @return array Standardised result (success, actions, errors, summary).
      */
     public function run(): array {
+        // Process lock: prevent concurrent runs to avoid race conditions.
+        $lock_key = 'wac_ab_optimizer_lock';
+        if ( get_transient( $lock_key ) ) {
+            return array(
+                'success' => true,
+                'actions' => 0,
+                'errors'  => array(),
+                'summary' => 'AB Optimizer is already running (process lock active).',
+            );
+        }
+        set_transient( $lock_key, time(), 10 * MINUTE_IN_SECONDS );
+        register_shutdown_function( function () use ( $lock_key ) {
+            delete_transient( $lock_key );
+        } );
+
         $ab      = $this->services['ab'] ?? null;
         $llm     = $this->services['llm'] ?? null;
         $logger  = $this->services['logger'] ?? null;
         $signals = $this->services['signals'] ?? null;
 
         if ( ! $ab || ! $logger ) {
+            delete_transient( $lock_key );
             return array(
                 'success' => false,
                 'actions' => 0,

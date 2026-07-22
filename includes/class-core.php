@@ -356,13 +356,24 @@ class Core {
     // ─── Agent Ticks ──────────────────────────────────────────────
 
     /**
+     * Allowed agent keys — single source of truth for cron runs.
+     */
+    const ALLOWED_AGENTS = array(
+        'error_detector',
+        'self_healing',
+        'conversion_analyzer',
+        'ab_optimizer',
+        'suggestion_generator',
+    );
+
+    /**
      * Hourly tick — Error Detector + Self-Healer run.
      */
     public function agent_tick() {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
-        $this->services['agents']->run_agents( array( 'error_detector', 'self_healing' ) );
+        $this->run_agent_list( array( 'error_detector', 'self_healing' ) );
     }
 
     /**
@@ -372,7 +383,7 @@ class Core {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
-        $this->services['agents']->run_agents( array( 'conversion_analyzer', 'ab_optimizer' ) );
+        $this->run_agent_list( array( 'conversion_analyzer', 'ab_optimizer' ) );
     }
 
     /**
@@ -382,7 +393,20 @@ class Core {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
-        $this->services['agents']->run_agents( array( 'suggestion_generator' ) );
+        $this->run_agent_list( array( 'suggestion_generator' ) );
+    }
+
+    /**
+     * Run a list of agents with allowlist validation.
+     * Ensures no arbitrary agent keys can be passed via cron or action hooks.
+     *
+     * @param array $agent_keys Agent keys to run.
+     */
+    private function run_agent_list( array $agent_keys ) {
+        $valid = array_intersect( $agent_keys, self::ALLOWED_AGENTS );
+        if ( ! empty( $valid ) ) {
+            $this->services['agents']->run_agents( array_values( $valid ) );
+        }
     }
 
     // ─── AJAX / REST ──────────────────────────────────────────────

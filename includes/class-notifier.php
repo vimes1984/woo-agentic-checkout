@@ -152,7 +152,7 @@ class Notifier {
         <p style="margin:0 0 16px;color:#50575e;font-size:14px;white-space:pre-wrap;">{$safe_message}</p>
         {$context_html}
         <p style="margin:16px 0 0;font-size:11px;color:#8c8f94;">
-            Woo Agentic Checkout &mdash; <a href="{$this->get_dashboard_url()}" style="color:#2271b1;">View Dashboard</a>
+            Woo Agentic Checkout &mdash; <a href="
         </p>
     </div>
 </body>
