@@ -44,6 +44,11 @@ class AgentManager {
     const FAILURE_ALERT_THRESHOLD = 3;
 
     /**
+     * Cooldown period in seconds before an agent can run again.
+     */
+    const AGENT_COOLDOWN_SECONDS = 60;
+
+    /**
      * @param LLMClient         $llm
      * @param SignalCollector   $signals
      * @param ABTestManager     $ab
