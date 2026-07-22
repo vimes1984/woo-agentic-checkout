@@ -133,6 +133,15 @@ class ABTestManager {
             return 0;
         }
 
+        // Validate experiment name max length (DB column is VARCHAR(255)).
+        if ( strlen( $name ) > 255 ) {
+            return 0;
+        }
+        // Validate experiment description max length (free-form, limit to 10,000).
+        if ( strlen( $description ) > 10000 ) {
+            return 0;
+        }
+
         // Validate each variant has required fields.
         foreach ( $variants as $i => $variant ) {
             if ( empty( $variant['key'] ) || empty( $variant['name'] ) ) {
