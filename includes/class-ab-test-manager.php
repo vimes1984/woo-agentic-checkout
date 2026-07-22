@@ -289,7 +289,7 @@ class ABTestManager {
         }
 
         // Assign based on traffic_pct threshold and variant weighting.
-        $hash = crc32( $cookie_key . session_id() );
+        $hash = crc32( $cookie_key . $this->get_session_id() );
         $mod  = abs( $hash ) % 100;
 
         // If outside experiment traffic percentage, show control.
@@ -344,7 +344,7 @@ class ABTestManager {
                     'revenue' => $revenue,
                     'user_id' => $user_id,
                 ) ),
-                'session_id'    => session_id() ?: uniqid(),
+                'session_id'    => $this->get_session_id(),
                 'created_at'    => current_time( 'mysql' ),
             ),
             array( '%d', '%d', '%s', '%s', '%s', '%s' )
@@ -367,7 +367,7 @@ class ABTestManager {
                 'experiment_id' => $experiment_id,
                 'event_type'    => 'impression',
                 'event_data'    => '{}',
-                'session_id'    => session_id() ?: uniqid(),
+                'session_id'    => $this->get_session_id(),
                 'created_at'    => current_time( 'mysql' ),
             ),
             array( '%d', '%d', '%s', '%s', '%s', '%s' )

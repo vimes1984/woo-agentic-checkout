@@ -31,10 +31,31 @@ class LLMClient {
     );
 
     /**
+     * Max LLM calls per hour before rate-limiting.
+     */
+    const MAX_CALLS_PER_HOUR = 60;
+
+    /**
+     * Max tokens for combined prompt to avoid context window issues.
+     */
+    const MAX_PROMPT_TOKENS = 120000;
+
+    /**
+     * Rough token:char ratio for estimation.
+     */
+    const TOKEN_RATIO = 0.38;
+
+    /**
+     * @var int Hourly call counter (tracked via transient).
+     */
+    private $call_count = -1;
+
+    /**
      * @param Settings $settings
      */
     public function __construct( Settings $settings ) {
         $this->settings = $settings;
+        $this->call_count = (int) get_transient( 'wac_llm_calls_hourly' );
     }
 
     /**
