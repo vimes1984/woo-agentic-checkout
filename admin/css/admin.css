@@ -263,6 +263,17 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
+    transition: opacity var(--wac-transition), box-shadow var(--wac-transition);
+}
+
+.wac-badge:hover {
+    opacity: 0.85;
+}
+
+.wac-badge:focus-visible {
+    opacity: 0.85;
+    outline: 2px solid var(--wac-theme);
+    outline-offset: 2px;
 }
 
 .wac-badge--lg {
