@@ -257,7 +257,7 @@ class LLMClient {
                 }
             }
         }
-        return $text ?: $response;
+        return $this->clean_json_response( $text ?: $response );
     }
 
     /**

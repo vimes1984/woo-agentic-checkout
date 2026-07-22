@@ -24,6 +24,24 @@ class Beacon {
         <script>
         // WAC Experiment Tracker — injected by server
         window._wacExperiments = <?php echo wp_json_encode( $experiments ); ?>;
+
+        // localStorage bridge for cookie-disabled users.
+        (function() {
+            try {
+                var ls = window.localStorage;
+                if (!ls) return;
+                var cid = ls.getItem('wac_client_id');
+                if (!cid) {
+                    cid = 'wac_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    ls.setItem('wac_client_id', cid);
+                }
+                // Sync to a cookie so PHP can read it.
+                document.cookie = 'wac_client_id=' + encodeURIComponent(cid) +
+                    '; path=/; max-age=2592000; samesite=lax';
+            } catch (e) {
+                // localStorage disabled or quota exceeded — fall back to server-side cookies.
+            }
+        })();
         </script>
         <?php
     }
