@@ -130,7 +130,7 @@ class Logger {
 
         if ( ! empty( $args['event'] ) ) {
             $where[] = 'event = %s';
-            $params[] = $args['event'];
+            $params[] = sanitize_key( $args['event'] );
         }
 
         $limit  = min( 500, max( 1, $args['limit'] ?? 100 ) );
