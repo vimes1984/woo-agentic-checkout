@@ -131,7 +131,7 @@ class AdminHandlers {
      */
     public function handle_wac_manual_agent() {
         // Nonce check.
-        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_manual_agent' ) ) {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['wac_nonce'] ), 'wac_manual_agent' ) ) {
             wp_die( 'Security check failed.' );
         }
 
@@ -172,7 +172,7 @@ class AdminHandlers {
      * Apply a suggestion (admin-post version).
      */
     public function handle_wac_apply_suggestion() {
-        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_apply_suggestion' ) ) {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['wac_nonce'] ), 'wac_apply_suggestion' ) ) {
             wp_die( 'Security check failed.' );
         }
 

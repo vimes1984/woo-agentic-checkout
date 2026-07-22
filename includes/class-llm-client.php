@@ -401,11 +401,11 @@ class LLMClient {
     }
 
     /**
-     * Perform HTTP POST request.
+     * Perform HTTP POST request using WordPress HTTP API for proxy/SSL support.
      *
      * @param string $url     API endpoint.
      * @param array  $body    JSON-serialisable request body.
-     * @param array  $headers Additional HTTP headers.
+     * @param array  $headers Additional HTTP headers as flat string array (e.g. ["Authorization: Bearer x"]).
      *
      * @return string Raw response body.
      *
@@ -413,31 +413,39 @@ class LLMClient {
      */
     private function http_post( string $url, array $body, array $headers = array() ): string {
         $default_headers = array(
-            'Content-Type: application/json',
+            'Content-Type' => 'application/json',
         );
-        $all_headers = array_merge( $default_headers, $headers );
 
-        $ch = curl_init();
-        curl_setopt_array( $ch, array(
-            CURLOPT_URL            => $url,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => wp_json_encode( $body ),
-            CURLOPT_HTTPHEADER     => $all_headers,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-        ));
-
-        $response = curl_exec( $ch );
-        $http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-        $error = curl_error( $ch );
-        curl_close( $ch );
-
-        if ( false === $response ) {
-            // Log curl error for diagnostics.
-            do_action( 'wac_llm_curl_error', $url, $error );
-            throw new \RuntimeException( "LLM request failed: {$error}" );
+        // Convert flat "Key: Value" array entries to associative format for wp_remote_post.
+        foreach ( $headers as $header_line ) {
+            if ( is_string( $header_line ) && false !== strpos( $header_line, ':' ) ) {
+                $parts = explode( ':', $header_line, 2 );
+                $key   = trim( $parts[0] );
+                $value = trim( $parts[1] );
+                $default_headers[ $key ] = $value;
+            }
         }
+
+        $args = array(
+            'method'      => 'POST',
+            'body'        => wp_json_encode( $body ),
+            'headers'     => $default_headers,
+            'timeout'     => 30,
+            'redirection' => 0,
+            'httpversion' => '1.1',
+            'blocking'    => true,
+        );
+
+        $response = wp_remote_post( $url, $args );
+
+        if ( is_wp_error( $response ) ) {
+            $error_message = $response->get_error_message();
+            do_action( 'wac_llm_request_error', $url, $error_message );
+            throw new \RuntimeException( "LLM request failed: {$error_message}" );
+        }
+
+        $http_code = wp_remote_retrieve_response_code( $response );
+        $body_raw  = wp_remote_retrieve_body( $response );
 
         if ( $http_code >= 400 ) {
             // Rate-limit handling: 429 means we should back off.
@@ -448,11 +456,11 @@ class LLMClient {
                 );
             }
             throw new \RuntimeException(
-                "LLM API returned {$http_code}: " . substr( $response, 0, 500 )
+                "LLM API returned {$http_code}: " . substr( $body_raw, 0, 500 )
             );
         }
 
-        $decoded = json_decode( $response, true );
+        $decoded = json_decode( $body_raw, true );
 
         // Extract content from standard chat completion format.
         if ( isset( $decoded['choices'][0]['message']['content'] ) ) {
@@ -469,7 +477,7 @@ class LLMClient {
         }
 
         // Fallback: return raw (Anthropic or other) after cleaning.
-        return $this->clean_json_response( $response );
+        return $this->clean_json_response( $body_raw );
     }
 
     /**
