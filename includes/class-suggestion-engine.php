@@ -476,20 +476,19 @@ PROMPT;
     public function get_suggestions( string $status = '', int $limit = 50 ): array {
         global $wpdb;
 
-        $params = array();
-        $where  = '';
+        $sql  = "SELECT * FROM {$wpdb->prefix}wac_suggestions";
+        $args = array();
+
         if ( ! empty( $status ) ) {
-            $where    = 'WHERE status = %s';
-            $params[] = $status;
+            $sql  .= ' WHERE status = %s';
+            $args[] = $status;
         }
 
-        $params[] = absint( $limit );
+        $sql  .= ' ORDER BY score DESC, created_at DESC LIMIT %d';
+        $args[] = absint( $limit );
 
         return $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}wac_suggestions {$where} ORDER BY score DESC, created_at DESC LIMIT %d",
-                $params
-            ),
+            $wpdb->prepare( $sql, $args ),
             ARRAY_A
         );
     }
