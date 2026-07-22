@@ -142,7 +142,13 @@ add_action( 'plugins_loaded', 'wac_register_error_handler', 1 );
  * Deactivation cleanup.
  */
 register_deactivation_hook( __FILE__, function () {
+    // Clear all scheduled cron events.
     wp_clear_scheduled_hook( 'wac_agent_tick' );
     wp_clear_scheduled_hook( 'wac_daily_agent_run' );
     wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+
+    // Unregister the error handler.
+    if ( class_exists( '\\WooAgenticCheckout\\ErrorHandler' ) ) {
+        \WooAgenticCheckout\ErrorHandler::unregister();
+    }
 } );

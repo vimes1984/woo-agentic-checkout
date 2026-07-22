@@ -199,9 +199,13 @@ class SelfHealingAgent {
 
         foreach ( $tables as $table ) {
             $short = str_replace( $wpdb->prefix, '', $table );
+            $exists = (bool) $wpdb->get_var( $wpdb->prepare(
+                "SHOW TABLES LIKE %s",
+                $table
+            ) );
             $checks["db_table_{$short}"] = array(
-                'passed' => (bool) $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ),
-                'detail' => "Table {$short} " . ( $checks["db_table_{$short}"] ?? false ? 'exists' : 'missing' ),
+                'passed' => $exists,
+                'detail' => "Table {$short} " . ( $exists ? 'exists' : 'missing' ),
             );
         }
 
