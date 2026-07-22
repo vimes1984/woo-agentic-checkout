@@ -215,7 +215,7 @@ HTML;
             ),
         );
 
-        $response = wp_remote_post( $webhook_url, array(
+        $response = wp_safe_remote_post( $webhook_url, array(
             'body'    => wp_json_encode( $payload ),
             'timeout' => 10,
             'headers' => array( 'Content-Type' => 'application/json' ),
