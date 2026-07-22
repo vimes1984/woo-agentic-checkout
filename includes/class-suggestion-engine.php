@@ -108,11 +108,20 @@ class SuggestionEngine {
      */
     public function get_pending( int $limit = 20 ): array {
         global $wpdb;
-        return $wpdb->get_results( $wpdb->prepare(
+        $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}wac_suggestions WHERE status = %s ORDER BY score DESC LIMIT %d",
             self::STATUS_PENDING,
             $limit
         ), ARRAY_A );
+
+        // Strict type casting for numeric fields.
+        foreach ( $rows as &\$row ) {
+            \$row["id"] = (int) \$row["id"];
+            \$row["score"] = (float) \$row["score"];
+        }
+        unset( \$row );
+
+        return \$rows;
     }
 
     /**
