@@ -39,7 +39,7 @@ class Schema {
             INDEX idx_level (level),
             INDEX idx_event (event),
             INDEX idx_created (created_at)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Experiments ──────────────────────────────────
         $table_experiments = $wpdb->prefix . 'wac_ab_experiments';
@@ -55,7 +55,7 @@ class Schema {
             ended_at DATETIME DEFAULT NULL,
             INDEX idx_status (status),
             INDEX idx_created (created_at)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Variants ─────────────────────────────────────
         $table_variants = $wpdb->prefix . 'wac_ab_variants';
@@ -72,7 +72,7 @@ class Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_experiment (experiment_id),
             INDEX idx_status (status)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Events ───────────────────────────────────────
         $table_events = $wpdb->prefix . 'wac_ab_events';
@@ -89,7 +89,7 @@ class Schema {
             INDEX idx_type (event_type),
             INDEX idx_session (session_id),
             INDEX idx_created (created_at)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Beacon Events (checkout telemetry) ──────────────
         $table_beacon = $wpdb->prefix . 'wac_beacon_events';
@@ -103,7 +103,7 @@ class Schema {
             INDEX idx_session (session_id),
             INDEX idx_event (event),
             INDEX idx_created (created_at)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Suggestions ──────────────────────────────────────
         $table_suggestions = $wpdb->prefix . 'wac_suggestions';
@@ -123,7 +123,7 @@ class Schema {
             INDEX idx_status (status),
             INDEX idx_category (category),
             INDEX idx_score (score DESC)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Healing Log ──────────────────────────────────────
         $table_heal = $wpdb->prefix . 'wac_heal_log';
@@ -139,7 +139,7 @@ class Schema {
             INDEX idx_issue (issue_id),
             INDEX idx_action (action),
             INDEX idx_created (created_at)
-        ) {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Execute all CREATE TABLE queries ─────────────────
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

@@ -223,7 +223,7 @@ class ErrorHandler {
     // ─── Safe Logging ───────────────────────────────────────────
 
     /**
-     * Log safely — checks table exists, falls back to error_log.
+     * Log safely — checks table exists, falls back to file, then error_log.
      *
      * @param string $event
      * @param array  $data
@@ -243,8 +243,21 @@ class ErrorHandler {
             }
         }
 
-        // Fallback: file log (always works, never crashes).
-        self::file_log( $event, $data );
+        // First fallback: file log.
+        if ( self::file_log( $event, $data ) ) {
+            return;
+        }
+
+        // Second fallback: PHP error_log.
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log(
+            sprintf(
+                '[WAC] [%s] %s: %s',
+                strtoupper( $event ),
+                $data['type'] ?? 'unknown',
+                $data['message'] ?? 'No message'
+            )
+        );
     }
 
     /**
@@ -295,8 +308,10 @@ class ErrorHandler {
      *
      * @param string $event
      * @param array  $data
+     *
+     * @return bool True on successful write, false on failure.
      */
-    private static function file_log( string $event, array $data ) {
+    private static function file_log( string $event, array $data ): bool {
         $log_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
         $log_dir = rtrim( $log_dir, '/' );
 
@@ -306,10 +321,10 @@ class ErrorHandler {
             @mkdir( $log_dir, 0755, true );
         }
         if ( ! is_writable( $log_dir ) ) {
-            return; // Cannot write logs, bail silently.
+            return false; // Cannot write logs, bail silently.
         }
 
-        $log_file = $log_dir . '/wac-errors.log'; // Already rtrim'd above.
+        $log_file = $log_dir . '/wac-errors.log';
 
         $line = sprintf(
             "[%s] [%s] %s: %s\n",
@@ -321,7 +336,7 @@ class ErrorHandler {
 
         // Suppress any PHP warnings from file writes.
         // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-        @file_put_contents( $log_file, $line, FILE_APPEND | LOCK_EX );
+        return (bool) @file_put_contents( $log_file, $line, FILE_APPEND | LOCK_EX );
     }
 
     // ─── Path Relevance ─────────────────────────────────────────
