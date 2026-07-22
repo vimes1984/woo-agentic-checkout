@@ -398,7 +398,11 @@ class Core {
      * Capture and log checkout processing errors.
      */
     public function capture_checkout_errors() {
-        $errors = wc()->session ? wc()->session->get( 'wac_checkout_errors', array() ) : array();
+        if ( ! function_exists( 'wc' ) ) {
+            return;
+        }
+        $woocommerce = wc();
+        $errors = ( $woocommerce && isset( $woocommerce->session ) ) ? $woocommerce->session->get( 'wac_checkout_errors', array() ) : array();
         if ( ! empty( $errors ) && isset( $this->services['logger'] ) ) {
             foreach ( $errors as $error ) {
                 $this->services['logger']->error( 'checkout_validation_error', $error );

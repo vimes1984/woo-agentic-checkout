@@ -284,19 +284,36 @@ class ErrorDetector {
      * @return array
      */
     private function llm_root_cause_analysis( array $critical, $llm ): array {
+        // Cold start guard — if critical issues array is empty, skip LLM call entirely.
+        if ( empty( $critical ) ) {
+            return array();
+        }
+
         $system = <<<'PROMPT'
 You are a WooCommerce troubleshooting expert. Given the following error reports,
 determine the most likely root cause and suggest a concrete healing action.
 
 For each issue output:
-- issue_id: Unique identifier
+- issue_id: Unique identifier (use the existing event name or a hash)
 - root_cause: Most likely cause
-- severity: confirmed critical
+- severity: "critical"
 - heal_action: One of: rollback_setting, revert_template, disable_plugin, clear_cache, toggle_feature, patch_javascript, patch_css, escalate
-- heal_params: Parameters needed for the heal action
+- heal_params: Parameters needed for the heal action (object)
 - reasoning: Brief explanation
 
-Output JSON with an array of analyses.
+Output ONLY valid JSON matching this exact schema:
+{
+  "analyses": [
+    {
+      "issue_id": "err_checkout_fatal_001",
+      "root_cause": "Payment gateway API timeout",
+      "severity": "critical",
+      "heal_action": "disable_plugin",
+      "heal_params": {"plugin_slug": "some-payment-gateway"},
+      "reasoning": "Gateway X has timed out 15 times in the last hour, likely a server-side issue."
+    }
+  ]
+}
 PROMPT;
 
         try {

@@ -151,6 +151,26 @@ class ABOptimizer {
         $recent_orders = $signals->get_recent_orders( 168 );
         $funnel        = $signals->get_funnel_data( 24 );
 
+        // Cold start guard — no data to base an experiment on.
+        $has_data = false;
+        if ( is_array( $recent_orders ) && isset( $recent_orders['total_orders'] ) && (int) $recent_orders['total_orders'] >= 5 ) {
+            $has_data = true;
+        }
+        if ( ! $has_data && is_array( $funnel ) && ! empty( $funnel ) ) {
+            foreach ( $funnel as $step => $count ) {
+                if ( (int) $count > 0 ) {
+                    $has_data = true;
+                    break;
+                }
+            }
+        }
+        if ( ! $has_data ) {
+            $this->services['logger']->info( 'ab_no_data_for_experiment', array(
+                'note' => 'Insufficient data to propose experiment (cold start).',
+            ) );
+            return null;
+        }
+
         $system = <<<'PROMPT'
 You are an A/B testing expert for WooCommerce. Based on the current checkout data,
 propose ONE new experiment that has the highest potential to improve conversion rate.
