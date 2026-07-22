@@ -111,9 +111,22 @@ function wac_autoload_execute( $class ) {
         $ns_root = $segments[0] . '\\' . $segments[1] . '\\';
         if ( isset( $mappings[ $ns_root ] ) ) {
             $dir_parts = array_slice( $segments, 2 );
-            $filename  = 'class-' . strtolower( implode( '-', $dir_parts ) ) . '.php';
+            // Sanitize each segment to prevent path traversal via crafted namespace.
+            $safe_parts = array();
+            foreach ( $dir_parts as $part ) {
+                // Only allow alphanumeric and hyphens in namespace segments.
+                $sanitized = preg_replace( '/[^a-zA-Z0-9\-]/', '', $part );
+                if ( '' === $sanitized ) {
+                    return; // Invalid segment, bail.
+                }
+                $safe_parts[] = $sanitized;
+            }
+            $filename  = 'class-' . strtolower( implode( '-', $safe_parts ) ) . '.php';
             $path      = WAC_PATH . $mappings[ $ns_root ] . $filename;
-            if ( file_exists( $path ) ) {
+            // Verify resolved path stays within plugin directory to prevent LFI.
+            $real_base = realpath( WAC_PATH );
+            $real_file = realpath( $path );
+            if ( false !== $real_file && false !== $real_base && str_starts_with( $real_file, $real_base ) && file_exists( $path ) ) {
                 require_once $path;
                 return;
             }

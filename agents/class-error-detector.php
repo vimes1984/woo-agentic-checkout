@@ -62,19 +62,36 @@ class ErrorDetector {
      * @return array Standardised result (success, actions, errors, summary, issues, critical_count).
      */
     public function run(): array {
+        // Process lock: prevent concurrent runs.
+        $lock_key = 'wac_error_detector_lock';
+        if ( get_transient( $lock_key ) ) {
+            return array(
+                'success' => true,
+                'actions' => 0,
+                'errors'  => array(),
+                'summary' => 'Error Detector is already running (process lock active).',
+            );
+        }
+        set_transient( $lock_key, time(), 10 * MINUTE_IN_SECONDS );
+        $release = function () use ( $lock_key ) {
+            delete_transient( $lock_key );
+        };
+
         $signals  = $this->services['signals'] ?? null;
         $logger   = $this->services['logger'] ?? null;
         $llm      = $this->services['llm'] ?? null;
         $notifier = new \WooAgenticCheckout\Notifier();
 
-        if ( ! $signals || ! $logger ) {
-            return array(
-                'success' => false,
-                'actions' => 0,
-                'errors'  => array( 'Missing required services: signals or logger.' ),
-                'summary' => 'Error detector could not initialise due to missing service dependencies.',
-            );
-        }
+        try {
+            if ( ! $signals || ! $logger ) {
+                $release();
+                return array(
+                    'success' => false,
+                    'actions' => 0,
+                    'errors'  => array( 'Missing required services: signals or logger.' ),
+                    'summary' => 'Error detector could not initialise due to missing service dependencies.',
+                );
+            }
 
         $issues = array();
 
