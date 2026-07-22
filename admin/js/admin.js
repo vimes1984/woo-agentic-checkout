@@ -86,6 +86,9 @@
                 self.stopAutoRefresh();
             });
 
+            // Mark body as ready for CSS targeting.
+            $(document.body).addClass('wac-ready');
+
             // Announce page loaded for screen readers.
             this.announce('Admin UI loaded', 'polite');
         },

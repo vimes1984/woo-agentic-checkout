@@ -140,6 +140,17 @@ class AdminUI {
                 }
                 ?>
             </div>
+
+            <div class="wac-footer">
+                <?php
+                /* translators: %1$s: plugin version, %2$s: WordPress version */
+                echo esc_html( sprintf( __( 'Woo Agentic Checkout v%s — WordPress %s', 'woo-agentic-checkout' ), WAC_VERSION, get_bloginfo( 'version' ) ) );
+                ?>
+                &middot;
+                <a href="https://github.com/vimes1984/woo-agentic-checkout" target="_blank" rel="noopener noreferrer">
+                    <?php esc_html_e( 'GitHub', 'woo-agentic-checkout' ); ?>
+                </a>
+            </div>
         </div>
         <?php
     }
@@ -341,8 +352,8 @@ class AdminUI {
                         <p class="wac-empty-state__text">No agents registered yet.</p>
                     </div>
                 <?php else : ?>
-                    <table class="widefat striped">
-                        <thead><tr><th>Agent</th><th>Status</th><th>Last Run</th></tr></thead>
+                    <table class="widefat striped" aria-label="<?php esc_attr_e( 'Agent status table', 'woo-agentic-checkout' ); ?>">
+                        <thead><tr><th scope="col"><?php esc_html_e( 'Agent', 'woo-agentic-checkout' ); ?></th><th scope="col"><?php esc_html_e( 'Status', 'woo-agentic-checkout' ); ?></th><th scope="col"><?php esc_html_e( 'Last Run', 'woo-agentic-checkout' ); ?></th></tr></thead>
                         <tbody>
                             <?php foreach ( $status as $key => $agent ) : ?>
                                 <tr>
@@ -493,7 +504,7 @@ class AdminUI {
                             <th class="wac-sortable" data-col="variants" aria-sort="none"><?php esc_html_e( 'Variants', 'woo-agentic-checkout' ); ?></th>
                             <th class="wac-sortable" data-col="traffic" aria-sort="none"><?php esc_html_e( 'Traffic', 'woo-agentic-checkout' ); ?></th>
                             <th class="wac-sortable" data-col="created" aria-sort="none"><?php esc_html_e( 'Created', 'woo-agentic-checkout' ); ?></th>
-                            <th><?php esc_html_e( 'Actions', 'woo-agentic-checkout' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Actions', 'woo-agentic-checkout' ); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -694,7 +705,7 @@ class AdminUI {
                             <th class="wac-sortable"><?php esc_html_e( 'Agent', 'woo-agentic-checkout' ); ?></th>
                             <th class="wac-sortable"><?php esc_html_e( 'Status', 'woo-agentic-checkout' ); ?></th>
                             <th class="wac-sortable"><?php esc_html_e( 'Last Run', 'woo-agentic-checkout' ); ?></th>
-                            <th><?php esc_html_e( 'Run Now', 'woo-agentic-checkout' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Run Now', 'woo-agentic-checkout' ); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -810,7 +821,8 @@ class AdminUI {
                         <td>
                             <input type="text" id="wac_llm_model" name="wac_llm_model"
                                    value="<?php echo esc_attr( get_option( 'wac_llm_model', 'gpt-4o' ) ); ?>"
-                                   class="regular-text" required />
+                                   class="regular-text" required
+                                   placeholder="gpt-4o, claude-3-opus, etc." />
                         </td>
                     </tr>
                 </table>
@@ -841,7 +853,9 @@ class AdminUI {
                         <th scope="row"><label for="wac_ga4_measurement_id"><?php esc_html_e( 'GA4 Measurement ID', 'woo-agentic-checkout' ); ?></label></th>
                         <td><input type="text" id="wac_ga4_measurement_id" name="wac_ga4_measurement_id"
                                    value="<?php echo esc_attr( get_option( 'wac_ga4_measurement_id', '' ) ); ?>"
-                                   class="regular-text" pattern="^G-[A-Z0-9]+$" title="<?php esc_attr_e( 'Format: G-XXXXXXXX', 'woo-agentic-checkout' ); ?>" /></td>
+                                   class="regular-text" pattern="^G-[A-Z0-9]+$" title="<?php esc_attr_e( 'Format: G-XXXXXXXX', 'woo-agentic-checkout' ); ?>"
+                                   placeholder="G-XXXXXXXX" aria-describedby="wac-ga4-desc" />
+                                   <p class="description" id="wac-ga4-desc"><?php esc_html_e( 'Found in Google Analytics Admin → Data Streams → your web stream.', 'woo-agentic-checkout' ); ?></p></td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="wac_ga4_api_secret"><?php esc_html_e( 'GA4 API Secret', 'woo-agentic-checkout' ); ?></label></th>
@@ -901,8 +915,9 @@ class AdminUI {
                         <td>
                             <input type="email" id="wac_notify_email" name="wac_notify_email"
                                    value="<?php echo esc_attr( get_option( 'wac_notify_email', get_option( 'admin_email' ) ) ); ?>"
-                                   class="regular-text" />
-                            <p class="description"><?php esc_html_e( 'Leave blank to use the WordPress admin email.', 'woo-agentic-checkout' ); ?></p>
+                                   class="regular-text" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"
+                                   aria-describedby="wac-notify-email-desc" />
+                            <p class="description" id="wac-notify-email-desc"><?php esc_html_e( 'Leave blank to use the WordPress admin email.', 'woo-agentic-checkout' ); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -910,8 +925,9 @@ class AdminUI {
                         <td>
                             <input type="url" id="wac_slack_webhook" name="wac_slack_webhook"
                                    value="<?php echo esc_attr( get_option( 'wac_slack_webhook', '' ) ); ?>"
-                                   class="regular-text" placeholder="https://hooks.slack.com/services/..." />
-                            <p class="description">
+                                   class="regular-text" placeholder="https://hooks.slack.com/services/..."
+                                   aria-describedby="wac-slack-desc" />
+                            <p class="description" id="wac-slack-desc">
                                 <?php esc_html_e( 'Create a webhook in Slack → Apps → Incoming Webhooks.', 'woo-agentic-checkout' ); ?>
                                 <a href="https://api.slack.com/messaging/webhooks" target="_blank"><?php esc_html_e( 'Docs', 'woo-agentic-checkout' ); ?></a>
                             </p>

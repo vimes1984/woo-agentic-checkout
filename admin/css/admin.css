@@ -54,6 +54,37 @@
     max-width: 1200px;
 }
 
+/* ─── Footer ────────────────────────────────── */
+
+.wac-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--wac-border-light);
+    text-align: center;
+    font-size: 11px;
+    color: var(--wac-text-muted);
+}
+
+.wac-footer a {
+    color: var(--wac-text-muted);
+    text-decoration: none;
+}
+
+.wac-footer a:hover {
+    color: var(--wac-theme);
+    text-decoration: underline;
+}
+
+/* ─── Body Ready State ──────────────────────── */
+
+body.wac-ready .wac-card {
+    transition: opacity var(--wac-transition);
+}
+
+body:not(.wac-ready) .wac-toast-container {
+    display: none;
+}
+
 .wac-admin h1 {
     display: flex;
     align-items: center;
