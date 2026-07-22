@@ -41,6 +41,23 @@ class ABOptimizer {
     }
 
     /**
+     * Agent capabilities for introspection.
+     *
+     * @return array
+     */
+    public function get_capabilities(): array {
+        return array(
+            'id'             => 'ab_optimizer',
+            'label'          => $this->get_label(),
+            'revision'       => self::REVISION,
+            'llm_dependent'  => true,
+            'schedule'       => 'every_6_hours',
+            'data_sources'   => array( 'experiments', 'orders', 'funnel' ),
+            'description'    => 'Analyses running A/B experiments, suggests winning variants, and proposes new experiments.',
+        );
+    }
+
+    /**
      * Execute agent run.
      *
      * @return array Standardised result (success, actions, errors, summary).

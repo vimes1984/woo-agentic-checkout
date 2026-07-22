@@ -288,6 +288,9 @@
             this._sendThrottled(stepName, extraData);
         },
 
+        /** Maximum errors stored in memory */
+        _maxErrors: 50,
+
         /**
          * Track an error event.
          */
@@ -297,6 +300,11 @@
                 message: message,
                 time: Date.now()
             });
+
+            // Cap error list to prevent memory bloat.
+            if (this.steps.errors.length > this._maxErrors) {
+                this.steps.errors.shift();
+            }
 
             this._sendThrottled(type, $.extend({
                 message: message

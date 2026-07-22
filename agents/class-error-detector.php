@@ -40,6 +40,23 @@ class ErrorDetector {
     }
 
     /**
+     * Agent capabilities for introspection.
+     *
+     * @return array
+     */
+    public function get_capabilities(): array {
+        return array(
+            'id'             => 'error_detector',
+            'label'          => $this->get_label(),
+            'revision'       => self::REVISION,
+            'llm_dependent'  => false,
+            'schedule'       => 'continuous',
+            'data_sources'   => array( 'errors', 'funnel', 'wc_health' ),
+            'description'    => 'Monitors checkout errors, classifies severity, triggers self-healing for critical issues.',
+        );
+    }
+
+    /**
      * Execute agent run. Checks recent errors and evaluates severity.
      *
      * @return array Standardised result (success, actions, errors, summary, issues, critical_count).

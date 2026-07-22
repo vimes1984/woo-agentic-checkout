@@ -41,6 +41,23 @@ class SuggestionGenerator {
     }
 
     /**
+     * Agent capabilities for introspection.
+     *
+     * @return array
+     */
+    public function get_capabilities(): array {
+        return array(
+            'id'             => 'suggestion_generator',
+            'label'          => $this->get_label(),
+            'revision'       => self::REVISION,
+            'llm_dependent'  => true,
+            'schedule'       => 'weekly',
+            'data_sources'   => array( 'orders', 'funnel', 'experiments', 'errors' ),
+            'description'    => 'Generates concrete, prioritised checkout improvements using LLM analysis of all signals.',
+        );
+    }
+
+    /**
      * Execute agent run.
      *
      * @return array Standardised result (success, actions, errors, summary, suggestions).
