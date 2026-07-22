@@ -175,6 +175,10 @@ class Core {
      * Show admin notices for wac_msg query params.
      */
     public function admin_notices() {
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            return;
+        }
+
         if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification
             return;
         }
