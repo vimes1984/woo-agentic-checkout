@@ -312,8 +312,15 @@ class ErrorHandler {
      * @return bool True on successful write, false on failure.
      */
     private static function file_log( string $event, array $data ): bool {
-        $log_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
-        $log_dir = rtrim( $log_dir, '/' );
+        // Resolve log dir safely — reject path traversal via WP_CONTENT_DIR manipulation.
+        $candidate = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
+
+        // Resolve to real path to detect symlink escapes and ../ traversal.
+        $real_candidate = realpath( rtrim( $candidate, '/' ) );
+        if ( false === $real_candidate || ! str_starts_with( $real_candidate, rtrim( realpath( ABSPATH ) ?: ABSPATH, '/' ) ) ) {
+            return false;
+        }
+        $log_dir = $real_candidate;
 
         // Bail early if open_basedir restricts access to the target directory.
         $open_basedir = ini_get( 'open_basedir' );
