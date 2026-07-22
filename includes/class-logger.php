@@ -70,6 +70,11 @@ class Logger {
     private function log( string $level, string $event, $context ) {
         global $wpdb;
 
+        $valid_levels = array( 'info', 'warning', 'error', 'debug' );
+        if ( ! in_array( $level, $valid_levels, true ) ) {
+            $level = 'info';
+        }
+
         $data = array(
             'level'      => $level,
             'event'      => $event,
