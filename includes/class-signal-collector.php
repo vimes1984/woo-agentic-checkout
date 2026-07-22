@@ -86,6 +86,12 @@ class SignalCollector {
             return array();
         }
 
+        // Validate property ID to prevent URL injection.
+        $property_id = sanitize_text_field( $property_id );
+        if ( ! preg_match( '/^[a-zA-Z0-9_\/]+$/', $property_id ) ) {
+            return array( 'error' => 'Invalid GA4 property ID format.' );
+        }
+
         $credentials_array = json_decode( $credentials, true );
         if ( JSON_ERROR_NONE !== json_last_error() || ! isset( $credentials_array['client_email'] ) ) {
             return array( 'error' => 'Invalid GA4 credentials JSON format.' );
