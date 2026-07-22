@@ -406,7 +406,11 @@ class Core {
         if ( ! isset( $this->services['suggest'] ) ) {
             return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
         }
-        return rest_ensure_response( $this->services['suggest']->get_pending() );
+        $pending = $this->services['suggest']->get_pending();
+        if ( ! is_array( $pending ) ) {
+            $pending = array();
+        }
+        return rest_ensure_response( $pending );
     }
 
     /**
@@ -414,6 +418,9 @@ class Core {
      */
     public function rest_apply_suggestion( \WP_REST_Request $request ) {
         $id = (int) $request->get_param( 'id' );
+        if ( $id < 1 ) {
+            return new \WP_Error( 'invalid_id', 'Invalid suggestion ID.', array( 'status' => 400 ) );
+        }
         if ( ! isset( $this->services['suggest'] ) ) {
             return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
         }
