@@ -264,7 +264,29 @@ class SelfHealingAgent {
             );
         }
 
-        // 5. LLM connection is configured.
+        // 5. Database engines are InnoDB.
+        global $wpdb;
+        $engine_check = $wpdb->get_results(
+            "SELECT TABLE_NAME, ENGINE
+             FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME LIKE '" . $wpdb->esc_like( $wpdb->prefix . 'wac_' ) . "%'"
+        );
+        $all_innodb = true;
+        foreach ( $engine_check as $t ) {
+            if ( 'InnoDB' !== $t->ENGINE ) {
+                $all_innodb = false;
+                break;
+            }
+        }
+        $checks['db_engine_innodb'] = array(
+            'passed' => $all_innodb && count( $engine_check ) >= 7,
+            'detail' => $all_innodb
+                ? sprintf( 'All %d WAC tables use InnoDB', count( $engine_check ) )
+                : 'Some tables are not InnoDB -- check schema',
+        );
+
+        // 6. LLM connection is configured.
         $llm_provider = get_option( 'wac_llm_provider', 'openai' );
         $llm_key      = get_option( 'wac_llm_api_key', '' );
 
