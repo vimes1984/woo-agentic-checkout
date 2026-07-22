@@ -12,6 +12,7 @@ class Beacon {
 
     /**
      * Inject A/B test experiment tracker into checkout page.
+     * Includes experiment metadata for JS-side analysis.
      */
     public function inject_tracker() {
         $experiments = $this->get_experiment_data();

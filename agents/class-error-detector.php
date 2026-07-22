@@ -438,8 +438,11 @@ PROMPT;
                         ),
                     ),
                     'required' => array( 'analyses' ),
-                )
-            );
+                    'additionalProperties' => false,
+                ),
+            ),
+            'additionalProperties' => false,
+        );
 
             return $result['analyses'] ?? array();
         } catch ( \Exception $e ) {
