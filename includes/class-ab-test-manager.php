@@ -1105,6 +1105,12 @@ class ABTestManager {
      */
     public function get_expected_loss( int $experiment_id ): array {
         $analysis = $this->bayesian_analysis( $experiment_id );
+
+        // Guard: ensure analysis is an array before iterating.
+        if ( ! is_array( $analysis ) || empty( $analysis ) ) {
+            return array();
+        }
+
         $losses   = array();
 
         $best_prob = 0.0;
@@ -1676,6 +1682,12 @@ class ABTestManager {
         );
         $weights  = array_merge( $defaults, $weights );
         $analysis = $this->bayesian_analysis( $experiment_id );
+
+        // Guard: ensure analysis is an array before iterating.
+        if ( ! is_array( $analysis ) || empty( $analysis ) ) {
+            return array();
+        }
+
         $scores   = array();
 
         foreach ( $analysis as $r ) {
