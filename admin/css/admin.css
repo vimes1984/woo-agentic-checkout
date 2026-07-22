@@ -171,6 +171,38 @@
     box-shadow: var(--wac-shadow-hover);
 }
 
+/* ─── Welcome Card ──────────────────────────── */
+
+.wac-welcome-card {
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--wac-bg-card) 0%, #f0f6fc 100%);
+    border-left: 4px solid var(--wac-theme);
+}
+
+.wac-welcome-card__title {
+    border-bottom: none;
+    font-size: 16px;
+}
+
+.wac-welcome-card__text {
+    color: var(--wac-text-muted);
+    max-width: 700px;
+    line-height: 1.5;
+}
+
+.wac-welcome-card__links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .wac-welcome-card {
+        background: linear-gradient(135deg, #2c3338 0%, #1d2327 100%);
+    }
+}
+
 /* ─── Cards ─────────────────────────────────── */
 
 .wac-card {
@@ -666,6 +698,10 @@
     border-bottom: none;
 }
 
+.wac-experiment-list li .wac-badge {
+    margin-left: 6px;
+}
+
 .wac-count {
     font-size: 12px;
     color: #888;
@@ -713,6 +749,30 @@
     opacity: 0.3;
 }
 
+/* Category accent colours for suggestion cards */
+.wac-badge-checkout::before,
+.wac-suggestion-card .wac-badge-checkout ~ .wac-suggestion-card__meta::before { --wac-card-accent: #2271b1; }
+
+.wac-suggestion-card:has(.wac-badge-conversion)::before {
+    background: #2e7b32;
+    opacity: 0.4;
+}
+
+.wac-suggestion-card:has(.wac-badge-ux)::before {
+    background: #856404;
+    opacity: 0.4;
+}
+
+.wac-suggestion-card:has(.wac-badge-security)::before {
+    background: #721c24;
+    opacity: 0.4;
+}
+
+.wac-suggestion-card:has(.wac-badge-performance)::before {
+    background: #155724;
+    opacity: 0.4;
+}
+
 .wac-suggestion-card:hover {
     box-shadow: var(--wac-shadow-hover);
     transform: translateY(-1px);
@@ -758,6 +818,23 @@
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--wac-border-light);
+}
+
+.wac-actions-cell {
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .wac-actions-cell .button,
+    .wac-suggestion-card__actions .button {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .wac-suggestion-card__actions {
+        flex-direction: column;
+    }
 }
 
 /* ─── Logs ──────────────────────────────────── */
@@ -839,6 +916,38 @@
     content: " ↓";
     opacity: 1;
     color: var(--wac-theme);
+}
+
+/* ─── Select / Dropdown ─────────────────────── */
+
+.wac-admin select {
+    max-width: 100%;
+}
+
+.wac-admin select:focus {
+    border-color: var(--wac-theme);
+    box-shadow: 0 0 0 1px var(--wac-theme);
+}
+
+/* ─── Sticky Table Headers ──────────────────── */
+
+.wac-sticky-header thead th {
+    position: sticky;
+    top: 0;
+    background: #f0f0f1;
+    z-index: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+    .wac-sticky-header thead th {
+        background: #1d2327;
+    }
+}
+
+@media print {
+    .wac-sticky-header thead th {
+        position: static;
+    }
 }
 
 /* ─── Form Controls ─────────────────────────── */

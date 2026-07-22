@@ -309,6 +309,29 @@ class AdminUI {
         $experiments = $this->ab->get_active_experiments();
         $suggestions = $this->suggest->get_pending_count();
         ?>
+        <div class="wac-welcome-card wac-card">
+            <div class="wac-welcome-card__content">
+                <h3 class="wac-welcome-card__title">
+                    <span role="img" aria-label="Wave">👋</span>
+                    <?php esc_html_e( 'Welcome to Woo Agentic Checkout', 'woo-agentic-checkout' ) ?>
+                </h3>
+                <p class="wac-welcome-card__text">
+                    <?php esc_html_e( 'This plugin uses AI agents to optimise your WooCommerce checkout. Agents run autonomously on schedules — detect errors, analyse conversion data, generate suggestions, and heal issues automatically.', 'woo-agentic-checkout' ) ?>
+                </p>
+                <div class="wac-welcome-card__links">
+                    <a href="?page=wac-dashboard&tab=agents" class="button button-secondary">
+                        <span role="img" aria-label="Agents">🤖</span> <?php esc_html_e( 'View Agents', 'woo-agentic-checkout' ) ?>
+                    </a>
+                    <a href="?page=wac-dashboard&tab=suggestions" class="button button-secondary">
+                        <span role="img" aria-label="Suggestions">💡</span> <?php esc_html_e( 'Review Suggestions', 'woo-agentic-checkout' ) ?>
+                    </a>
+                    <a href="?page=wac-dashboard&tab=settings" class="button button-secondary">
+                        <span role="img" aria-label="Settings">⚙️</span> <?php esc_html_e( 'Configure', 'woo-agentic-checkout' ) ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="wac-dashboard-grid">
             <div class="wac-card">
                 <h3><span role="img" aria-label="Agent">🤖</span> Agent Status <button class="wac-refresh-btn" data-target="wac-status" title="Refresh agent status" aria-label="Refresh agent status"><span class="dashicons dashicons-update" aria-hidden="true"></span></button></h3>
