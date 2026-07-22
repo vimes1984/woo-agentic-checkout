@@ -169,10 +169,18 @@ class Logger {
         global $wpdb;
 
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
+        $table     = $wpdb->prefix . 'wac_logs';
 
-        return (int) $wpdb->query( $wpdb->prepare(
-            "DELETE FROM {$wpdb->prefix}wac_logs WHERE created_at < %s",
-            $threshold
-        ) );
+        // Chunked delete: 5000 rows per iteration to avoid long table locks.
+        $total = 0;
+        do {
+            $deleted = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$table} WHERE created_at < %s LIMIT 5000",
+                $threshold
+            ) );
+            $total += $deleted;
+        } while ( $deleted > 0 );
+
+        return $total;
     }
 }
