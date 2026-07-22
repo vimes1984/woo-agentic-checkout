@@ -51,7 +51,14 @@ class SelfHealingAgent {
 
         if ( 'monitor' === $permission ) {
             $logger->info( 'self_heal_monitor_only', array() );
-            return array( 'mode' => 'monitor', 'healed' => 0 );
+            return array(
+                'success' => true,
+                'actions' => 0,
+                'errors'  => array(),
+                'summary' => 'Monitor-only mode — no healing actions taken.',
+                'mode'    => 'monitor',
+                'healed'  => 0,
+            );
         }
 
         $results = array(

@@ -173,7 +173,7 @@
             // Page visibility (tab switch during checkout = abandonment risk)
             document.addEventListener('visibilitychange', function () {
                 if (document.visibilityState === 'hidden') {
-                    self.sendEvent('checkout_tab_hidden', {
+                    self._sendThrottled('checkout_tab_hidden', {
                         step: self.steps.current,
                         timeOnPage: self.steps.timings[self.steps.current]
                     });
@@ -183,31 +183,48 @@
 
         /**
          * Track field interactions (focus/blur timing).
+         * Re-binds on 'updated_checkout' to catch AJAX-replaced DOM elements.
          */
         trackFieldInteractions: function () {
+            this._bindFieldEvents();
+
+            // Re-bind after WooCommerce AJAX updates the checkout fragments.
             var self = this;
+            $(document.body).on('updated_checkout', function () {
+                self._bindFieldEvents();
+            });
+        },
 
-            $('.woocommerce-checkout input, .woocommerce-checkout select, .woocommerce-checkout textarea').each(function () {
-                var $field = $(this),
-                    fieldName = $field.attr('name') || $field.attr('id') || 'unknown',
-                    startTime;
+        /**
+         * Bind focus/blur handlers to checkout fields (event delegation via body).
+         */
+        _bindFieldEvents: function () {
+            var self = this;
+            var selector = '.woocommerce-checkout input, .woocommerce-checkout select, .woocommerce-checkout textarea';
+            var fieldTimes = {};
 
-                $field.on('focus', function () {
-                    startTime = Date.now();
-                });
-
-                $field.on('blur', function () {
+            // Use delegation on document.body so AJAX-replaced fields are covered.
+            $(document.body).off('focus.wacBeacon blur.wacBeacon', selector)
+                .on('focus.wacBeacon', selector, function () {
+                    var $field = $(this);
+                    var fieldName = $field.attr('name') || $field.attr('id') || 'unknown';
+                    fieldTimes[fieldName] = Date.now();
+                })
+                .on('blur.wacBeacon', selector, function () {
+                    var $field = $(this);
+                    var fieldName = $field.attr('name') || $field.attr('id') || 'unknown';
+                    var startTime = fieldTimes[fieldName];
                     if (startTime) {
                         var elapsed = Date.now() - startTime;
                         if (elapsed > 500) {
-                            self.sendEvent('field_interaction', {
+                            self._sendThrottled('field_interaction', {
                                 field: fieldName,
                                 timeMs: elapsed
                             });
                         }
+                        delete fieldTimes[fieldName];
                     }
                 });
-            });
         },
 
         /**
@@ -217,7 +234,8 @@
             this.steps.current = stepName;
             this.steps.timings[stepName] = Date.now();
 
-            this.sendEvent(stepName, extraData);
+            // Critical checkpoint events fire immediately with throttling.
+            this._sendThrottled(stepName, extraData);
         },
 
         /**
@@ -230,7 +248,7 @@
                 time: Date.now()
             });
 
-            this.sendEvent(type, $.extend({
+            this._sendThrottled(type, $.extend({
                 message: message
             }, extra));
         },

@@ -315,6 +315,22 @@ class ErrorHandler {
         $log_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
         $log_dir = rtrim( $log_dir, '/' );
 
+        // Bail early if open_basedir restricts access to the target directory.
+        $open_basedir = ini_get( 'open_basedir' );
+        if ( ! empty( $open_basedir ) ) {
+            $allowed_dirs = explode( PATH_SEPARATOR, $open_basedir );
+            $is_allowed   = false;
+            foreach ( $allowed_dirs as $allowed ) {
+                if ( str_starts_with( $log_dir, rtrim( $allowed, '/' ) ) ) {
+                    $is_allowed = true;
+                    break;
+                }
+            }
+            if ( ! $is_allowed ) {
+                return false; // open_basedir prevents writing to this directory.
+            }
+        }
+
         // Ensure the log directory exists and is writable.
         if ( ! is_dir( $log_dir ) ) {
             // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
