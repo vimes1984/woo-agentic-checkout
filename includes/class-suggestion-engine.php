@@ -27,9 +27,19 @@ class SuggestionEngine {
     private $llm;
 
     /**
+     * Engine revision for tracking behaviour changes.
+     */
+    const REVISION = 'batch5.18';
+
+    /**
      * @param LLMClient $llm
+     *
+     * @throws \InvalidArgumentException If $llm is null.
      */
     public function __construct( LLMClient $llm ) {
+        if ( ! $llm ) {
+            throw new \InvalidArgumentException( 'SuggestionEngine requires a valid LLMClient instance.' );
+        }
         $this->llm = $llm;
     }
 

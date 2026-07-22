@@ -293,6 +293,7 @@ class CheckoutModifier {
 
     /**
      * Hide fields (keep in DOM but hide with CSS).
+     * Uses wp_add_inline_style if available for late-loading safety.
      */
     private function apply_hidden_fields( array $fields, array $hide_keys ): array {
         $css_rules = array();
@@ -302,9 +303,17 @@ class CheckoutModifier {
         }
 
         if ( ! empty( $css_rules ) ) {
-            add_action( 'wp_head', function () use ( $css_rules ) {
-                echo '<style id="wac-variant-hide">' . implode( "\n", $css_rules ) . '</style>';
-            }, 100 );
+            $css = implode( "\n", $css_rules );
+
+            // Prefer inline style enqueue (safe even if wp_head already fired).
+            if ( function_exists( 'wp_add_inline_style' ) && wp_style_is( 'woocommerce-general', 'registered' ) ) {
+                wp_add_inline_style( 'woocommerce-general', $css );
+            } else {
+                // Fallback: inject via wp_head.
+                add_action( 'wp_head', function () use ( $css ) {
+                    echo '<style id="wac-variant-hide">' . $css . '</style>';
+                }, 100 );
+            }
         }
 
         return $fields;
