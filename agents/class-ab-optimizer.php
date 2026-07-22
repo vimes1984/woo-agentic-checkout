@@ -108,11 +108,30 @@ class ABOptimizer {
         }
 
         foreach ( $experiments as $exp ) {
+            // Validate experiment structure.
+            if ( ! isset( $exp['id'] ) ) {
+                $logger->warning( 'ab_optimizer_missing_exp_id', array( 'exp' => $exp ) );
+                continue;
+            }
+
             $variants = $ab->get_variants( $exp['id'] );
             $bayesian = $ab->bayesian_analysis( $exp['id'] );
-            $variants_ok = ! empty( $variants );
+
+            // Guard: validate variants + bayesian return type.
+            $variants_ok = is_array( $variants ) && ! empty( $variants );
+            $bayesian_ok = is_array( $bayesian );
 
             if ( ! $variants_ok ) {
+                $logger->info( 'ab_optimizer_no_variants', array(
+                    'exp_id' => $exp['id'],
+                ) );
+                continue;
+            }
+
+            if ( ! $bayesian_ok ) {
+                $logger->warning( 'ab_optimizer_invalid_bayesian', array(
+                    'exp_id' => $exp['id'],
+                ) );
                 continue;
             }
 
@@ -149,9 +168,11 @@ class ABOptimizer {
             $min_sample = $settings ? (int) $settings->get( 'ab_min_sample_size', 100 ) : 100;
             if ( $max_impressions >= $min_sample * count( $variants ) ) {
                 // Check if all variants have similar conversion rates (within 5% relative).
-                $crs = array_column( $bayesian, 'cr' );
-                // Guard against empty/zero CRs.
-                if ( empty( $crs ) ) {
+                $crs = array_filter( array_column( $bayesian, 'cr' ), function ( $v ) {
+                    return is_numeric( $v );
+                } );
+                // Guard against empty/zero CRs (needs at least 2 variants with data).
+                if ( count( $crs ) < 2 ) {
                     continue;
                 }
                 $max_cr = max( $crs );
