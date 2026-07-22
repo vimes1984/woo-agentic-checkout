@@ -298,6 +298,20 @@ class ABTestManager {
                 ORDER BY v.is_control DESC, v.id ASC";
 
         $results = $wpdb->get_results( $wpdb->prepare( $sql, $experiment_id ), ARRAY_A );
+
+        // Strict type casting for numeric fields.
+        foreach ( $results as &$row ) {
+            $row["id"]             = (int) $row["id"];
+            $row["experiment_id"]  = (int) $row["experiment_id"];
+            $row["is_control"]     = (int) $row["is_control"];
+            $row["traffic_percent"] = (int) $row["traffic_percent"];
+            $row["winner_flag"]    = (int) $row["winner_flag"];
+            $row["conversions"]    = (int) $row["conversions"];
+            $row["impressions"]    = (int) $row["impressions"];
+            $row["revenue"]        = (float) $row["revenue"];
+        }
+        unset( $row );
+
         self::$cache[ $cache_key ] = $results;
         return $results;
     }
