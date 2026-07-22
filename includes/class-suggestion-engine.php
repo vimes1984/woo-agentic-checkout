@@ -539,11 +539,13 @@ PROMPT;
                             'expected_lift' => array( 'type' => 'string' ),
                             'category'      => array( 'type' => 'string' ),
                         ),
-                        'required' => array( 'title', 'description', 'action_type', 'action_data', 'score' ),
+                        'required'   => array( 'title', 'description', 'action_type', 'action_data', 'score' ),
+                        'additionalProperties' => false,
                     ),
                 ),
             ),
             'required'   => array( 'suggestions' ),
+            'additionalProperties' => false,
         );
     }
 
