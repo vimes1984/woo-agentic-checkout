@@ -94,6 +94,23 @@
     min-height: 400px;
 }
 
+/* ─── Page Intro ────────────────────────────── */
+
+.wac-page-intro {
+    margin-bottom: 20px;
+}
+
+.wac-page-intro h2 {
+    margin-bottom: 4px;
+}
+
+.wac-page-intro__text {
+    color: var(--wac-text-muted);
+    font-size: 13px;
+    margin: 4px 0 0;
+    max-width: 600px;
+}
+
 /* ─── Status Summary Bar ────────────────────── */
 
 .wac-status-bar {
@@ -747,10 +764,21 @@
 
 .wac-log-error td {
     background: #fff5f5 !important;
+    border-left: 3px solid var(--wac-error-text);
 }
 
 .wac-log-warning td {
     background: #fffef5 !important;
+    border-left: 3px solid var(--wac-warning-text);
+}
+
+.wac-log-info td {
+    border-left: 3px solid var(--wac-theme);
+}
+
+.wac-log-debug td {
+    border-left: 3px solid transparent;
+    opacity: 0.7;
 }
 
 .wac-log-context pre {

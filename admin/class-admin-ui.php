@@ -442,7 +442,10 @@ class AdminUI {
     private function render_experiments_tab() {
         $all_experiments = $this->ab->get_experiments( '', 50 );
         ?>
-        <h2>🧪 A/B Experiments</h2>
+        <div class="wac-page-intro">
+            <h2><span role="img" aria-label="Experiments">🧪</span> A/B Experiments</h2>
+            <p class="wac-page-intro__text"><?php esc_html_e( 'Manage and monitor A/B experiments. Variants are shown to a portion of traffic and automatically analysed with Bayesian methods to pick a winner.', 'woo-agentic-checkout' ); ?></p>
+        </div>
 
         <?php if ( ! empty( $all_experiments ) ) : ?>
             <div class="wac-filter-row">
@@ -745,7 +748,10 @@ class AdminUI {
      */
     private function render_settings_tab() {
         ?>
-        <h2>⚙️ Settings</h2>
+        <div class="wac-page-intro">
+            <h2><span role="img" aria-label="Settings">⚙️</span> Settings</h2>
+            <p class="wac-page-intro__text"><?php esc_html_e( 'Configure LLM provider, self-healing permissions, analytics integration, and A/B testing parameters.', 'woo-agentic-checkout' ); ?></p>
+        </div>
         <form method="post" action="options.php" class="wac-settings-form" novalidate>
             <?php settings_fields( 'wac_settings' ); ?>
 

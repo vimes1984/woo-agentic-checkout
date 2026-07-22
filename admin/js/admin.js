@@ -67,6 +67,9 @@
             this.bindBatchDismiss();
             this.addAriaLiveRegion();
 
+            // Auto-focus the first filter input on page load for quicker keyboard nav.
+            this.autoFocusFilter();
+
             // Show notifications from query string (after redirect).
             this.showNotificationFromQuery();
 
@@ -1066,6 +1069,17 @@
             if (this._refreshInterval) {
                 clearInterval(this._refreshInterval);
                 this._refreshInterval = null;
+            }
+        },
+
+        /**
+         * Auto-focus the first visible filter input for keyboard users.
+         * Only activates on desktop (>= 782px) to avoid virtual keyboard issues.
+         */
+        autoFocusFilter: function () {
+            var $filter = $('.wac-table-filter:visible').first();
+            if ($filter.length && window.innerWidth > 782) {
+                $filter.focus();
             }
         },
 
