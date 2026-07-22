@@ -186,10 +186,15 @@
                 }
             });
 
-            // Order success (redirect)
+            // Order success (redirect) — also detect via URL hash for SPAs.
             if ($('.woocommerce-order').length) {
                 self.trackStep('order_placed', {
                     orderId: $('.woocommerce-order .order').data('order-id') || 0
+                });
+            } else if (window.location.href.indexOf('order-received') > -1) {
+                var params = new URLSearchParams(window.location.search);
+                self.trackStep('order_placed', {
+                    orderId: params.get('order_id') || 0
                 });
             }
 
