@@ -43,6 +43,8 @@ $options = array(
     'wac_field_order',
     'wac_removed_fields',
     'wac_setting_rollbacks',
+    'wac_agent_failure_counts',
+    'wac_llm_calls_hourly',
     'wac_slack_webhook',
     'wac_notify_email',
     'wac_notify_email_enabled',
