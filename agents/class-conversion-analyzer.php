@@ -169,13 +169,18 @@ class ConversionAnalyzer {
                 'funnel'              => $funnel,
             );
         } catch ( \Exception $e ) {
-            $err_msg = substr( $e->getMessage(), 0, 500 );
-            $logger->error( 'conversion_analyzer_failed', array( 'error' => $err_msg ) );
+            // Sanitize error message to prevent information disclosure (file paths, API keys, tokens).
+            $raw_msg   = $e->getMessage();
+            $sanitized = sanitize_text_field( substr( $raw_msg, 0, 500 ) );
+            $logger->error( 'conversion_analyzer_failed', array(
+                'error_hash' => md5( $raw_msg ),
+                'sanitized'  => $sanitized,
+            ) );
             return array(
                 'success' => false,
                 'actions' => 0,
-                'errors'  => array( $err_msg ),
-                'summary' => 'Conversion analysis failed: ' . $err_msg,
+                'errors'  => array( $sanitized ),
+                'summary' => 'Conversion analysis failed: ' . $sanitized,
                 'fallback' => array(
                     'conversion_rate_24h' => $orders_24h['conversion_rate'],
                     'conversion_rate_7d'  => $orders_7d['conversion_rate'],
