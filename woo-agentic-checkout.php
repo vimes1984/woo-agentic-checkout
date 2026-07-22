@@ -148,7 +148,7 @@ register_deactivation_hook( __FILE__, function () {
     wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
 
     // Unregister the error handler.
-    if ( class_exists( '\\WooAgenticCheckout\\ErrorHandler' ) ) {
+    if ( class_exists( 'WooAgenticCheckout\\ErrorHandler' ) ) {
         \WooAgenticCheckout\ErrorHandler::unregister();
     }
 } );
