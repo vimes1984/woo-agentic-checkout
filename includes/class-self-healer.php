@@ -81,14 +81,18 @@ class SelfHealer {
         if ( $current_level < $required_level ) {
             return array(
                 'success' => false,
-                'action'  => $action,
-                'message' => "Permission denied. Required: {$required_perm}, current: {$permission}",
+                'action'  => sanitize_key( $action ),
+                'message' => sprintf(
+                    'Permission denied. Required: %1$s, current: %2$s',
+                    sanitize_key( $required_perm ),
+                    sanitize_key( $permission )
+                ),
                 'needs_approval' => true,
             );
         }
 
         // Execute the action.
-        $method = "do_{$action}";
+        $method = 'do_' . sanitize_key( $action );
         if ( method_exists( $this, $method ) ) {
             try {
                 $result = $this->$method( $params );
