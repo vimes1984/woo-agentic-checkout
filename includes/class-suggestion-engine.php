@@ -163,6 +163,11 @@ class SuggestionEngine {
      * @return bool|\WP_Error
      */
     public function apply_suggestion( int $id ) {
+        // Capability check: only users with manage_options can apply suggestions.
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return new \WP_Error( 'forbidden', 'You do not have permission to apply suggestions.' );
+        }
+
         global $wpdb;
 
         if ( $id < 1 ) {
