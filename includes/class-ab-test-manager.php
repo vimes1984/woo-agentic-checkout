@@ -1,7 +1,6 @@
 <?php
 namespace WooAgenticCheckout;
 
-/** @noinspection PhpUnused */
 
 
 defined( 'ABSPATH' ) || exit;
