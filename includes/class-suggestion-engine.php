@@ -432,8 +432,8 @@ class SuggestionEngine {
      * Set a template override.
      */
     private function set_template_override( array $data ): bool {
-        $template = $data['template'] ?? '';
-        $content  = $data['content'] ?? '';
+        $template = isset( $data['template'] ) ? sanitize_key( $data['template'] ) : '';
+        $content  = isset( $data['content'] ) ? wp_kses_post( $data['content'] ) : '';
         if ( empty( $template ) || empty( $content ) ) {
             return false;
         }
@@ -446,9 +446,14 @@ class SuggestionEngine {
      * Change a plugin/WooCommerce setting.
      */
     private function change_setting( array $data ): bool {
-        $option = $data['option'] ?? '';
-        $value  = $data['value'] ?? '';
+        $option = isset( $data['option'] ) ? sanitize_key( $data['option'] ) : '';
+        $value  = isset( $data['value'] ) ? sanitize_text_field( $data['value'] ) : '';
         if ( empty( $option ) ) {
+            return false;
+        }
+
+        // Only allow changes to wac_* prefixed options for security.
+        if ( ! str_starts_with( $option, 'wac_' ) ) {
             return false;
         }
 
