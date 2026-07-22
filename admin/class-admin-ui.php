@@ -364,8 +364,10 @@ class AdminUI {
                                     <td>
                                         <?php
                                         if ( ! empty( $agent['enabled'] ) ) {
+                                            echo '<span class="wac-status-dot wac-status-dot--active" aria-hidden="true"></span>';
                                             echo $this->badge( 'active', __( 'Active', 'woo-agentic-checkout' ), true );
                                         } else {
+                                            echo '<span class="wac-status-dot wac-status-dot--inactive" aria-hidden="true"></span>';
                                             echo $this->badge( 'inactive', __( 'Disabled', 'woo-agentic-checkout' ), true );
                                         }
                                         ?>
@@ -720,8 +722,10 @@ class AdminUI {
                                 <td>
                                     <?php
                                     if ( ! empty( $agent['enabled'] ) ) {
+                                        echo '<span class="wac-status-dot wac-status-dot--active" aria-hidden="true"></span>';
                                         echo $this->badge( 'active', __( 'Enabled', 'woo-agentic-checkout' ), true );
                                     } else {
+                                        echo '<span class="wac-status-dot wac-status-dot--inactive" aria-hidden="true"></span>';
                                         echo $this->badge( 'inactive', __( 'Disabled', 'woo-agentic-checkout' ), true );
                                     }
                                     ?>

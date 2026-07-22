@@ -1626,4 +1626,31 @@ html {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+
+    .widefat tbody tr {
+        page-break-inside: avoid;
+    }
+
+    .wac-variant-row td {
+        padding-left: 24px !important;
+    }
+
+    .wac-progress-bar {
+        border: 1px solid #ccc;
+        background: #f5f5f5 !important;
+    }
+
+    .wac-progress-bar__fill {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .wac-status-bar {
+        border: 1px solid #ccc;
+    }
+
+    .wac-status-dot--active {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 }

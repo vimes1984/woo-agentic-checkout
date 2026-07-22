@@ -22,6 +22,7 @@
             confirmApply:  'Apply this suggestion to your checkout?',
             confirmReject: 'Reject this suggestion? It will be dismissed permanently.',
             rejectReason:  'Reason for rejection (optional):',
+            unsavedWarning: 'You have unsaved settings changes.',
             loading:       'Loading\u2026',
             applying:      'Applying\u2026',
             rejecting:     'Rejecting\u2026',
@@ -66,6 +67,7 @@
             this.bindFormValidation();
             this.bindBatchDismiss();
             this.bindTabFocus();
+            this.bindUnsavedChangesWarning();
             this.addAriaLiveRegion();
 
             // Auto-focus the first filter input on page load for quicker keyboard nav.
@@ -1229,6 +1231,42 @@
             var container = document.querySelector('.wac-toast-container');
             if (container) {
                 observer.observe(container, { childList: true, subtree: true });
+            }
+        },
+
+        /**
+         * Warn user before leaving settings with unsaved changes.
+         */
+        bindUnsavedChangesWarning: function () {
+            var self = this;
+            var formDirty = false;
+
+            $(document).on('change', '.wac-settings-form input, .wac-settings-form select, .wac-settings-form textarea', function () {
+                formDirty = true;
+            });
+
+            $(document).on('submit', '.wac-settings-form', function () {
+                formDirty = false;
+            });
+
+            $(window).on('beforeunload', function () {
+                if (formDirty) {
+                    return self.__('unsavedWarning') || 'You have unsaved changes.';
+                }
+            });
+        },
+
+        /**
+         * Log AJAX errors with detailed info to console for debugging.
+         */
+        logAjaxError: function (action, jqXHR, textStatus) {
+            if (window.console && window.console.warn) {
+                window.console.warn('WAC AJAX Error [' + action + ']:', {
+                    status: jqXHR.status,
+                    statusText: jqXHR.statusText,
+                    responseText: jqXHR.responseText ? jqXHR.responseText.substring(0, 200) : '',
+                    textStatus: textStatus
+                });
             }
         },
 
