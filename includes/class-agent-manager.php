@@ -325,6 +325,9 @@ class AgentManager {
      * @return array
      */
     public function manual_run( $key ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return array( 'error' => 'Insufficient permissions.' );
+        }
         if ( ! isset( $this->agents[ $key ] ) ) {
             $safe_key = is_string( $key ) ? sanitize_key( $key ) : 'invalid';
             return array( 'error' => "Unknown agent: {$safe_key}" );

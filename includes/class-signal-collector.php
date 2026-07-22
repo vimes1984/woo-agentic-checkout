@@ -53,15 +53,29 @@ class SignalCollector {
             return false;
         }
 
+        // Sanitize GA4 parameter values: only strings and numbers allowed, max 100 chars per value.
+        $sanitized_params = array();
+        $defaults = array(
+            'currency' => get_woocommerce_currency(),
+            'plugin'   => 'woo-agentic-checkout',
+        );
+        $merged = wp_parse_args( $params, $defaults );
+        foreach ( $merged as $key => $value ) {
+            $sanitized_key = sanitize_key( $key );
+            if ( is_scalar( $value ) ) {
+                $sanitized_params[ $sanitized_key ] = substr( (string) $value, 0, 100 );
+            } elseif ( is_array( $value ) || is_object( $value ) ) {
+                // Skip non-scalar values — GA4 Measurement Protocol only accepts scalars.
+                continue;
+            }
+        }
+
         $payload = array(
             'client_id' => md5( session_id() ?: uniqid( 'ga4_', true ) ),
             'events'    => array(
                 array(
                     'name'   => $event_name,
-                    'params' => wp_parse_args( $params, array(
-                        'currency' => get_woocommerce_currency(),
-                        'plugin'   => 'woo-agentic-checkout',
-                    )),
+                    'params' => $sanitized_params,
                 ),
             ),
         );
