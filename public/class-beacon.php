@@ -47,15 +47,27 @@ class Beacon {
     }
 
     /**
+     * Cached experiment data for this session.
+     *
+     * @var array|null
+     */
+    private $cached_experiment_data = null;
+
+    /**
      * Get experiment assignment data for the current session.
      *
      * @return array
      */
     private function get_experiment_data(): array {
+        if ( null !== $this->cached_experiment_data ) {
+            return $this->cached_experiment_data;
+        }
+
         $ab_manager = new \WooAgenticCheckout\ABTestManager();
         $variants   = $ab_manager->get_session_variants();
 
         if ( empty( $variants ) ) {
+            $this->cached_experiment_data = array();
             return array();
         }
 
@@ -67,6 +79,43 @@ class Beacon {
             );
         }
 
+        $this->cached_experiment_data = $data;
         return $data;
+    }
+
+    /**
+     * AJAX handler for wac_beacon endpoint.
+     * Verifies nonce, stores event data.
+     */
+    public function handle_ajax() {
+        // Verify nonce.
+        $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'wac_beacon_nonce' ) ) {
+            wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
+        }
+
+        $event   = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
+        $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
+        $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '{}';
+        $data    = json_decode( $raw_data, true );
+
+        if ( ! is_array( $data ) ) {
+            $data = array();
+        }
+
+        if ( empty( $event ) || empty( $session ) ) {
+            wp_send_json_error( array( 'message' => 'Missing required fields.' ), 400 );
+        }
+
+        /**
+         * Fires when a beacon event is received.
+         *
+         * @param string $event   Event type.
+         * @param string $session Session identifier.
+         * @param array  $data    Event payload.
+         */
+        do_action( 'wac_beacon_event', $event, $session, $data );
+
+        wp_send_json_success( array( 'logged' => true ) );
     }
 }

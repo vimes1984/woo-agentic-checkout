@@ -43,6 +43,23 @@ class ConversionAnalyzer {
     }
 
     /**
+     * Agent capabilities for introspection.
+     *
+     * @return array{id: string, label: string, revision: string, llm_dependent: bool, schedule: string, data_sources: string[]}
+     */
+    public function get_capabilities(): array {
+        return array(
+            'id'             => 'conversion_analyzer',
+            'label'          => $this->get_label(),
+            'revision'       => self::REVISION,
+            'llm_dependent'  => true,
+            'schedule'       => 'daily',
+            'data_sources'   => array( 'orders', 'funnel', 'experiments' ),
+            'description'    => 'Analyses conversion rate changes and attributes them to experiments, external factors, or regressions.',
+        );
+    }
+
+    /**
      * Execute agent run.
      *
      * @return array Analysis results with standardised format (success, actions, errors, summary).
