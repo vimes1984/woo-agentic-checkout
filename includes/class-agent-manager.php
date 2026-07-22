@@ -25,6 +25,25 @@ class AgentManager {
     private $services;
 
     /**
+     * Tracks currently running agents to prevent concurrent runs.
+     *
+     * @var array<string, bool>
+     */
+    private $running_agents = array();
+
+    /**
+     * Consecutive failure counts per agent.
+     *
+     * @var array<string, int>
+     */
+    private $failure_counts = array();
+
+    /**
+     * Alert threshold for consecutive failures.
+     */
+    const FAILURE_ALERT_THRESHOLD = 3;
+
+    /**
      * @param LLMClient         $llm
      * @param SignalCollector   $signals
      * @param ABTestManager     $ab
@@ -43,6 +62,7 @@ class AgentManager {
         $logger
     ) {
         $this->services = compact( 'llm', 'signals', 'ab', 'healer', 'suggest', 'settings', 'logger' );
+        $this->failure_counts = get_option( 'wac_agent_failure_counts', array() );
         $this->register_agents();
     }
 

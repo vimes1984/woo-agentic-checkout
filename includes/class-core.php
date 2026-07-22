@@ -316,11 +316,11 @@ class Core {
     public function rest_status( \WP_REST_Request $request ) {
         return rest_ensure_response( array(
             'version'       => WAC_VERSION,
-            'activeAgents'  => $this->services['agents']->get_status(),
-            'activeTests'   => $this->services['ab']->get_active_experiments(),
-            'conversion24h' => $this->services['signals']->get_recent_conversion_rate( DAY_IN_SECONDS ),
-            'healCount'     => $this->services['healer']->get_total_heals(),
-            'pendingSuggestions' => $this->services['suggest']->get_pending_count(),
+            'activeAgents'  => isset( $this->services['agents'] ) ? $this->services['agents']->get_status() : array(),
+            'activeTests'   => isset( $this->services['ab'] ) ? $this->services['ab']->get_active_experiments() : array(),
+            'conversion24h' => isset( $this->services['signals'] ) ? $this->services['signals']->get_recent_conversion_rate( DAY_IN_SECONDS ) : 0.0,
+            'healCount'     => isset( $this->services['healer'] ) ? $this->services['healer']->get_total_heals() : 0,
+            'pendingSuggestions' => isset( $this->services['suggest'] ) ? $this->services['suggest']->get_pending_count() : 0,
         ) );
     }
 
