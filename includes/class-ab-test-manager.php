@@ -337,6 +337,8 @@ class ABTestManager {
         }
 
         $experiment['variants'] = $this->get_variants( $id );
+        $experiment['runtime_days'] = $this->get_runtime_days( $id );
+        $experiment['is_running'] = self::STATUS_ACTIVE === $experiment['status'];
         return $experiment;
     }
 

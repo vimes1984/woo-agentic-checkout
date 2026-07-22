@@ -369,7 +369,9 @@ PROMPT;
                             ),
                         ),
                         'required' => array( 'actions' ),
-                    )
+                        'additionalProperties' => false,
+                    ),
+                    'additionalProperties' => false,
                 );
 
                 return $result['actions'] ?? array();
@@ -512,7 +514,9 @@ PROMPT;
                         ),
                     ),
                     'required' => array( 'actions' ),
-                )
+                    'additionalProperties' => false,
+                ),
+                'additionalProperties' => false,
             );
 
             return $result['actions'] ?? array();
