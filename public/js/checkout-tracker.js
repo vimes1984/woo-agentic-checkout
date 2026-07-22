@@ -286,6 +286,14 @@
     // Boot on DOM ready
     $(document).ready(function () {
         WACBeacon.init();
+
+        // Watch for dynamically-added checkout fields.
+        var checkoutEl = document.querySelector('.woocommerce-checkout');
+        if (checkoutEl && window.MutationObserver) {
+            (new MutationObserver(function () {
+                WACBeacon._bindFieldEvents();
+            })).observe(checkoutEl, { childList: true, subtree: true });
+        }
     });
 
 })(jQuery);

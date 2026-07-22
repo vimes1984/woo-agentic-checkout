@@ -32,6 +32,13 @@ class AgentManager {
     private $running_agents = array();
 
     /**
+     * Last run timestamps per agent for cooldown enforcement.
+     *
+     * @var array<string, float>
+     */
+    private $last_run_times = array();
+
+    /**
      * Consecutive failure counts per agent.
      *
      * @var array<string, int>
@@ -110,6 +117,25 @@ class AgentManager {
                 continue;
             }
 
+            // ── Cooldown check ───────────────────────────────────────
+            $last_run = $this->last_run_times[ $key ] ?? 0;
+            if ( ( microtime( true ) - $last_run ) < self::AGENT_COOLDOWN_SECONDS ) {
+                $remaining = round( self::AGENT_COOLDOWN_SECONDS - ( microtime( true ) - $last_run ), 1 );
+                $this->services['logger']->info( 'agent_cooldown', array(
+                    'agent'     => $key,
+                    'remaining' => $remaining,
+                    'note'      => "Agent {$key} skipped due to cooldown ({$remaining}s remaining).",
+                ) );
+                $results[ $key ] = array(
+                    'success'  => false,
+                    'actions'  => 0,
+                    'errors'   => array(),
+                    'summary'  => "Skipped: agent '{$key}' is in cooldown ({$remaining}s remaining).",
+                    'cooldown' => $remaining,
+                );
+                continue;
+            }
+
             // ── Concurrent run guard ────────────────────────────────
             if ( isset( $this->running_agents[ $key ] ) && true === $this->running_agents[ $key ] ) {
                 $this->services['logger']->warning( 'agent_manager', "Agent {$key} is already running — skipping." );
@@ -141,6 +167,9 @@ class AgentManager {
                 // Track success — reset failure count.
                 $this->failure_counts[ $key ] = 0;
                 $this->persist_failure_counts();
+
+                // Update last run time for cooldown.
+                $this->last_run_times[ $key ] = microtime( true );
 
                 $results[ $key ] = $result;
 
