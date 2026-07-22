@@ -95,6 +95,15 @@ class ConversionAnalyzer {
         $user_prompt   = $this->build_user_prompt( $analysis_data );
         $schema        = $this->get_output_schema();
 
+        // Token budget check: warn if prompt is approaching context window limits.
+        $combined_len = strlen( $system_prompt ) + strlen( $user_prompt );
+        if ( $combined_len > 80000 ) {
+            $logger->warning( 'conversion_analyzer_large_prompt', array(
+                'char_length' => $combined_len,
+                'note'        => 'Prompt is large; may approach context window limit.',
+            ) );
+        }
+
         try {
             $result = $llm->analyze( $system_prompt, $user_prompt, $schema );
 

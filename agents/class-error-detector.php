@@ -375,6 +375,8 @@ PROMPT;
 
             return $result['analyses'] ?? array();
         } catch ( \Exception $e ) {
+            // Log the failure so we can track consecutive LLM failures.
+            do_action( 'wac_log_warning', 'error_detector_llm_failed', $e->getMessage() );
             return array();
         }
     }
