@@ -170,13 +170,20 @@ class ErrorHandler {
             return;
         }
 
-        // No recursion guard needed — this runs once on shutdown.
+        // Recursion guard: if safe_log triggers another fatal during shutdown, bail.
+        if ( self::$handling ) {
+            return;
+        }
+        self::$handling = true;
+
         self::safe_log( 'fatal_error', array(
             'type'    => 'fatal',
             'message' => $error['message'] ?? '',
             'file'    => self::short_path( $error['file'] ?? '' ),
             'line'    => $error['line'] ?? 0,
         ) );
+
+        self::$handling = false;
     }
 
     /**
