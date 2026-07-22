@@ -144,6 +144,11 @@ class ConversionAnalyzer {
         try {
             $result = $llm->analyze( $system_prompt, $user_prompt, $schema );
 
+            // Guard: ensure result is an array before accessing keys.
+            if ( ! is_array( $result ) ) {
+                $result = array( 'cr_assessment' => 'Analysis returned unexpected format.' );
+            }
+
             // Log analysis.
             $logger->info( 'conversion_analysis', array(
                 'cr_24h'       => $orders_24h['conversion_rate'],
