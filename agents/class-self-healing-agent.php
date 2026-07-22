@@ -1,0 +1,373 @@
+<?php
+namespace WooAgenticCheckout\Agents;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Self-Healing Agent
+ *
+ * Responds to error detector alerts and performs autonomous healing actions
+ * within configured permission boundaries. Also does passive health scans.
+ *
+ * @since 0.1.0-alpha
+ */
+class SelfHealingAgent {
+
+    /**
+     * @var array Service dependencies.
+     */
+    private $services;
+
+    /**
+     * @param array $services
+     */
+    public function __construct( array $services ) {
+        $this->services = $services;
+    }
+
+    /**
+     * Agent label.
+     *
+     * @return string
+     */
+    public function get_label(): string {
+        return 'Self-Healing Agent';
+    }
+
+    /**
+     * Execute agent run — health scan + try to fix anything broken.
+     *
+     * @return array Healing results.
+     */
+    public function run(): array {
+        $healer    = $this->services['healer'];
+        $signals   = $this->services['signals'];
+        $logger    = $this->services['logger'];
+        $settings  = $this->services['settings'];
+        $llm       = $this->services['llm'];
+
+        $permission = $settings->get_heal_permission();
+
+        if ( 'monitor' === $permission ) {
+            $logger->info( 'self_heal_monitor_only', array() );
+            return array( 'mode' => 'monitor', 'healed' => 0 );
+        }
+
+        $results = array(
+            'healed'          => 0,
+            'failed'          => 0,
+            'actions'         => array(),
+            'health_checks'   => array(),
+        );
+
+        // ─── Health Checks ─────────────────────────────────────
+
+        $health_checks = $this->run_health_checks();
+        $results['health_checks'] = $health_checks;
+
+        $failing = array_filter( $health_checks, function ( $check ) {
+            return ! $check['passed'];
+        } );
+
+        if ( ! empty( $failing ) ) {
+            $logger->warning( 'health_checks_failing', array(
+                'count'  => count( $failing ),
+                'checks' => array_keys( $failing ),
+            ) );
+
+            // Try LLM-assisted healing for failing checks.
+            $heal_plan = $this->build_heal_plan( $failing, $llm );
+
+            foreach ( $heal_plan as $plan ) {
+                $result = $healer->attempt_heal(
+                    $plan['issue_id'] ?? uniqid( 'heal_' ),
+                    $plan['action'],
+                    $plan['params'] ?? array(),
+                    $permission
+                );
+
+                if ( $result['success'] ) {
+                    $results['healed']++;
+                } else {
+                    $results['failed']++;
+                }
+
+                $results['actions'][] = $result;
+            }
+        }
+
+        // ─── Recent Error Response ─────────────────────────────
+
+        $recent_errors = $signals->get_recent_errors( 1, 10 );
+
+        if ( ! empty( $recent_errors ) && empty( $failing ) ) {
+            $heal_plan = $this->build_heal_plan_from_errors( $recent_errors, $llm );
+
+            foreach ( $heal_plan as $plan ) {
+                $result = $healer->attempt_heal(
+                    $plan['issue_id'] ?? uniqid( 'heal_' ),
+                    $plan['action'],
+                    $plan['params'] ?? array(),
+                    $permission
+                );
+
+                if ( $result['success'] ) {
+                    $results['healed']++;
+                } else {
+                    $results['failed']++;
+                }
+
+                $results['actions'][] = $result;
+            }
+        }
+
+        $logger->info( 'self_heal_run', array(
+            'health_checked' => count( $health_checks ),
+            'health_passing' => count( $health_checks ) - count( $failing ),
+            'healed'         => $results['healed'],
+            'failed'         => $results['failed'],
+            'permission'     => $permission,
+        ) );
+
+        return $results;
+    }
+
+    /**
+     * Run internal health checks.
+     *
+     * @return array<string, array{passed: bool, detail: string}>
+     */
+    private function run_health_checks(): array {
+        $checks = array();
+
+        // 1. Checkout page exists and is published.
+        $checkout_id = (int) get_option( 'woocommerce_checkout_page_id', 0 );
+        $checks['checkout_page'] = array(
+            'passed' => $checkout_id > 0 && 'publish' === get_post_status( $checkout_id ),
+            'detail' => $checkout_id ? "Checkout page ID: {$checkout_id}" : 'No checkout page set',
+        );
+
+        // 2. WooCommerce session handler works.
+        $checks['wc_session'] = array(
+            'passed' => null !== WC()->session,
+            'detail' => null !== WC()->session ? 'Session handler active' : 'Session handler missing',
+        );
+
+        // 3. Cart is accessible.
+        $checks['wc_cart'] = array(
+            'passed' => function_exists( 'WC' ) && null !== WC()->cart,
+            'detail' => null !== WC()->cart ? 'Cart active' : 'Cart unavailable',
+        );
+
+        // 4. Database tables exist.
+        global $wpdb;
+        $tables = array(
+            $wpdb->prefix . 'wac_logs',
+            $wpdb->prefix . 'wac_ab_experiments',
+            $wpdb->prefix . 'wac_suggestions',
+        );
+
+        foreach ( $tables as $table ) {
+            $short = str_replace( $wpdb->prefix, '', $table );
+            $checks["db_table_{$short}"] = array(
+                'passed' => (bool) $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ),
+                'detail' => "Table {$short} " . ( $checks["db_table_{$short}"] ?? false ? 'exists' : 'missing' ),
+            );
+        }
+
+        // 5. LLM connection is configured.
+        $llm_provider = get_option( 'wac_llm_provider', 'openai' );
+        $llm_key      = get_option( 'wac_llm_api_key', '' );
+
+        $checks['llm_config'] = array(
+            'passed' => ! empty( $llm_key ) || 'ollama' === $llm_provider,
+            'detail' => empty( $llm_key ) && 'ollama' !== $llm_provider
+                ? 'LLM API key not configured'
+                : "Provider: {$llm_provider}",
+        );
+
+        // 6. Memory / no OOM.
+        $mem_limit = $this->get_php_memory_limit();
+        $checks['php_memory'] = array(
+            'passed' => $mem_limit >= 128 * 1024 * 1024,
+            'detail' => "PHP memory limit: " . size_format( $mem_limit ),
+        );
+
+        // 7. WP-Cron scheduled jobs.
+        $next_tick = wp_next_scheduled( 'wac_agent_tick' );
+        $checks['cron_jobs'] = array(
+            'passed' => false !== $next_tick,
+            'detail' => $next_tick
+                ? 'Agent tick scheduled at ' . gmdate( 'Y-m-d H:i:s', $next_tick )
+                : 'Agent tick NOT scheduled (check deactivation hook)',
+        );
+
+        return $checks;
+    }
+
+    /**
+     * Build a healing plan from failing health checks using LLM.
+     *
+     * @param array      $failing
+     * @param LLMClient  $llm
+     *
+     * @return array
+     */
+    private function build_heal_plan( array $failing, $llm ): array {
+        if ( count( $failing ) > 1 ) {
+            $system = <<<'PROMPT'
+You are a WooCommerce site reliability agent. Several health checks are failing.
+For each failing check, recommend the single most effective action to restore health.
+
+Possible actions: rollback_setting, revert_template, disable_plugin, clear_cache,
+toggle_feature, patch_javascript, patch_css, escalate.
+
+Output JSON with an array of heal actions, each with: issue_id, action, params, reasoning.
+PROMPT;
+
+            try {
+                $result = $llm->analyze(
+                    $system,
+                    wp_json_encode( array( 'failing_checks' => $failing ), JSON_PRETTY_PRINT ),
+                    array(
+                        'type'       => 'object',
+                        'properties' => array(
+                            'actions' => array(
+                                'type'  => 'array',
+                                'items' => array(
+                                    'type'       => 'object',
+                                    'properties' => array(
+                                        'issue_id'  => array( 'type' => 'string' ),
+                                        'action'    => array( 'type' => 'string' ),
+                                        'params'    => array( 'type' => 'object' ),
+                                        'reasoning' => array( 'type' => 'string' ),
+                                    ),
+                                    'required' => array( 'issue_id', 'action' ),
+                                ),
+                            ),
+                        ),
+                        'required' => array( 'actions' ),
+                    )
+                );
+
+                return $result['actions'] ?? array();
+            } catch ( \Exception $e ) {
+                // Fallback: predefined actions per check type.
+                return $this->fallback_heal_plan( $failing );
+            }
+        }
+
+        return $this->fallback_heal_plan( $failing );
+    }
+
+    /**
+     * Fallback healing plan when LLM is unavailable.
+     *
+     * @param array $failing
+     *
+     * @return array
+     */
+    private function fallback_heal_plan( array $failing ): array {
+        $plan = array();
+
+        foreach ( $failing as $key => $check ) {
+            $action = 'escalate';
+            $params = array( 'check' => $key, 'detail' => $check['detail'] ?? '' );
+
+            // Known fixes for common issues.
+            if ( false !== strpos( $key, 'db_table' ) ) {
+                $action = 'toggle_feature';
+                $params = array( 'action' => 'repair_tables' );
+            }
+
+            if ( 'checkout_page' === $key ) {
+                $action = 'rollback_setting';
+                $params = array(
+                    'option' => 'woocommerce_checkout_page_id',
+                    'note'   => 'Checkout page missing, may need manual recreation',
+                );
+            }
+
+            if ( 'cron_jobs' === $key ) {
+                $action = 'toggle_feature';
+                $params = array( 'action' => 'reschedule_cron' );
+            }
+
+            $plan[] = array(
+                'issue_id' => 'hc_' . $key,
+                'action'   => $action,
+                'params'   => $params,
+            );
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Build a healing plan from recent errors using LLM.
+     */
+    private function build_heal_plan_from_errors( array $errors, $llm ): array {
+        $system = <<<'PROMPT'
+You are a WooCommerce self-healing agent. Recent checkout errors have been detected.
+For each distinct error, recommend the single most likely fix.
+
+Prioritise non-disruptive actions first. Use 'escalate' only for unknown errors.
+
+Output JSON with array of: issue_id, action, params, reasoning.
+PROMPT;
+
+        try {
+            $result = $llm->analyze(
+                $system,
+                wp_json_encode( array( 'recent_errors' => $errors ), JSON_PRETTY_PRINT ),
+                array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'actions' => array(
+                            'type'  => 'array',
+                            'items' => array(
+                                'type'       => 'object',
+                                'properties' => array(
+                                    'issue_id'  => array( 'type' => 'string' ),
+                                    'action'    => array( 'type' => 'string' ),
+                                    'params'    => array( 'type' => 'object' ),
+                                    'reasoning' => array( 'type' => 'string' ),
+                                ),
+                                'required' => array( 'issue_id', 'action' ),
+                            ),
+                        ),
+                    ),
+                    'required' => array( 'actions' ),
+                )
+            );
+
+            return $result['actions'] ?? array();
+        } catch ( \Exception $e ) {
+            return array();
+        }
+    }
+
+    /**
+     * Get PHP memory limit in bytes.
+     *
+     * @return int
+     */
+    private function get_php_memory_limit(): int {
+        $limit = ini_get( 'memory_limit' );
+        if ( '-1' === $limit ) {
+            return PHP_INT_MAX;
+        }
+        $unit = strtolower( substr( $limit, -1 ) );
+        $val  = (int) $limit;
+        switch ( $unit ) {
+            case 'g':
+                return $val * 1024 * 1024 * 1024;
+            case 'm':
+                return $val * 1024 * 1024;
+            case 'k':
+                return $val * 1024;
+            default:
+                return $val;
+        }
+    }
+}

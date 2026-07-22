@@ -1,0 +1,40 @@
+{
+    "name": "vimes1984/woo-agentic-checkout",
+    "description": "LLM-powered agentic checkout optimisation for WooCommerce. Self-healing, auto A/B testing, signal-driven improvements.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Kevin the Minion",
+            "homepage": "https://github.com/vimes1984"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "composer/installers": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "wp-coding-standards/wpcs": "^3.0"
+    },
+    "autoload": {
+        "classmap": [
+            "includes/",
+            "admin/",
+            "public/",
+            "agents/",
+            "database/"
+        ]
+    },
+    "scripts": {
+        "phpcs": "phpcs --standard=WordPress --extensions=php .",
+        "phpcbf": "phpcbf --standard=WordPress --extensions=php .",
+        "test": "phpunit"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

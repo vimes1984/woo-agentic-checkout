@@ -1,0 +1,397 @@
+<?php
+namespace WooAgenticCheckout;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Core plugin class — lifecycle, hook registration, and service wiring.
+ *
+ * @since 0.1.0-alpha
+ */
+class Core {
+
+    /**
+     * Singleton instance.
+     *
+     * @var self
+     */
+    private static $instance = null;
+
+    /**
+     * Registered service instances.
+     *
+     * @var array<string, object>
+     */
+    private $services = array();
+
+    /**
+     * @return self
+     */
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Private constructor — use get_instance().
+     */
+    private function __construct() {}
+
+    /**
+     * Boot the plugin.
+     */
+    public function init() {
+        $this->load_dependencies();
+        $this->register_hooks();
+        $this->init_services();
+    }
+
+    /**
+     * Load all includes.
+     */
+    private function load_dependencies() {
+        // Files are autoloaded — nothing else needed.
+        // Schema is loaded explicitly for activation.
+        require_once WAC_PATH . 'database/class-schema.php';
+    }
+
+    /**
+     * Register WordPress hooks.
+     */
+    private function register_hooks() {
+        // Activation: create DB tables.
+        register_activation_hook( WAC_FILE, array( $this, 'activate' ) );
+
+        // Admin hooks.
+        add_action( 'admin_menu', array( $this, 'register_admin_menu' ), 99 );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+
+        // Public hooks.
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_assets' ) );
+
+        // AJAX endpoints.
+        add_action( 'wp_ajax_wac_beacon', array( $this, 'ajax_beacon' ) );
+        add_action( 'wp_ajax_nopriv_wac_beacon', array( $this, 'ajax_beacon' ) );
+
+        // Cron / agent hooks.
+        add_action( 'wac_agent_tick', array( $this, 'agent_tick' ) );
+        add_action( 'wac_daily_agent_run', array( $this, 'daily_agent_run' ) );
+        add_action( 'wac_weekly_suggestion_run', array( $this, 'weekly_suggestion_run' ) );
+
+        // REST API endpoints.
+        add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+
+        // Checkout modification hooks.
+        add_filter( 'woocommerce_checkout_fields', array( $this, 'maybe_modify_checkout_fields' ), 100 );
+        add_action( 'woocommerce_before_checkout_form', array( $this, 'maybe_inject_checkout_template' ), 10 );
+        add_action( 'woocommerce_after_checkout_form', array( $this, 'inject_experiment_tracker' ), 10 );
+
+        // Error monitoring.
+        add_action( 'woocommerce_checkout_process', array( $this, 'capture_checkout_errors' ), 999 );
+
+        // Settings link on plugins page.
+        add_filter( 'plugin_action_links_' . WAC_BASENAME, array( $this, 'plugin_action_links' ) );
+    }
+
+    /**
+     * Initialize all service instances.
+     */
+    private function init_services() {
+        $this->services['logger']    = new Logger();
+        $this->services['settings']  = new Settings();
+        $this->services['llm']       = new LLMClient( $this->services['settings'] );
+        $this->services['signals']   = new SignalCollector();
+        $this->services['ab']        = new ABTestManager();
+        $this->services['healer']    = new SelfHealer();
+        $this->services['suggest']   = new SuggestionEngine( $this->services['llm'] );
+        $this->services['agents']    = new AgentManager(
+            $this->services['llm'],
+            $this->services['signals'],
+            $this->services['ab'],
+            $this->services['healer'],
+            $this->services['suggest'],
+            $this->services['settings'],
+            $this->services['logger']
+        );
+
+        if ( is_admin() ) {
+            $this->services['admin'] = new AdminUI(
+                $this->services['agents'],
+                $this->services['ab'],
+                $this->services['settings'],
+                $this->services['suggest']
+            );
+        }
+
+        $this->services['modifier'] = new CheckoutModifier( $this->services['ab'] );
+        $this->services['beacon']   = new Beacon();
+    }
+
+    /**
+     * Activation: create/upgrade DB tables.
+     */
+    public function activate() {
+        $schema = new Schema();
+        $schema->create_tables();
+
+        // Schedule daily and weekly runs.
+        if ( ! wp_next_scheduled( 'wac_daily_agent_run' ) ) {
+            wp_schedule_event( time(), 'daily', 'wac_daily_agent_run' );
+        }
+        if ( ! wp_next_scheduled( 'wac_weekly_suggestion_run' ) ) {
+            wp_schedule_event( time(), 'weekly', 'wac_weekly_suggestion_run' );
+        }
+    }
+
+    /**
+     * Register admin menu pages.
+     */
+    public function register_admin_menu() {
+        add_submenu_page(
+            'woocommerce',
+            __( 'Agentic Checkout', 'woo-agentic-checkout' ),
+            __( 'Agentic Checkout 🍌', 'woo-agentic-checkout' ),
+            'manage_woocommerce',
+            'wac-dashboard',
+            array( $this, 'render_admin_page' )
+        );
+    }
+
+    /**
+     * Render admin page shell.
+     */
+    public function render_admin_page() {
+        if ( isset( $this->services['admin'] ) ) {
+            $this->services['admin']->render_page();
+        }
+    }
+
+    /**
+     * Enqueue admin CSS/JS.
+     */
+    public function enqueue_admin_assets( $hook ) {
+        if ( false === strpos( $hook, 'wac-' ) ) {
+            return;
+        }
+        wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), WAC_VERSION );
+        wp_enqueue_script( 'wac-admin', WAC_URL . 'admin/js/admin.js', array( 'jquery', 'wp-util' ), WAC_VERSION, true );
+        wp_localize_script( 'wac-admin', 'wacData', array(
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'wac_admin' ),
+            'restUrl' => rest_url( 'wac/v1' ),
+        ) );
+    }
+
+    /**
+     * Enqueue public (checkout) assets.
+     */
+    public function enqueue_public_assets() {
+        if ( ! is_checkout() ) {
+            return;
+        }
+        wp_enqueue_script( 'wac-beacon', WAC_URL . 'public/js/checkout-tracker.js', array( 'jquery' ), WAC_VERSION, true );
+        wp_localize_script( 'wac-beacon', 'wacBeacon', array(
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'session' => md5( session_id() ?: uniqid( 'wac_', true ) ),
+            'variants' => $this->get_active_variant_assignments(),
+        ) );
+    }
+
+    // ─── Agent Ticks ──────────────────────────────────────────────
+
+    /**
+     * Hourly tick — Error Detector + Self-Healer run.
+     */
+    public function agent_tick() {
+        if ( ! isset( $this->services['agents'] ) ) {
+            return;
+        }
+        $this->services['agents']->run_agents( array( 'error_detector', 'self_healing' ) );
+    }
+
+    /**
+     * Daily run — Conversion Analyzer + AB Optimizer.
+     */
+    public function daily_agent_run() {
+        if ( ! isset( $this->services['agents'] ) ) {
+            return;
+        }
+        $this->services['agents']->run_agents( array( 'conversion_analyzer', 'ab_optimizer' ) );
+    }
+
+    /**
+     * Weekly run — Suggestion Generator.
+     */
+    public function weekly_suggestion_run() {
+        if ( ! isset( $this->services['agents'] ) ) {
+            return;
+        }
+        $this->services['agents']->run_agents( array( 'suggestion_generator' ) );
+    }
+
+    // ─── AJAX / REST ──────────────────────────────────────────────
+
+    /**
+     * Handle beacon AJAX (anonymous telemetry).
+     */
+    public function ajax_beacon() {
+        check_ajax_referer( 'wac_beacon', 'nonce' );
+
+        $event = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
+        $data  = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array();
+        $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
+
+        do_action( 'wac_beacon_event', $event, $data, $session );
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Register REST API routes.
+     */
+    public function register_rest_routes() {
+        register_rest_route( 'wac/v1', '/status', array(
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'rest_status' ),
+            'permission_callback' => function () {
+                return current_user_can( 'manage_woocommerce' );
+            },
+        ) );
+
+        register_rest_route( 'wac/v1', '/suggestions', array(
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'rest_suggestions' ),
+            'permission_callback' => function () {
+                return current_user_can( 'manage_woocommerce' );
+            },
+        ) );
+
+        register_rest_route( 'wac/v1', '/suggestions/(?P<id>\d+)/apply', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'rest_apply_suggestion' ),
+            'permission_callback' => function () {
+                return current_user_can( 'manage_woocommerce' );
+            },
+        ) );
+    }
+
+    /**
+     * GET /wac/v1/status
+     */
+    public function rest_status( \WP_REST_Request $request ) {
+        return rest_ensure_response( array(
+            'version'       => WAC_VERSION,
+            'activeAgents'  => $this->services['agents']->get_status(),
+            'activeTests'   => $this->services['ab']->get_active_experiments(),
+            'conversion24h' => $this->services['signals']->get_recent_conversion_rate( DAY_IN_SECONDS ),
+            'healCount'     => $this->services['healer']->get_total_heals(),
+            'pendingSuggestions' => $this->services['suggest']->get_pending_count(),
+        ) );
+    }
+
+    /**
+     * GET /wac/v1/suggestions
+     */
+    public function rest_suggestions() {
+        return rest_ensure_response( $this->services['suggest']->get_pending() );
+    }
+
+    /**
+     * POST /wac/v1/suggestions/{id}/apply
+     */
+    public function rest_apply_suggestion( \WP_REST_Request $request ) {
+        $id = (int) $request->get_param( 'id' );
+        $result = $this->services['suggest']->apply_suggestion( $id );
+        if ( is_wp_error( $result ) ) {
+            return rest_ensure_response( $result );
+        }
+        return rest_ensure_response( array( 'success' => true, 'message' => 'Suggestion applied.' ) );
+    }
+
+    // ─── Checkout Modification ───────────────────────────────────
+
+    /**
+     * Get variant assignments for current session.
+     *
+     * @return array<string, string>
+     */
+    private function get_active_variant_assignments() {
+        if ( ! isset( $this->services['ab'] ) ) {
+            return array();
+        }
+        return $this->services['ab']->get_session_variants();
+    }
+
+    /**
+     * Modify checkout fields per active experiment variant.
+     *
+     * @param array $fields WooCommerce checkout fields.
+     * @return array
+     */
+    public function maybe_modify_checkout_fields( $fields ) {
+        if ( isset( $this->services['modifier'] ) ) {
+            return $this->services['modifier']->modify_fields( $fields );
+        }
+        return $fields;
+    }
+
+    /**
+     * Inject alternative checkout template if experiment variant requires it.
+     */
+    public function maybe_inject_checkout_template() {
+        if ( isset( $this->services['modifier'] ) ) {
+            $this->services['modifier']->maybe_override_template();
+        }
+    }
+
+    /**
+     * Inject A/B test experiment tracking data into checkout.
+     */
+    public function inject_experiment_tracker() {
+        if ( isset( $this->services['beacon'] ) ) {
+            $this->services['beacon']->inject_tracker();
+        }
+    }
+
+    /**
+     * Capture and log checkout processing errors.
+     */
+    public function capture_checkout_errors() {
+        $errors = wc()->session ? wc()->session->get( 'wac_checkout_errors', array() ) : array();
+        if ( ! empty( $errors ) && isset( $this->services['logger'] ) ) {
+            foreach ( $errors as $error ) {
+                $this->services['logger']->error( 'checkout_validation_error', $error );
+            }
+        }
+    }
+
+    // ─── Utilities ────────────────────────────────────────────────
+
+    /**
+     * Add settings link on plugins list.
+     *
+     * @param array $links Existing action links.
+     * @return array
+     */
+    public function plugin_action_links( $links ) {
+        $settings_link = sprintf(
+            '<a href="%s">%s</a>',
+            admin_url( 'admin.php?page=wac-dashboard' ),
+            esc_html__( 'Dashboard', 'woo-agentic-checkout' )
+        );
+        array_unshift( $links, $settings_link );
+        return $links;
+    }
+
+    /**
+     * Get a registered service by key.
+     *
+     * @param string $key Service identifier.
+     * @return object|null
+     */
+    public function get_service( $key ) {
+        return isset( $this->services[ $key ] ) ? $this->services[ $key ] : null;
+    }
+}

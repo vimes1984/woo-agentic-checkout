@@ -1,0 +1,214 @@
+<?php
+namespace WooAgenticCheckout\Agents;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * AB Optimizer Agent
+ *
+ * Analyses running A/B experiments, computes Bayesian probabilities,
+ * suggests winning variants, and proposes new experiments.
+ * Runs every 6 hours or when triggered.
+ *
+ * @since 0.1.0-alpha
+ */
+class ABOptimizer {
+
+    /**
+     * @var array Service dependencies.
+     */
+    private $services;
+
+    /**
+     * @param array $services
+     */
+    public function __construct( array $services ) {
+        $this->services = $services;
+    }
+
+    /**
+     * Agent label.
+     *
+     * @return string
+     */
+    public function get_label(): string {
+        return 'A/B Optimizer';
+    }
+
+    /**
+     * Execute agent run.
+     */
+    public function run(): array {
+        $ab      = $this->services['ab'];
+        $llm     = $this->services['llm'];
+        $logger  = $this->services['logger'];
+        $signals = $this->services['signals'];
+
+        $results = array(
+            'experiments_analysed' => 0,
+            'winners_declared'     => 0,
+            'new_experiments_proposed' => 0,
+            'recommendations'      => array(),
+        );
+
+        // Get active experiments.
+        $experiments = $ab->get_active_experiments();
+
+        foreach ( $experiments as $exp ) {
+            $variants = $ab->get_variants( $exp['id'] );
+            $bayesian = $ab->bayesian_analysis( $exp['id'] );
+            $variants_ok = ! empty( $variants );
+
+            if ( ! $variants_ok ) {
+                continue;
+            }
+
+            $results['experiments_analysed']++;
+            $settings = $this->services['settings'];
+
+            // Check if any variant has enough data for a decision.
+            foreach ( $bayesian as $b ) {
+                if ( $b['prob_better'] >= ( $settings->get( 'ab_confidence_threshold', 0.95 ) * 100 ) ) {
+                    $min_conversions = (int) $settings->get( 'ab_min_conversions', 30 );
+
+                    if ( $b['conversions'] >= $min_conversions ) {
+                        $ab->declare_winner( $exp['id'], $b['variant_key'] );
+                        $results['winners_declared']++;
+                        $results['recommendations'][] = array(
+                            'experiment' => $exp['name'],
+                            'action'     => 'declared_winner',
+                            'variant'    => $b['variant_name'],
+                            'confidence' => $b['prob_better'],
+                            'lift'       => $b['lift'],
+                        );
+                        continue 2; // Move to next experiment.
+                    }
+                }
+            }
+
+            // Check if experiment should be concluded (no significant difference after enough data).
+            $max_impressions = 0;
+            foreach ( $variants as $v ) {
+                $max_impressions = max( $max_impressions, (int) $v['impressions'] );
+            }
+
+            $min_sample = (int) $settings->get( 'ab_min_sample_size', 100 );
+            if ( $max_impressions >= $min_sample * count( $variants ) ) {
+                // Check if all variants have similar conversion rates (within 5% relative).
+                $crs = array_column( $bayesian, 'cr' );
+                $max_cr = max( $crs );
+                $min_cr = min( $crs );
+
+                if ( $max_cr > 0 && ( ( $max_cr - $min_cr ) / $max_cr ) < 0.05 ) {
+                    // No clear winner — propose conclusion or new hypothesis.
+                    $ab->conclude_experiment( $exp['id'] );
+                    $results['recommendations'][] = array(
+                        'experiment' => $exp['name'],
+                        'action'     => 'concluded_no_winner',
+                        'note'       => 'No statistically significant difference found.',
+                    );
+                }
+            }
+        }
+
+        // Propose new experiment if space available.
+        $max_concurrent = (int) $settings->get( 'ab_max_concurrent', 3 );
+        $active_count   = count( $experiments );
+
+        if ( $active_count < $max_concurrent ) {
+            $new_exp = $this->propose_next_experiment();
+            if ( $new_exp ) {
+                $results['new_experiments_proposed'] = 1;
+                $results['recommendations'][] = $new_exp;
+
+                // If auto_patch or higher, auto-create the experiment.
+                $permission = $settings->get_heal_permission();
+                if ( in_array( $permission, array( 'auto_patch', 'auto_full' ), true ) ) {
+                    $ab->create_experiment(
+                        $new_exp['name'],
+                        $new_exp['description'],
+                        $new_exp['variants'],
+                        $new_exp['traffic_pct'] ?? 50
+                    );
+                }
+            }
+        }
+
+        $logger->info( 'ab_optimizer_run', $results );
+
+        return $results;
+    }
+
+    /**
+     * Propose a new experiment based on current data.
+     *
+     * @return array|null Experiment proposal or null.
+     */
+    private function propose_next_experiment(): ?array {
+        $llm    = $this->services['llm'];
+        $signals = $this->services['signals'];
+
+        $recent_orders = $signals->get_recent_orders( 168 );
+        $funnel        = $signals->get_funnel_data( 24 );
+
+        $system = <<<'PROMPT'
+You are an A/B testing expert for WooCommerce. Based on the current checkout data,
+propose ONE new experiment that has the highest potential to improve conversion rate.
+
+Focus on:
+1. The biggest funnel drop-off point
+2. Industry best practices for checkout optimisation
+3. Changes that can be implemented as a checkout field/variant experiment
+
+Provide: experiment name, hypothesis, description, and 2-3 variants (including control)
+with specific config snapshots for each.
+
+Output JSON with: name, hypothesis, description, traffic_pct, and variants array.
+Each variant needs: key, name, traffic_percent, and config object.
+PROMPT;
+
+        try {
+            $result = $llm->analyze( $system, wp_json_encode( array(
+                'orders_7d'  => $recent_orders,
+                'funnel'     => $funnel,
+                'currency'   => get_woocommerce_currency(),
+            ) ), $this->get_experiment_schema() );
+
+            // Validate the result has required fields.
+            if ( ! isset( $result['name'], $result['variants'] ) || count( $result['variants'] ) < 2 ) {
+                return null;
+            }
+
+            return $result;
+        } catch ( \Exception $e ) {
+            return null;
+        }
+    }
+
+    private function get_experiment_schema(): array {
+        return array(
+            'type'       => 'object',
+            'properties' => array(
+                'name'        => array( 'type' => 'string' ),
+                'hypothesis'  => array( 'type' => 'string' ),
+                'description' => array( 'type' => 'string' ),
+                'traffic_pct' => array( 'type' => 'integer', 'minimum' => 10, 'maximum' => 100 ),
+                'variants'    => array(
+                    'type'  => 'array',
+                    'items' => array(
+                        'type'       => 'object',
+                        'properties' => array(
+                            'key'             => array( 'type' => 'string' ),
+                            'name'            => array( 'type' => 'string' ),
+                            'traffic_percent' => array( 'type' => 'integer', 'minimum' => 10, 'maximum' => 100 ),
+                            'config'          => array( 'type' => 'object' ),
+                        ),
+                        'required' => array( 'key', 'name', 'traffic_percent', 'config' ),
+                    ),
+                    'minItems' => 2,
+                ),
+            ),
+            'required'   => array( 'name', 'hypothesis', 'description', 'variants' ),
+        );
+    }
+}

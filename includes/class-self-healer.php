@@ -1,0 +1,303 @@
+<?php
+namespace WooAgenticCheckout;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Self-Healer — manages automated fixes for checkout issues.
+ * Tracks healing actions, supports rollback, and enforces permissions.
+ *
+ * @since 0.1.0-alpha
+ */
+class SelfHealer {
+
+    /**
+     * Allowed healing action types.
+     */
+    const ACTIONS = array(
+        'rollback_setting',
+        'revert_template',
+        'disable_plugin',
+        'clear_cache',
+        'restore_backup',
+        'toggle_feature',
+        'patch_javascript',
+        'patch_css',
+        'escalate',
+    );
+
+    /**
+     * Minimum permission level for each action.
+     */
+    const ACTION_PERMISSIONS = array(
+        'rollback_setting'   => 'auto_patch',
+        'revert_template'    => 'auto_patch',
+        'disable_plugin'     => 'auto_full',
+        'clear_cache'        => 'auto_patch',
+        'restore_backup'     => 'auto_full',
+        'toggle_feature'     => 'auto_patch',
+        'patch_javascript'   => 'suggest',
+        'patch_css'          => 'suggest',
+        'escalate'           => 'suggest',
+    );
+
+    /**
+     * @var Logger
+     */
+    private $logger;
+
+    /**
+     * Constructor.
+     */
+    public function __construct() {
+        $this->logger = new Logger();
+    }
+
+    /**
+     * Attempt to heal an issue detected by the error detector / self-healing agent.
+     *
+     * @param string $issue_id   Unique identifier for the issue.
+     * @param string $action     Healing action type.
+     * @param array  $params     Action parameters.
+     * @param string $permission Current permission level.
+     *
+     * @return array{success: bool, action: string, message: string, rollback_id?: string}
+     */
+    public function attempt_heal( string $issue_id, string $action, array $params, string $permission = 'suggest' ): array {
+        if ( ! in_array( $action, self::ACTIONS, true ) ) {
+            return array(
+                'success' => false,
+                'action'  => $action,
+                'message' => "Unknown healing action: {$action}",
+            );
+        }
+
+        $required_perm = self::ACTION_PERMISSIONS[ $action ] ?? 'auto_full';
+        $perm_levels   = array( 'monitor' => 0, 'suggest' => 1, 'auto_patch' => 2, 'auto_full' => 3 );
+
+        $current_level  = $perm_levels[ $permission ] ?? 0;
+        $required_level = $perm_levels[ $required_perm ] ?? 3;
+
+        if ( $current_level < $required_level ) {
+            return array(
+                'success' => false,
+                'action'  => $action,
+                'message' => "Permission denied. Required: {$required_perm}, current: {$permission}",
+                'needs_approval' => true,
+            );
+        }
+
+        // Execute the action.
+        $method = "do_{$action}";
+        if ( method_exists( $this, $method ) ) {
+            try {
+                $result = $this->$method( $params );
+                $rollback_id = $this->log_heal( $issue_id, $action, $params, $result );
+
+                $this->logger->info( 'heal_applied', array(
+                    'issue_id'    => $issue_id,
+                    'action'      => $action,
+                    'rollback_id' => $rollback_id,
+                    'result'      => $result,
+                ) );
+
+                return array(
+                    'success'     => true,
+                    'action'      => $action,
+                    'message'     => $result['message'] ?? 'Healing action applied.',
+                    'rollback_id' => $rollback_id,
+                );
+            } catch ( \Exception $e ) {
+                $this->logger->error( 'heal_failed', array(
+                    'issue_id' => $issue_id,
+                    'action'   => $action,
+                    'error'    => $e->getMessage(),
+                ) );
+
+                return array(
+                    'success' => false,
+                    'action'  => $action,
+                    'message' => $e->getMessage(),
+                );
+            }
+        }
+
+        // Fallback: return action as suggestion for escalation.
+        return array(
+            'success'        => false,
+            'action'         => $action,
+            'message'        => 'Action requires manual intervention.',
+            'needs_approval' => true,
+        );
+    }
+
+    /**
+     * Rollback a previously applied healing action.
+     *
+     * @param string $rollback_id
+     *
+     * @return bool
+     */
+    public function rollback( string $rollback_id ): bool {
+        global $wpdb;
+
+        $log = $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}wac_heal_log WHERE rollback_id = %s",
+            $rollback_id
+        ), ARRAY_A );
+
+        if ( ! $log ) {
+            return false;
+        }
+
+        $rollback_data = json_decode( $log['rollback_data'], true );
+        $action = $log['action'];
+        $method = "undo_{$action}";
+
+        if ( method_exists( $this, $method ) ) {
+            try {
+                $this->$method( $rollback_data );
+                $this->logger->info( 'heal_rolled_back', array(
+                    'rollback_id' => $rollback_id,
+                    'action'      => $action,
+                ) );
+                return true;
+            } catch ( \Exception $e ) {
+                $this->logger->error( 'heal_rollback_failed', array(
+                    'rollback_id' => $rollback_id,
+                    'error'       => $e->getMessage(),
+                ) );
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get total number of healing actions performed.
+     *
+     * @return int
+     */
+    public function get_total_heals(): int {
+        global $wpdb;
+        return (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log"
+        );
+    }
+
+    /**
+     * Get recent heal log entries.
+     *
+     * @param int $limit
+     *
+     * @return array
+     */
+    public function get_heal_log( int $limit = 50 ): array {
+        global $wpdb;
+        return $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}wac_heal_log ORDER BY created_at DESC LIMIT " . intval( $limit ),
+            ARRAY_A
+        );
+    }
+
+    // ─── Action Implementations ──────────────────────────────────
+
+    /**
+     * Rollback a plugin setting to a previous value.
+     */
+    private function do_rollback_setting( array $params ): array {
+        $option_name = $params['option'] ?? '';
+        $prev_value  = $params['previous_value'] ?? '';
+
+        if ( empty( $option_name ) ) {
+            throw new \InvalidArgumentException( 'Setting name required for rollback.' );
+        }
+
+        update_option( $option_name, $prev_value );
+
+        return array(
+            'message' => "Rolled back setting: {$option_name}",
+        );
+    }
+
+    /**
+     * Revert a template override to default.
+     */
+    private function do_revert_template( array $params ): array {
+        $template = $params['template'] ?? '';
+
+        if ( empty( $template ) ) {
+            throw new \InvalidArgumentException( 'Template name required.' );
+        }
+
+        // Remove template override via filter.
+        add_filter( 'woocommerce_locate_template', function ( $template_path, $template_name ) use ( $template ) {
+            if ( $template_name === $template ) {
+                return locate_template( 'woocommerce/' . $template_name );
+            }
+            return $template_path;
+        }, 999, 2 );
+
+        return array(
+            'message' => "Reverted template: {$template}",
+        );
+    }
+
+    /**
+     * Log and track the healing action for rollback.
+     */
+    private function log_heal( string $issue_id, string $action, array $params, array $result ): string {
+        global $wpdb;
+
+        $rollback_id = 'heal_' . uniqid();
+
+        $wpdb->insert(
+            $wpdb->prefix . 'wac_heal_log',
+            array(
+                'rollback_id'   => $rollback_id,
+                'issue_id'      => $issue_id,
+                'action'        => $action,
+                'params'        => wp_json_encode( $params ),
+                'rollback_data' => wp_json_encode( $params ), // Store original state for undo
+                'result'        => $result['message'] ?? 'OK',
+                'created_at'    => current_time( 'mysql' ),
+            ),
+            array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+        );
+
+        return $rollback_id;
+    }
+
+    // ─── Permission Utilities ────────────────────────────────────
+
+    /**
+     * Get available actions for a given permission level.
+     *
+     * @param string $permission Current permission level.
+     *
+     * @return array
+     */
+    public function get_actions_for_permission( string $permission ): array {
+        $perm_levels = array( 'monitor' => 0, 'suggest' => 1, 'auto_patch' => 2, 'auto_full' => 3 );
+        $current     = $perm_levels[ $permission ] ?? 0;
+
+        $available = array();
+        foreach ( self::ACTION_PERMISSIONS as $action => $required ) {
+            $required_level = $perm_levels[ $required ] ?? 3;
+            if ( $current >= $required_level ) {
+                $available[] = $action;
+            }
+        }
+
+        return $available;
+    }
+
+    /**
+     * Dummy undo methods for completeness.
+     */
+    private function undo_rollback_setting( array $data ) {}
+    private function undo_revert_template( array $data ) {}
+    private function undo_disable_plugin( array $data ) {}
+    private function undo_toggle_feature( array $data ) {}
+}

@@ -1,0 +1,11 @@
+# Woo Agentic Checkout - .gitignore
+vendor/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+/.idea/
+/.vscode/
