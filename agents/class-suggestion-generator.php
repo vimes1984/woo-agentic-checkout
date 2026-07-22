@@ -186,7 +186,7 @@ class SuggestionGenerator {
             'wp_version'            => get_bloginfo( 'version' ),
             'currency'              => get_woocommerce_currency(),
             'country'               => get_option( 'woocommerce_default_country', '' ),
-            'site_url'              => home_url(),
+            'site_url'              => apply_filters( 'wac_context_site_url', home_url() ),
             '_meta'                 => array(
                 'has_orders'  => $has_orders,
                 'has_errors'  => $has_errors,
