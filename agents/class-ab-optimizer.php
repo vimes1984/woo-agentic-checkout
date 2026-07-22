@@ -54,6 +54,23 @@ class ABOptimizer {
         // Get active experiments.
         $experiments = $ab->get_active_experiments();
 
+        // Guard: if no experiments, log and return gracefully.
+        if ( empty( $experiments ) || ! is_array( $experiments ) ) {
+            $logger->info( 'ab_optimizer_no_experiments', array(
+                'note' => 'No active experiments to analyse.',
+            ) );
+            return array(
+                'success'    => true,
+                'actions'    => 0,
+                'errors'     => array(),
+                'summary'    => 'No active experiments to analyse.',
+                'experiments_analysed' => 0,
+                'winners_declared'     => 0,
+                'new_experiments_proposed' => 0,
+                'recommendations'      => array(),
+            );
+        }
+
         foreach ( $experiments as $exp ) {
             $variants = $ab->get_variants( $exp['id'] );
             $bayesian = $ab->bayesian_analysis( $exp['id'] );

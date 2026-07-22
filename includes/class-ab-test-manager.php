@@ -105,6 +105,21 @@ class ABTestManager {
             return 0;
         }
 
+        // Validate each variant has required fields.
+        foreach ( $variants as $i => $variant ) {
+            if ( empty( $variant['key'] ) || empty( $variant['name'] ) ) {
+                return 0;
+            }
+            // Validate config_snapshot is valid JSON if provided.
+            if ( isset( $variant['config'] ) && ! is_array( $variant['config'] ) ) {
+                return 0;
+            }
+            // Ensure traffic_percent is valid.
+            if ( isset( $variant['traffic_percent'] ) && ( $variant['traffic_percent'] < 0 || $variant['traffic_percent'] > 100 ) ) {
+                return 0;
+            }
+        }
+
         // Use transaction to ensure experiment + variants are inserted atomically.
         $wpdb->query( 'START TRANSACTION' );
 
@@ -743,6 +758,9 @@ class ABTestManager {
                 $control['impressions'] - $control['conversions'] + 1
             );
 
+            // Bayes Factor (BF10): evidence strength for variant > control.
+            $bf10 = $this->compute_bayes_factor( $prob_better );
+
             // Adjusted threshold: Bonferroni correction for multiple comparisons.
             $prob_threshold = $bonferroni_alpha * 100;
 
@@ -757,6 +775,8 @@ class ABTestManager {
                     ? round( ( ( $variant_cr - $control_cr ) / $control_cr ) * 100, 2 )
                     : 0,
                 'prob_better'      => round( $prob_better * 100, 2 ),
+                'bf10'             => $bf10,
+                'bf10_label'       => $bf10 >= 10 ? 'strong' : ( $bf10 >= 3 ? 'moderate' : ( $bf10 >= 1 ? 'anecdotal' : 'none' ) ),
                 'prob_threshold'   => round( $prob_threshold, 2 ),
                 'bonferroni_pass'  => ( $prob_better * 100 ) >= $prob_threshold,
                 'revenue'          => (float) $v['revenue'],
