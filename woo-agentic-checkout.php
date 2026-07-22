@@ -100,6 +100,8 @@ function wac_autoload( $class ) {
             }
         }
     }
+
+    $autoloading = false;
 }
 
 spl_autoload_register( 'wac_autoload' );

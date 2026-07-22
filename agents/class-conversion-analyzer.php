@@ -109,8 +109,18 @@ Analyse:
 2. Is the trend improving or declining compared to 7d ago?
 3. Are there funnel step drop-offs that indicate specific problems?
 4. Could a currently active experiment explain the change?
+5. If data is empty or shows zero orders, respond with a 'no_data' verdict.
 
-Output JSON with: verdict, cr_assessment, funnel_issues, likely_cause, recommendations.
+Output ONLY valid JSON matching this exact schema:
+{
+  "verdict": "healthy" | "declining" | "critical" | "no_data",
+  "cr_assessment": "string describing rate assessment",
+  "funnel_issues": ["string", "..."],
+  "likely_cause": "string with most likely cause",
+  "recommendations": ["string", "..."]
+}
+
+If there is no order data or the conversion rate is exactly 0 for 24h with no apparent cause, set verdict to "no_data" and explain why in cr_assessment.
 
 Be concise and actionable. Focus on data-backed conclusions.
 PROMPT;
