@@ -232,7 +232,7 @@ class Core {
      * Enqueue admin CSS/JS.
      */
     public function enqueue_admin_assets( $hook ) {
-        if ( false === strpos( $hook, 'wac-' ) ) {
+        if ( ! str_contains( $hook, 'wac-' ) ) {
             return;
         }
         wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), WAC_VERSION );

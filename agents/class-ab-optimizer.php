@@ -136,7 +136,15 @@ class ABOptimizer {
 
         $logger->info( 'ab_optimizer_run', $results );
 
-        return $results;
+        // Normalize to standardized result format.
+        return array(
+            'success'    => true,
+            'actions'    => $results['experiments_analysed'] + $results['new_experiments_proposed'],
+            'errors'     => array(),
+            'summary'    => $results['experiments_analysed'] . ' experiments analysed, '
+                          . $results['winners_declared'] . ' winners declared, '
+                          . $results['new_experiments_proposed'] . ' new experiments proposed.',
+        ) + $results;
     }
 
     /**

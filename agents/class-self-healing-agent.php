@@ -124,11 +124,11 @@ class SelfHealingAgent {
         }
 
         // ─── Recent Error Response ─────────────────────────────
+        // Use broader query for errors section (already fetched early for cold-start).
+        $heal_errors = $signals->get_recent_errors( 1, 10 );
 
-        $recent_errors = $signals->get_recent_errors( 1, 10 );
-
-        if ( ! empty( $recent_errors ) && empty( $failing ) ) {
-            $heal_plan = $this->build_heal_plan_from_errors( $recent_errors, $llm );
+        if ( ! empty( $heal_errors ) && empty( $failing ) ) {
+            $heal_plan = $this->build_heal_plan_from_errors( $heal_errors, $llm );
 
             foreach ( $heal_plan as $plan ) {
                 $result = $healer->attempt_heal(
@@ -144,9 +144,12 @@ class SelfHealingAgent {
                     $results['failed']++;
                 }
 
-                $results['actions'][] = $result;
+                $results['actions_taken'][] = $result;
             }
         }
+
+        $results['actions'] = $results['healed'] + $results['failed'];
+        $results['summary'] = $results['healed'] . ' issues healed, ' . $results['failed'] . ' failures.';
 
         $logger->info( 'self_heal_run', array(
             'health_checked' => count( $health_checks ),
