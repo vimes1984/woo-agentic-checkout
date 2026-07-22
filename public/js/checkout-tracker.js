@@ -27,6 +27,10 @@
         _lastEventTime: {},
         _eventQueue: [],
         _flushTimer: null,
+        /** Per-field focus times (shared across function scopes) */
+        _fieldTimes: {},
+        /** Max retries for failed beacon sends */
+        _maxRetries: 2,
 
         /**
          * Throttled send — max 1 event per event type per 200ms, batch heavy events.
@@ -201,19 +205,18 @@
         _bindFieldEvents: function () {
             var self = this;
             var selector = '.woocommerce-checkout input, .woocommerce-checkout select, .woocommerce-checkout textarea';
-            var fieldTimes = {};
 
             // Use delegation on document.body so AJAX-replaced fields are covered.
             $(document.body).off('focus.wacBeacon blur.wacBeacon', selector)
                 .on('focus.wacBeacon', selector, function () {
                     var $field = $(this);
                     var fieldName = $field.attr('name') || $field.attr('id') || 'unknown';
-                    fieldTimes[fieldName] = Date.now();
+                    self._fieldTimes[fieldName] = Date.now();
                 })
                 .on('blur.wacBeacon', selector, function () {
                     var $field = $(this);
                     var fieldName = $field.attr('name') || $field.attr('id') || 'unknown';
-                    var startTime = fieldTimes[fieldName];
+                    var startTime = self._fieldTimes[fieldName];
                     if (startTime) {
                         var elapsed = Date.now() - startTime;
                         if (elapsed > 500) {
@@ -222,7 +225,7 @@
                                 timeMs: elapsed
                             });
                         }
-                        delete fieldTimes[fieldName];
+                        delete self._fieldTimes[fieldName];
                     }
                 });
         },

@@ -103,8 +103,10 @@ class ABOptimizer {
 
             // Check if any variant has enough data for a decision.
             foreach ( $bayesian as $b ) {
-                if ( $b['prob_better'] >= ( $settings->get( 'ab_confidence_threshold', 0.95 ) * 100 ) ) {
-                    $min_conversions = (int) $settings->get( 'ab_min_conversions', 30 );
+                $confidence_threshold = $settings ? (float) $settings->get( 'ab_confidence_threshold', 0.95 ) : 0.95;
+                $min_conversions      = $settings ? (int) $settings->get( 'ab_min_conversions', 30 ) : 30;
+
+                if ( $b['prob_better'] >= ( $confidence_threshold * 100 ) ) {
 
                     if ( $b['conversions'] >= $min_conversions ) {
                         $ab->declare_winner( $exp['id'], $b['variant_key'] );
@@ -127,7 +129,7 @@ class ABOptimizer {
                 $max_impressions = max( $max_impressions, (int) $v['impressions'] );
             }
 
-            $min_sample = (int) $settings->get( 'ab_min_sample_size', 100 );
+            $min_sample = $settings ? (int) $settings->get( 'ab_min_sample_size', 100 ) : 100;
             if ( $max_impressions >= $min_sample * count( $variants ) ) {
                 // Check if all variants have similar conversion rates (within 5% relative).
                 $crs = array_column( $bayesian, 'cr' );
@@ -151,8 +153,8 @@ class ABOptimizer {
         }
 
         // Propose new experiment if space available.
-        $max_concurrent = (int) $settings->get( 'ab_max_concurrent', 3 );
-        $active_count   = count( $experiments );
+        $max_concurrent = $settings ? (int) $settings->get( 'ab_max_concurrent', 3 ) : 3;
+        $active_count   = is_countable( $experiments ) ? count( $experiments ) : 0;
 
         if ( $active_count < $max_concurrent ) {
             $new_exp = $this->propose_next_experiment();

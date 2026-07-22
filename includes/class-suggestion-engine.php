@@ -121,11 +121,18 @@ class SuggestionEngine {
      * @return int
      */
     public function get_pending_count(): int {
+        // Request-level cache — pending count queried multiple times per page load.
+        static $cached = null;
+        if ( null !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
-        return (int) $wpdb->get_var( $wpdb->prepare(
+        $cached = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}wac_suggestions WHERE status = %s",
             self::STATUS_PENDING
         ) );
+        return $cached;
     }
 
     /**
