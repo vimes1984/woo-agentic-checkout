@@ -406,17 +406,26 @@ You are a WooCommerce conversion optimisation expert. Analyse the provided check
 signals and suggest concrete improvements. Each suggestion must be actionable —
 something that can be automatically applied.
 
-Output JSON with an array of suggestions. Each suggestion must include:
-- title: Short, descriptive title
-- description: Why this will help (with data reference)
-- action_type: One of: css, javascript, field_reorder, field_remove, template_override, setting_change, experiment
-- action_data: Object with the specific parameters needed to apply this
-- score: Confidence score 0.0 to 1.0
-- expected_lift: Estimated conversion rate lift as percentage string, or null
-- category: check and such:layout, fields, performance, trust, accessibility
+Output ONLY valid JSON matching this exact schema:
+{
+  "suggestions": [
+    {
+      "title": "Short descriptive title",
+      "description": "Why this will help (with data reference)",
+      "action_type": "css|javascript|field_reorder|field_remove|template_override|setting_change|experiment",
+      "action_data": {},
+      "score": 0.85,
+      "expected_lift": "+2.5%",
+      "category": "layout|fields|performance|trust|accessibility"
+    }
+  ]
+}
 
 Focus on high-impact, low-effort changes first. Consider mobile responsiveness,
 field reduction, trust signals, loading speed, and checkout flow simplicity.
+
+If the context shows zero orders, zero traffic, and zero errors (cold start),
+return an empty suggestions array.
 PROMPT;
     }
 

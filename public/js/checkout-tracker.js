@@ -236,9 +236,9 @@
         },
 
         /**
-         * Send an event to the server via AJAX.
+         * Send an event to the server via AJAX (unthrottled — use _sendThrottled or _enqueueBatched instead).
          */
-        sendEvent: function (event, data) {
+        _sendRaw: function (event, data) {
             if (!this.sessionId) return;
 
             $.ajax({
@@ -252,8 +252,11 @@
                     data: JSON.stringify(data || {})
                 },
                 timeout: 3000,
-                complete: function () {
-                    // Fire and forget — no callback needed
+                error: function (jqXHR, textStatus, errorThrown) {
+                    // Silently log, don't disrupt checkout.
+                    if (window.console && console.warn) {
+                        console.warn('WAC beacon error:', textStatus, errorThrown);
+                    }
                 }
             });
         }
