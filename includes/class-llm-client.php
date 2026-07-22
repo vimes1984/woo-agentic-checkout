@@ -298,6 +298,16 @@ class LLMClient {
         );
 
         if ( ! empty( $schema ) ) {
+            // OpenRouter supports json_schema via OpenAI-compatible route.
+            $body['response_format'] = array(
+                'type'        => 'json_schema',
+                'json_schema' => array(
+                    'name'   => 'structured_response',
+                    'schema' => $schema,
+                    'strict' => true,
+                ),
+            );
+        } else {
             $body['response_format'] = array(
                 'type' => 'json_object',
             );
@@ -311,6 +321,30 @@ class LLMClient {
                 'HTTP-Referer: ' . home_url(),
             )
         );
+    }
+
+    /**
+     * Clean raw LLM response — strip markdown code fences and leading/trailing whitespace
+     * so json_decode can succeed.
+     *
+     * @param string $raw
+     * @return string
+     */
+    private function clean_json_response( string $raw ): string {
+        $raw = trim( $raw );
+        // Strip ```json ... ``` fences.
+        $raw = preg_replace( '/^```(?:json)?\s*/i', '', $raw );
+        $raw = preg_replace( '/\s*```$/', '', $raw );
+        // Strip any leading non-{ characters (e.g. "Here is the JSON:").
+        $first_brace = strpos( $raw, '{' );
+        if ( false !== $first_brace && $first_brace > 0 ) {
+            $raw = substr( $raw, $first_brace );
+        }
+        $last_brace = strrpos( $raw, '}' );
+        if ( false !== $last_brace && $last_brace < strlen( $raw ) - 1 ) {
+            $raw = substr( $raw, 0, $last_brace + 1 );
+        }
+        return trim( $raw );
     }
 
     /**
@@ -347,10 +381,19 @@ class LLMClient {
         curl_close( $ch );
 
         if ( false === $response ) {
+            // Log curl error for diagnostics.
+            do_action( 'wac_llm_curl_error', $url, $error );
             throw new \RuntimeException( "LLM request failed: {$error}" );
         }
 
         if ( $http_code >= 400 ) {
+            // Rate-limit handling: 429 means we should back off.
+            if ( 429 === $http_code ) {
+                do_action( 'wac_llm_rate_limited', $url );
+                throw new \RuntimeException(
+                    'LLM API rate limited (429). Retry after ' . gmdate( 'Y-m-d H:i:s', time() + 60 )
+                );
+            }
             throw new \RuntimeException(
                 "LLM API returned {$http_code}: " . substr( $response, 0, 500 )
             );
@@ -360,15 +403,20 @@ class LLMClient {
 
         // Extract content from standard chat completion format.
         if ( isset( $decoded['choices'][0]['message']['content'] ) ) {
-            return $decoded['choices'][0]['message']['content'];
+            $content = $decoded['choices'][0]['message']['content'];
+            // If content is already JSON wrapped in backticks, clean it.
+            if ( null !== json_decode( $content ) ) {
+                return $content;
+            }
+            return $this->clean_json_response( $content );
         }
 
         if ( isset( $decoded['response'] ) ) {
-            return $decoded['response'];
+            return $this->clean_json_response( $decoded['response'] );
         }
 
-        // Fallback: return raw (Anthropic or other).
-        return $response;
+        // Fallback: return raw (Anthropic or other) after cleaning.
+        return $this->clean_json_response( $response );
     }
 
     /**

@@ -489,20 +489,27 @@ class ABTestManager {
      */
     const COOKIE_TTL = 2592000; // 30 * 24 * 60 * 60
 
+    /**
+     * Set A/B variant cookie, mirroring to localStorage-bridge cookie if client has one.
+     */
     private function set_variant_cookie( string $key, string $value ) {
         if ( ! headers_sent() ) {
-            setcookie(
-                $key,
-                $value,
-                array(
-                    'expires'  => time() + self::COOKIE_TTL,
-                    'path'     => COOKIEPATH,
-                    'domain'   => COOKIE_DOMAIN,
-                    'secure'   => is_ssl(),
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                )
+            $options = array(
+                'expires'  => time() + self::COOKIE_TTL,
+                'path'     => COOKIEPATH,
+                'domain'   => COOKIE_DOMAIN,
+                'secure'   => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax',
             );
+            setcookie( $key, $value, $options );
+
+            // Mirror to a JS-readable cookie as localStorage bridge.
+            if ( ! empty( $_COOKIE['wac_client_id'] ) ) {
+                $ls_key             = $key . '_ls';
+                $options['httponly'] = false;
+                setcookie( $ls_key, $value, $options );
+            }
         }
     }
 

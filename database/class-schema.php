@@ -129,6 +129,7 @@ class Schema {
             INDEX idx_status (status),
             INDEX idx_category (category),
             INDEX idx_score (score DESC),
+            INDEX idx_score_asc (score),
             INDEX idx_status_score (status, score DESC)
         ) ENGINE=InnoDB {$charset_collate};";
 
@@ -195,32 +196,35 @@ class Schema {
         global $wpdb;
 
         $tables = array(
-            'wac_logs',
-            'wac_ab_experiments',
-            'wac_ab_variants',
-            'wac_ab_events',
-            'wac_beacon_events',
-            'wac_suggestions',
-            'wac_heal_log',
+            'wac_logs'         => $wpdb->prefix . 'wac_logs',
+            'wac_ab_experiments' => $wpdb->prefix . 'wac_ab_experiments',
+            'wac_ab_variants'    => $wpdb->prefix . 'wac_ab_variants',
+            'wac_ab_events'      => $wpdb->prefix . 'wac_ab_events',
+            'wac_beacon_events'  => $wpdb->prefix . 'wac_beacon_events',
+            'wac_suggestions'    => $wpdb->prefix . 'wac_suggestions',
+            'wac_heal_log'       => $wpdb->prefix . 'wac_heal_log',
         );
 
         $info = array();
-        foreach ( $tables as $table ) {
-            $full_name = $wpdb->prefix . $table;
-            $exists    = $wpdb->get_var( $wpdb->prepare(
-                "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
-                DB_NAME,
-                $full_name
-            ) );
+        $full_names = array_values( $tables );
 
-            if ( $exists ) {
-                $safe_name = sanitize_key( $full_name );
-                $info[ $table ] = array(
+        // Single query: get all table stats at once.
+        $placeholders = implode( ',', array_fill( 0, count( $full_names ), '%s' ) );
+        $results      = $wpdb->get_results( $wpdb->prepare(
+            "SELECT TABLE_NAME, TABLE_ROWS
+             FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN ({$placeholders})",
+            array_merge( array( DB_NAME ), $full_names )
+        ), OBJECT_K );
+
+        foreach ( $tables as $short => $full_name ) {
+            if ( isset( $results[ $full_name ] ) ) {
+                $info[ $short ] = array(
                     'exists' => true,
-                    'rows'   => (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$safe_name}`" ),
+                    'rows'   => (int) $results[ $full_name ]->TABLE_ROWS,
                 );
             } else {
-                $info[ $table ] = array(
+                $info[ $short ] = array(
                     'exists' => false,
                     'rows'   => 0,
                 );

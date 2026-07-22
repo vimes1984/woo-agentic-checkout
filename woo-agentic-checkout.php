@@ -121,6 +121,24 @@ spl_autoload_register( 'wac_autoload' );
  * Main plugin bootstrap.
  */
 function wac_init() {
+    // Check WordPress version.
+    global $wp_version;
+    if ( version_compare( $wp_version, '6.0', '<' ) ) {
+        add_action( 'admin_notices', function () {
+            echo '<div class="notice notice-error"><p>';
+            echo esc_html(
+                sprintf(
+                    /* translators: 1: current WP version, 2: minimum required version */
+                    __( 'Woo Agentic Checkout requires WordPress %2$s or later. Current version: %1$s', 'woo-agentic-checkout' ),
+                    $GLOBALS['wp_version'],
+                    '6.0'
+                )
+            );
+            echo '</p></div>';
+        } );
+        return;
+    }
+
     // Check WooCommerce dependency — deactivate gracefully if missing.
     if ( ! class_exists( 'WooCommerce' ) ) {
         if ( ! function_exists( 'deactivate_plugins' ) ) {
