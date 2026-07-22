@@ -398,13 +398,36 @@ class ABTestManager {
     }
 
     /**
+     * Minimum impressions required per variant before a winner can be declared.
+     */
+    const MIN_SAMPLE_SIZE = 100;
+
+    /**
      * Declare a winner for an experiment.
      *
      * @param int    $experiment_id
      * @param string $variant_key
+     *
+     * @throws \RuntimeException If minimum sample size not met.
      */
     public function declare_winner( int $experiment_id, string $variant_key ) {
         global $wpdb;
+
+        $experiment = $this->get_experiment( $experiment_id );
+        if ( ! $experiment ) {
+            throw new \RuntimeException( 'Experiment not found.' );
+        }
+
+        // Enforce minimum sample size.
+        $min_ok = $this->check_minimum_sample_size( $experiment );
+        if ( ! $min_ok ) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Cannot declare winner: minimum sample size of %d impressions per variant not met.',
+                    self::MIN_SAMPLE_SIZE
+                )
+            );
+        }
 
         // Mark experiment as winner.
         $wpdb->update(

@@ -328,6 +328,9 @@ class Core {
      * GET /wac/v1/suggestions
      */
     public function rest_suggestions() {
+        if ( ! isset( $this->services['suggest'] ) ) {
+            return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
+        }
         return rest_ensure_response( $this->services['suggest']->get_pending() );
     }
 
@@ -336,6 +339,9 @@ class Core {
      */
     public function rest_apply_suggestion( \WP_REST_Request $request ) {
         $id = (int) $request->get_param( 'id' );
+        if ( ! isset( $this->services['suggest'] ) ) {
+            return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
+        }
         $result = $this->services['suggest']->apply_suggestion( $id );
         if ( is_wp_error( $result ) ) {
             return rest_ensure_response( $result );
