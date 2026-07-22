@@ -79,6 +79,11 @@ class SignalCollector {
      * @return array Raw report data or empty array on failure.
      */
     public function fetch_ga4_report( string $start_date, string $end_date ): array {
+        // Validate date format (YYYY-MM-DD).
+        if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $start_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $end_date ) ) {
+            return array( 'error' => 'Invalid date format. Use YYYY-MM-DD.' );
+        }
+
         $property_id = $this->get_setting( 'ga4_property_id' );
         $credentials = $this->get_setting( 'ga4_credentials_json' );
 
