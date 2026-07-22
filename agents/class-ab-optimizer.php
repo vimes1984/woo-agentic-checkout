@@ -100,7 +100,6 @@ class ABOptimizer {
             }
 
             $results['experiments_analysed']++;
-            $settings = $this->services['settings'];
 
             // Check if any variant has enough data for a decision.
             foreach ( $bayesian as $b ) {
