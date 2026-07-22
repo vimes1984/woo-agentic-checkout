@@ -131,7 +131,7 @@ class ABTestManager {
         $results = $wpdb->get_results(
             "SELECT e.*,
                     (SELECT COUNT(*) FROM {$this->table_variants} v WHERE v.experiment_id = e.id) as variant_count,
-                    (SELECT SUM(impressions) FROM {$this->table_variants} v WHERE v.experiment_id = e.id) as total_impressions
+                    (SELECT COUNT(*) FROM {$this->table_events} ev WHERE ev.experiment_id = e.id AND ev.event_type = 'impression') as total_impressions
              FROM {$this->table_experiments} e
              {$where}
              ORDER BY e.created_at DESC

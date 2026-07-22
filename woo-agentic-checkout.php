@@ -35,6 +35,11 @@ define( 'WAC_BASENAME', plugin_basename( __FILE__ ) );
  * @param string $class Class name being loaded.
  */
 function wac_autoload( $class ) {
+    static $autoloading = false;
+    if ( $autoloading ) {
+        return; // Prevent recursion if require_once triggers another autoload.
+    }
+    $autoloading = true;
     $prefix = 'WooAgenticCheckout\\';
     $len    = strlen( $prefix );
 
