@@ -539,6 +539,9 @@ class Core {
 
     /**
      * Capture and log checkout processing errors.
+     *
+     * Sanitizes session-stored error data before logging to prevent
+     * stored XSS in log viewer and filter injections.
      */
     public function capture_checkout_errors() {
         if ( ! function_exists( 'wc' ) ) {
@@ -548,9 +551,42 @@ class Core {
         $errors = ( $woocommerce && isset( $woocommerce->session ) ) ? $woocommerce->session->get( 'wac_checkout_errors', array() ) : array();
         if ( ! empty( $errors ) && isset( $this->services['logger'] ) ) {
             foreach ( $errors as $error ) {
-                $this->services['logger']->error( 'checkout_validation_error', $error );
+                $sanitized_error = $this->sanitize_log_context( $error );
+                $this->services['logger']->error( 'checkout_validation_error', $sanitized_error );
             }
         }
+    }
+
+    /**
+     * Sanitize log context data from external sources.
+     * Strips HTML and limits nesting to prevent stored XSS and memory exhaustion.
+     *
+     * @param mixed $data Raw context data.
+     * @return mixed Sanitized context data.
+     */
+    private function sanitize_log_context( $data, int $depth = 0 ) {
+        if ( $depth > 5 ) {
+            return '[max_depth]';
+        }
+        if ( is_string( $data ) ) {
+            // Strip HTML tags to prevent XSS in log viewers.
+            return wp_kses( $data, array() );
+        }
+        if ( is_array( $data ) ) {
+            $result = array();
+            foreach ( $data as $key => $value ) {
+                $safe_key             = sanitize_key( $key );
+                $result[ $safe_key ]  = $this->sanitize_log_context( $value, $depth + 1 );
+            }
+            return $result;
+        }
+        if ( is_numeric( $data ) ) {
+            return $data;
+        }
+        if ( is_bool( $data ) ) {
+            return $data ? 'true' : 'false';
+        }
+        return sanitize_text_field( (string) $data );
     }
 
     // ─── Utilities ────────────────────────────────────────────────

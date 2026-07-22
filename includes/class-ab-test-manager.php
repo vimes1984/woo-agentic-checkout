@@ -1893,7 +1893,7 @@ class ABTestManager {
         global $wpdb;
         $wpdb->update(
             $this->table_experiments,
-            array( 'description' => $description ),
+            array( 'description' => sanitize_textarea_field( $description ) ),
             array( 'id' => $experiment_id ),
             array( '%s' ),
             array( '%d' )
