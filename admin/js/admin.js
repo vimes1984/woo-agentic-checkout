@@ -2,9 +2,9 @@
  * Woo Agentic Checkout — Admin Interface JS
  *
  * Manages suggestion apply/reject, experiment controls, agent runs,
- * toast notifications, loading states, and table sorting.
+ * toast notifications, loading states, table sorting, and accessibility.
  *
- * @version 0.2.0
+ * @version 0.3.0
  */
 (function ($, window, undefined) {
     'use strict';
@@ -12,13 +12,34 @@
     var WACAdmin = {
         /** Cached selectors */
         $body: null,
-        toastTimeout: null,
+
+        /**
+         * Localised strings fallback.
+         */
+        _strings: {
+            confirmPause:  'Pause this experiment? Visitors will see the control variant.',
+            confirmResume: 'Resume this experiment?',
+            confirmApply:  'Apply this suggestion to your checkout?',
+            confirmReject: 'Reject this suggestion? It will be dismissed permanently.',
+            rejectReason:  'Reason for rejection (optional):',
+            loading:       'Loading\u2026',
+            applying:      'Applying\u2026',
+            rejecting:     'Rejecting\u2026',
+            errorGeneric:  'Something went wrong. Please try again.',
+            errorNetwork:  'Network error. Please check your connection.'
+        },
 
         /**
          * Initialise all admin UI features.
          */
         init: function () {
             this.$body = $(document.body);
+
+            // Merge localised strings if available.
+            if (window.wacData && window.wacData.strings) {
+                $.extend(this._strings, window.wacData.strings);
+            }
+
             this.ensureToastContainer();
             this.bindSuggestionActions();
             this.bindExperimentActions();
@@ -28,39 +49,97 @@
             this.bindFilterInputs();
             this.bindRefreshButtons();
             this.bindDismissibleErrors();
+            this.bindKeyboardNav();
+            this.addAriaLiveRegion();
 
             // Show notifications from query string (after redirect).
             this.showNotificationFromQuery();
+
+            // Announce page loaded for screen readers.
+            this.announce('Admin UI loaded', 'polite');
+        },
+
+        // ─── Localised String Helper ───────────────────────────
+
+        /**
+         * Get a localised string with optional sprintf-style replacement.
+         *
+         * @param {string} key  - String key.
+         * @param {...*}   args - Replacement values for %s placeholders.
+         * @return {string}
+         */
+        __: function (key) {
+            var msg = this._strings[key] || key;
+            if (arguments.length > 1) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                args.forEach(function (val) {
+                    msg = msg.replace('%s', val);
+                });
+            }
+            return msg;
         },
 
         // ─── Toast / Notification System ────────────────────────
 
         /**
-         * Ensure the toast container exists in the DOM.
+         * Ensure the toast container exists.
          */
         ensureToastContainer: function () {
             if ($('.wac-toast-container').length === 0) {
-                $('body').append('<div class="wac-toast-container" aria-live="polite"></div>');
+                $('body').append(
+                    '<div class="wac-toast-container" aria-live="polite" aria-relevant="additions"></div>'
+                );
             }
+        },
+
+        /**
+         * Ensure an aria-live region exists for screen reader announcements.
+         */
+        addAriaLiveRegion: function () {
+            if ($('#wac-aria-live').length === 0) {
+                $('body').append(
+                    '<div id="wac-aria-live" class="screen-reader-text" aria-live="assertive" aria-relevant="additions text"></div>'
+                );
+            }
+        },
+
+        /**
+         * Announce a message to screen readers.
+         *
+         * @param {string} message - The announcement text.
+         * @param {string} polite  - 'polite' or 'assertive'.
+         */
+        announce: function (message, polite) {
+            var $el = $('#wac-aria-live');
+            if ($el.length === 0) {
+                return;
+            }
+            // Clear first to re-trigger announcement.
+            $el.empty();
+            setTimeout(function () {
+                $el.text(message);
+            }, 50);
         },
 
         /**
          * Show a toast notification.
          *
-         * @param {string} message  - The message text.
-         * @param {string} type     - 'success', 'error', or 'warning'.
-         * @param {number} duration - Auto-dismiss after ms (0 = no auto-dismiss).
+         * @param {string} message  - Message text.
+         * @param {string} type     - 'success', 'error', 'warning', 'info'.
+         * @param {number} duration - Auto-dismiss after ms (0 = manual).
          */
         showToast: function (message, type, duration) {
             type = type || 'info';
             duration = (typeof duration === 'number') ? duration : 4000;
 
             var icons = {
-                success: '✓',
-                error:   '✕',
-                warning: '⚠',
-                info:    'ℹ'
+                success: '\u2713',
+                error:   '\u2715',
+                warning: '\u26A0',
+                info:    '\u2139'
             };
+
+            var icon = icons[type] || '\u2139';
 
             var $container = $('.wac-toast-container');
             if ($container.length === 0) {
@@ -70,25 +149,27 @@
 
             var $toast = $(
                 '<div class="wac-toast wac-toast--' + type + '" role="alert">' +
-                    '<span class="wac-toast__icon">' + (icons[type] || 'ℹ') + '</span>' +
-                    '<span class="wac-toast__body">' + this.escapeHtml(message) + '</span>' +
+                    '<span class="wac-toast__icon" aria-hidden="true">' + icon + '</span>' +
+                    '<span class="wac-toast__body">' + this.escHtml(message) + '</span>' +
                     '<button class="wac-toast__dismiss" aria-label="Dismiss">&times;</button>' +
                 '</div>'
             );
 
             $container.append($toast);
 
-            // Bind dismiss
+            var self = this;
             $toast.find('.wac-toast__dismiss').on('click', function () {
-                WACAdmin.dismissToast($toast);
+                self.dismissToast($toast);
             });
 
-            // Auto-dismiss
             if (duration > 0) {
                 setTimeout(function () {
-                    WACAdmin.dismissToast($toast);
+                    self.dismissToast($toast);
                 }, duration);
             }
+
+            // Announce to screen readers.
+            this.announce(message, 'polite');
         },
 
         /**
@@ -105,9 +186,9 @@
         },
 
         /**
-         * Escape HTML entities for safe insertion.
+         * Escape HTML entities.
          */
-        escapeHtml: function (str) {
+        escHtml: function (str) {
             var div = document.createElement('div');
             div.appendChild(document.createTextNode(str));
             return div.innerHTML;
@@ -116,23 +197,25 @@
         // ─── Utilities ──────────────────────────────────────────
 
         /**
-         * Show loading state on an element.
+         * Show loading state on a button/element.
          */
         showLoading: function ($el) {
             $el.addClass('wac-loading');
             if ($el.is('button, input[type="submit"]')) {
                 $el.data('wac-original-text', $el.val ? $el.val() : $el.text());
+                var loadingText = this.__('loading');
                 if ($el.is('button')) {
-                    $el.text('Loading…');
+                    $el.text(loadingText);
                 } else {
-                    $el.val('Loading…');
+                    $el.val(loadingText);
                 }
                 $el.prop('disabled', true);
+                $el.attr('aria-busy', 'true');
             }
         },
 
         /**
-         * Remove loading state from an element.
+         * Remove loading state.
          */
         hideLoading: function ($el) {
             $el.removeClass('wac-loading');
@@ -146,6 +229,7 @@
                     }
                 }
                 $el.prop('disabled', false);
+                $el.removeAttr('aria-busy');
             }
         },
 
@@ -165,7 +249,10 @@
         },
 
         /**
-         * Show a confirmation dialog (inline or native).
+         * Show a native confirmation dialog.
+         *
+         * @param {string}   message  - Confirmation text.
+         * @param {Function} callback - Invoked if confirmed.
          */
         confirmAction: function (message, callback) {
             if (window.confirm(message)) {
@@ -183,19 +270,38 @@
             }
 
             var messages = {
-                success:         { text: 'Action completed successfully.', type: 'success' },
-                applied:         { text: 'Suggestion applied successfully.', type: 'success' },
-                rejected:        { text: 'Suggestion rejected.', type: 'info' },
-                error:           { text: 'Action failed. Please try again.', type: 'error' },
-                no_agent:        { text: 'No agent selected.', type: 'warning' },
-                exp_placeholder: { text: 'Experiment creation wizard coming in a future update!', type: 'info' },
-                service_unavailable: { text: 'Service unavailable. Please try again.', type: 'error' }
+                success:            { text: this.__('successNotice'),      type: 'success' },
+                applied:            { text: this.__('appliedNotice'),      type: 'success' },
+                rejected:           { text: this.__('rejectedNotice'),     type: 'info' },
+                error:              { text: this.__('errorNotice'),        type: 'error' },
+                no_agent:           { text: this.__('noAgentNotice'),      type: 'warning' },
+                exp_placeholder:    { text: this.__('expPlaceholder'),     type: 'info' },
+                service_unavailable: { text: this.__('serviceUnavailable'), type: 'error' }
             };
 
+            // Provide defaults for notices if strings not localised.
+            messages.success.text            = messages.success.text || 'Action completed successfully.';
+            messages.applied.text            = messages.applied.text || 'Suggestion applied successfully.';
+            messages.rejected.text           = messages.rejected.text || 'Suggestion rejected.';
+            messages.error.text              = messages.error.text || 'Action failed. Please try again.';
+            messages.no_agent.text           = messages.no_agent.text || 'No agent selected.';
+            messages.exp_placeholder.text    = messages.exp_placeholder.text || 'Experiment creation wizard coming soon!';
+            messages.service_unavailable.text = messages.service_unavailable.text || 'Service unavailable. Please refresh and try again.';
+
             var notice = messages[msg] || { text: msg, type: 'info' };
+
+            // Override success with agent name if present.
+            var agent = this.getQueryParam('wac_agent');
+            if (msg === 'success' && agent) {
+                notice.text = this.__('agentSuccess', agent);
+            }
+            if (msg === 'error' && agent) {
+                notice.text = this.__('agentError', agent);
+            }
+
             this.showToast(notice.text, notice.type, 5000);
 
-            // Clean the URL without reload.
+            // Clean the URL without page reload.
             if (window.history && window.history.replaceState) {
                 var url = new URL(window.location.href);
                 url.searchParams.delete('wac_msg');
@@ -225,11 +331,13 @@
                 e.preventDefault();
                 var $btn = $(this);
                 var id = $btn.data('id');
+                var $card = $btn.closest('.wac-suggestion-card');
                 var $row = $btn.closest('tr');
 
-                self.confirmAction('Apply this suggestion to your checkout?', function () {
+                self.confirmAction(self.__('confirmApply'), function () {
                     self.showLoading($btn);
-                    $btn.closest('td').find('.wac-spinner').removeClass('wac-hidden');
+                    $btn.closest('.wac-suggestion-card__actions, td')
+                        .find('.wac-spinner').removeClass('wac-hidden');
 
                     $.ajax({
                         url: wacData.restUrl + '/suggestions/' + id + '/apply',
@@ -239,23 +347,23 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                self.showToast('Suggestion applied successfully!', 'success');
-                                if ($row.length) {
+                                self.showToast(self.__('appliedNotice') || 'Suggestion applied successfully!', 'success');
+                                if ($card.length) {
+                                    $card.fadeOut(300, function () { $(this).remove(); });
+                                } else if ($row.length) {
                                     $row.fadeOut(300, function () { $(this).remove(); });
-                                } else {
-                                    $btn.closest('.wac-suggestion-card').fadeOut(300);
                                 }
                             } else {
-                                self.showToast('Failed to apply: ' + (response.message || 'Unknown error'), 'error');
+                                self.showToast(response.message || self.__('errorGeneric'), 'error');
                                 self.hideLoading($btn);
                             }
                         },
                         error: function (jqXHR) {
-                            var msg = 'Could not apply suggestion.';
+                            var msg = self.__('errorNetwork');
                             try {
                                 var resp = JSON.parse(jqXHR.responseText);
                                 msg = resp.message || msg;
-                            } catch (e) {}
+                            } catch (e) { /* use default */ }
                             self.showToast(msg, 'error');
                             self.hideLoading($btn);
                         }
@@ -268,10 +376,11 @@
                 e.preventDefault();
                 var $btn = $(this);
                 var id = $btn.data('id');
+                var $card = $btn.closest('.wac-suggestion-card');
                 var $row = $btn.closest('tr');
 
-                self.confirmAction('Reject this suggestion? It will be dismissed permanently.', function () {
-                    var reason = prompt('Reason for rejection (optional):') || '';
+                self.confirmAction(self.__('confirmReject'), function () {
+                    var reason = prompt(self.__('rejectReason')) || '';
                     self.showLoading($btn);
 
                     $.ajax({
@@ -285,19 +394,19 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                self.showToast('Suggestion rejected.', 'info');
-                                if ($row.length) {
+                                self.showToast(self.__('rejectedNotice') || 'Suggestion rejected.', 'info');
+                                if ($card.length) {
+                                    $card.fadeOut(300, function () { $(this).remove(); });
+                                } else if ($row.length) {
                                     $row.fadeOut(300, function () { $(this).remove(); });
-                                } else {
-                                    $btn.closest('.wac-suggestion-card').fadeOut(300);
                                 }
                             } else {
-                                self.showToast('Failed to reject suggestion.', 'error');
+                                self.showToast(response.message || self.__('errorGeneric'), 'error');
                                 self.hideLoading($btn);
                             }
                         },
                         error: function () {
-                            self.showToast('Network error rejecting suggestion.', 'error');
+                            self.showToast(self.__('errorNetwork'), 'error');
                             self.hideLoading($btn);
                         }
                     });
@@ -313,7 +422,7 @@
         bindExperimentActions: function () {
             var self = this;
 
-            // View experiment details (toggle variant rows)
+            // View experiment details (toggle variant rows).
             $(document).on('click', '.wac-view-exp', function (e) {
                 e.preventDefault();
                 var $link = $(this);
@@ -322,7 +431,7 @@
                 $rows.toggleClass('wac-hidden');
 
                 var isVisible = $rows.first().is(':visible');
-                $link.text(isVisible ? 'Hide Details' : 'View Details');
+                $link.text(isVisible ? 'Hide Details' : 'View');
                 $link.attr('aria-expanded', isVisible ? 'true' : 'false');
             });
 
@@ -332,7 +441,7 @@
                 var $link = $(this);
                 var id = $link.data('id');
 
-                self.confirmAction('Pause this experiment? Visitors will see the control variant.', function () {
+                self.confirmAction(self.__('confirmPause'), function () {
                     self.showLoading($link);
 
                     $.ajax({
@@ -345,14 +454,15 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                self.showToast('Experiment paused.', 'success');
+                                self.showToast(response.data && response.data.message
+                                    ? response.data.message : 'Experiment paused.', 'success');
                                 var $badge = $link.closest('tr').find('.wac-badge-active');
                                 $badge
                                     .removeClass('wac-badge-active')
                                     .addClass('wac-badge-paused')
                                     .text('paused');
                                 $link.replaceWith(
-                                    '<a href="#" class="wac-resume-exp" data-id="' + id + '">Resume</a>'
+                                    '<button class="wac-action-link wac-resume-exp" data-id="' + id + '" title="Resume this experiment">Resume</button>'
                                 );
                             } else {
                                 self.showToast(response.data && response.data.message
@@ -361,7 +471,7 @@
                             }
                         },
                         error: function () {
-                            self.showToast('Network error pausing experiment.', 'error');
+                            self.showToast(self.__('errorNetwork'), 'error');
                             self.hideLoading($link);
                         }
                     });
@@ -374,7 +484,7 @@
                 var $link = $(this);
                 var id = $link.data('id');
 
-                self.confirmAction('Resume this experiment?', function () {
+                self.confirmAction(self.__('confirmResume'), function () {
                     self.showLoading($link);
 
                     $.ajax({
@@ -387,14 +497,15 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                self.showToast('Experiment resumed.', 'success');
+                                self.showToast(response.data && response.data.message
+                                    ? response.data.message : 'Experiment resumed.', 'success');
                                 var $badge = $link.closest('tr').find('.wac-badge-paused');
                                 $badge
                                     .removeClass('wac-badge-paused')
                                     .addClass('wac-badge-active')
                                     .text('active');
                                 $link.replaceWith(
-                                    '<a href="#" class="wac-pause-exp" data-id="' + id + '">Pause</a>'
+                                    '<button class="wac-action-link wac-pause-exp" data-id="' + id + '" title="Pause this experiment">Pause</button>'
                                 );
                             } else {
                                 self.showToast(response.data && response.data.message
@@ -403,7 +514,7 @@
                             }
                         },
                         error: function () {
-                            self.showToast('Network error resuming experiment.', 'error');
+                            self.showToast(self.__('errorNetwork'), 'error');
                             self.hideLoading($link);
                         }
                     });
@@ -419,6 +530,7 @@
         bindAgentRun: function () {
             var self = this;
 
+            // Admin-post form submission.
             $(document).on('submit', 'form[action*="admin-post"][name]', function () {
                 var $form = $(this);
                 self.showLoading($form.find(':submit'));
@@ -429,7 +541,7 @@
                 }, 60000);
             });
 
-            // AJAX agent run (future use)
+            // AJAX agent run.
             $(document).on('click', '.wac-run-agent-ajax', function (e) {
                 e.preventDefault();
                 var $btn = $(this);
@@ -448,15 +560,23 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                self.showToast("Agent '" + agentKey + "' completed successfully.", 'success');
+                                self.showToast(
+                                    self.__('agentSuccess', agentKey) ||
+                                        "Agent '" + agentKey + "' completed successfully.",
+                                    'success'
+                                );
                             } else {
-                                self.showToast(response.data && response.data.message
-                                    ? response.data.message : 'Agent run failed.', 'error');
+                                self.showToast(
+                                    response.data && response.data.message
+                                        ? response.data.message
+                                        : 'Agent run failed.',
+                                    'error'
+                                );
                             }
                             self.hideLoading($btn);
                         },
                         error: function () {
-                            self.showToast('Network error running agent.', 'error');
+                            self.showToast(self.__('errorNetwork'), 'error');
                             self.hideLoading($btn);
                         }
                     });
@@ -475,7 +595,7 @@
             $(document).on('click', '#wac-create-experiment', function (e) {
                 e.preventDefault();
                 self.showToast(
-                    'Experiment creation wizard coming soon! The AB Optimizer agent will auto-create experiments based on data.',
+                    self.__('expPlaceholder') || 'Experiment creation wizard coming soon!',
                     'info',
                     6000
                 );
@@ -505,8 +625,8 @@
                     var bVal = $(b).find('td').eq(colIndex).text().trim();
 
                     // Numeric detection.
-                    var aNum = parseFloat(aVal.replace(/[^0-9.-]/g, ''));
-                    var bNum = parseFloat(bVal.replace(/[^0-9.-]/g, ''));
+                    var aNum = parseFloat(aVal.replace(/[^0-9.\-]/g, ''));
+                    var bNum = parseFloat(bVal.replace(/[^0-9.\-]/g, ''));
                     if (!isNaN(aNum) && !isNaN(bNum)) {
                         return isAsc ? bNum - aNum : aNum - bNum;
                     }
@@ -518,13 +638,18 @@
 
                 $.each($rows, function (i, row) {
                     $table.find('tbody').append(row);
-                    // Also move any variant detail rows that follow.
+                    // Also move variant detail rows that follow.
                     var $next = $(row).next();
                     while ($next.length && $next.hasClass('wac-variant-row')) {
                         $table.find('tbody').append($next);
                         $next = $(row).next();
                     }
                 });
+
+                // Announce sort change.
+                var direction = isAsc ? 'descending' : 'ascending';
+                var colLabel = $th.text().trim().replace(/[\u2191\u2193\u2195]/, '').trim();
+                WACAdmin.announce('Sorted by ' + colLabel + ' ' + direction, 'polite');
             });
         },
 
@@ -544,14 +669,25 @@
                     $table = $(this).closest('table');
                 }
 
+                var visibleCount = 0;
                 $table.find('tbody tr').each(function () {
                     var $row = $(this);
                     if ($row.hasClass('wac-variant-row')) {
                         return;
                     }
                     var text = $row.text().toLowerCase();
-                    $row.toggleClass('wac-hidden', text.indexOf(query) === -1);
+                    var match = text.indexOf(query) === -1;
+                    $row.toggleClass('wac-hidden', match);
+                    if (!match) {
+                        visibleCount++;
+                    }
                 });
+
+                // Announce filter results for screen readers.
+                self.announce(
+                    'Filtered to ' + visibleCount + ' visible ' + (visibleCount === 1 ? 'row' : 'rows'),
+                    'polite'
+                );
             }, 300);
 
             $(document).on('keyup', '.wac-table-filter', debouncedFilter);
@@ -563,8 +699,6 @@
          * Refresh button with spinner animation.
          */
         bindRefreshButtons: function () {
-            var self = this;
-
             $(document).on('click', '.wac-refresh-btn', function (e) {
                 e.preventDefault();
                 var $btn = $(this);
@@ -574,6 +708,7 @@
                 }
 
                 $btn.addClass('wac-refresh-btn--spinning');
+                WACAdmin.announce('Refreshing dashboard', 'polite');
                 window.location.reload();
             });
         },
@@ -585,29 +720,35 @@
          */
         bindDismissibleErrors: function () {
             $(document).on('click', '.wac-error__dismiss', function () {
-                $(this).closest('.wac-error').fadeOut(300, function () {
-                    $(this).remove();
+                var $error = $(this).closest('.wac-error');
+                $error.fadeOut(300, function () {
+                    $error.remove();
                 });
-            });
-
-            // Auto-dismiss success-ish errors after 8s
-            $(document).on('mouseenter', '.wac-error', function () {
-                $(this).data('wac-hover', true);
-            }).on('mouseleave', '.wac-error', function () {
-                $(this).data('wac-hover', false);
             });
         },
 
         // ─── Keyboard Navigation ────────────────────────────────
 
         /**
-         * Enable Enter key on action buttons styled as links.
+         * Enable Enter/Space keys on action buttons styled as links.
          */
         bindKeyboardNav: function () {
-            $(document).on('keydown', '.wac-action-link, .wac-view-exp, .wac-pause-exp, .wac-resume-exp', function (e) {
+            $(document).on('keydown', '.wac-action-link, button.wac-view-exp, button.wac-pause-exp, button.wac-resume-exp, .wac-refresh-btn:not(.wac-refresh-btn--spinning)', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     $(this).trigger('click');
+                }
+            });
+
+            // Tab trapping inside toast container (focus management).
+            $(document).on('keydown', '.wac-toast:last-child .wac-toast__dismiss', function (e) {
+                if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    // Focus first toast or first focusable in the container.
+                    var $toasts = $('.wac-toast');
+                    if ($toasts.length > 1) {
+                        $toasts.first().find('.wac-toast__dismiss').focus();
+                    }
                 }
             });
         }
@@ -619,7 +760,7 @@
         WACAdmin.init();
     });
 
-    // Expose globally for debugging.
+    // Expose globally for debugging and extensibility.
     window.WACAdmin = WACAdmin;
 
 })(jQuery, window);

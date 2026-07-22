@@ -40,6 +40,17 @@ class CheckoutModifier {
     }
 
     /**
+     * Return the list of applied experiment names for this session.
+     *
+     * @return array<string, bool>
+     */
+    public function get_applied_experiments(): array {
+        // Trigger config load.
+        $this->get_session_variant_config();
+        return $this->applied_experiments;
+    }
+
+    /**
      * Store removed fields so we can unhook their validation.
      *
      * @var array
