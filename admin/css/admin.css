@@ -77,6 +77,49 @@
     min-height: 400px;
 }
 
+/* ─── Status Summary Bar ────────────────────── */
+
+.wac-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    align-items: center;
+    background: var(--wac-bg-card);
+    border: 1px solid var(--wac-border);
+    border-radius: var(--wac-radius);
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.wac-status-bar__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--wac-text);
+}
+
+.wac-status-bar__time {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--wac-text-muted);
+}
+
+@media (max-width: 600px) {
+    .wac-status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .wac-status-bar__time {
+        margin-left: 0;
+        border-top: 1px solid var(--wac-border-light);
+        padding-top: 6px;
+        width: 100%;
+    }
+}
+
 /* ─── Dashboard Grid ────────────────────────── */
 
 .wac-dashboard-grid {

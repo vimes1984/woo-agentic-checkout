@@ -104,6 +104,8 @@ class AdminUI {
                 </a>
             </nav>
 
+            <?php $this->render_status_summary_bar(); ?>
+
             <div class="wac-tab-content" role="tabpanel">
                 <?php
                 switch ( $tab ) {
@@ -231,6 +233,60 @@ class AdminUI {
         }
         $html .= '</span>';
         return $html;
+    }
+
+    // ─── Status Summary Bar ─────────────────────────────────────
+
+    /**
+     * Render a thin status bar at the top of the admin page showing
+     * quick stats: active agents, pending suggestions, active experiments.
+     */
+    private function render_status_summary_bar() {
+        $experiments = $this->ab->get_active_experiments();
+        $suggestions = $this->suggest->get_pending_count();
+        $status      = $this->agents->get_status();
+        $total_heals = 0;
+        $healer      = new \WooAgenticCheckout\SelfHealer();
+        if ( method_exists( $healer, 'get_total_heals' ) ) {
+            $total_heals = $healer->get_total_heals();
+        }
+
+        $active_agents = 0;
+        if ( ! empty( $status ) ) {
+            foreach ( $status as $agent ) {
+                if ( ! empty( $agent['enabled'] ) ) {
+                    $active_agents++;
+                }
+            }
+        }
+        ?>
+        <div class="wac-status-bar" role="status" aria-label="Dashboard summary">
+            <span class="wac-status-bar__item">
+                <span class="wac-status-dot wac-status-dot--active" aria-hidden="true"></span>
+                <?php echo esc_html( sprintf( __( '%d agents active', 'woo-agentic-checkout' ), $active_agents ) ); ?>
+            </span>
+            <span class="wac-status-bar__item">
+                <span role="img" aria-label="Experiments">🧪</span>
+                <?php echo esc_html( sprintf( __( '%d active tests', 'woo-agentic-checkout' ), count( $experiments ) ) ); ?>
+            </span>
+            <span class="wac-status-bar__item">
+                <span role="img" aria-label="Suggestions">💡</span>
+                <?php echo esc_html( sprintf( __( '%d pending suggestions', 'woo-agentic-checkout' ), $suggestions ) ); ?>
+            </span>
+            <?php if ( $total_heals > 0 ) : ?>
+                <span class="wac-status-bar__item">
+                    <span role="img" aria-label="Heals">🩹</span>
+                    <?php echo esc_html( sprintf( __( '%d self-heals', 'woo-agentic-checkout' ), $total_heals ) ); ?>
+                </span>
+            <?php endif; ?>
+            <span class="wac-status-bar__item wac-status-bar__time" title="<?php echo esc_attr( current_time( 'mysql' ) ); ?>">
+                <?php
+                /* translators: %s: current date/time */
+                echo esc_html( sprintf( __( 'Updated: %s', 'woo-agentic-checkout' ), current_time( 'M j, Y H:i' ) ) );
+                ?>
+            </span>
+        </div>
+        <?php
     }
 
     // ─── Dashboard Tab ───────────────────────────────────────────
@@ -460,6 +516,17 @@ class AdminUI {
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
+                            <?php else : ?>
+                                <tr class="wac-variant-row wac-hidden" data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>">
+                                    <td></td>
+                                    <td colspan="5">
+                                        <div class="wac-variant-detail">
+                                            <span class="wac-empty" style="font-style:italic;color:var(--wac-text-muted);">
+                                                <?php esc_html_e( 'No variant data available yet. Data appears after visitors are bucketed.', 'woo-agentic-checkout' ); ?>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </tbody>
@@ -478,7 +545,12 @@ class AdminUI {
         $pending = $this->suggest->get_pending( 50 );
         $all     = $this->suggest->get_suggestions( '', 50 );
         ?>
-        <h2>💡 AI Suggestions</h2>
+        <h2>
+            <span role="img" aria-label="Suggestions">💡</span> AI Suggestions
+            <?php if ( ! empty( $pending ) ) : ?>
+                <?php echo $this->badge( 'pending', sprintf( __( '%d pending', 'woo-agentic-checkout' ), count( $pending ) ), true ); ?>
+            <?php endif; ?>
+        </h2>
 
         <?php if ( empty( $pending ) ) : ?>
             <?php $this->render_empty_state(
