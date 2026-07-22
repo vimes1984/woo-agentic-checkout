@@ -25,6 +25,13 @@ class AdminHandlers {
     private $logger;
 
     /**
+     * Rate limiting — track request timestamps per action+user.
+     *
+     * @var array<string, int>
+     */
+    private static $rate_limit = array();
+
+    /**
      * Constructor — registers all handlers.
      */
     public function __construct() {
@@ -32,6 +39,54 @@ class AdminHandlers {
 
         $this->register_admin_post_actions();
         $this->register_ajax_actions();
+    }
+
+    /**
+     * Check rate limit for a given action key.
+     *
+     * Allows no more than 1 request per 3 seconds per action+user.
+     *
+     * @param string $key The rate limit key (e.g., 'pause_exp_123').
+     * @return bool True if allowed, false if rate limited.
+     */
+    private function check_rate_limit( $key ) {
+        $user_id = get_current_user_id();
+        $lk      = $user_id . ':' . $key;
+        $now     = time();
+
+        if ( isset( self::$rate_limit[ $lk ] ) && ( $now - self::$rate_limit[ $lk ] ) < 3 ) {
+            return false;
+        }
+
+        self::$rate_limit[ $lk ] = $now;
+        return true;
+    }
+
+    /**
+     * Send a structured JSON success response with common fields.
+     *
+     * @param string $message  Success message.
+     * @param array  $extra    Additional data to merge.
+     */
+    private function json_success( $message, $extra = array() ) {
+        wp_send_json_success( array_merge( array(
+            'message'  => $message,
+            'success'  => true,
+            'redirect' => '',
+        ), $extra ) );
+    }
+
+    /**
+     * Send a structured JSON error response with common fields.
+     *
+     * @param string $message  Error message.
+     * @param array  $extra    Additional data to merge.
+     */
+    private function json_error( $message, $extra = array() ) {
+        wp_send_json_error( array_merge( array(
+            'message' => $message,
+            'success' => false,
+        ), $extra ) );
     }
 
     /**
@@ -222,10 +277,16 @@ class AdminHandlers {
     public function ajax_wac_pause_experiment() {
         $this->check_ajax_permissions();
 
+        // Rate limit: max 1 pause per 3 seconds.
+        if ( ! $this->check_rate_limit( 'pause_exp' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'pause_experiment' ) );
+            $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
+        }
+
         $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 
         if ( $id < 1 ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
         }
 
         $core = Core::get_instance();
@@ -233,22 +294,19 @@ class AdminHandlers {
 
         if ( ! $ab ) {
             $this->logger->error( 'ajax_ab_service_unavailable', array( 'action' => 'pause' ) );
-            wp_send_json_error( array( 'message' => __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) );
         }
 
         try {
             $result = $ab->pause_experiment( $id );
             $this->logger->info( 'experiment_paused', array( 'id' => $id ) );
-            wp_send_json_success( array(
-                'message' => __( 'Experiment paused. Visitors will see the control variant.', 'woo-agentic-checkout' ),
-                'id'      => $id,
-            ) );
+            $this->json_success( __( 'Experiment paused. Visitors will see the control variant.', 'woo-agentic-checkout' ), array( 'id' => $id ) );
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_pause_failed', array(
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            wp_send_json_error( array( 'message' => $e->getMessage() ) );
+            $this->json_error( $e->getMessage() );
         }
     }
 
@@ -258,10 +316,16 @@ class AdminHandlers {
     public function ajax_wac_resume_experiment() {
         $this->check_ajax_permissions();
 
+        // Rate limit: max 1 resume per 3 seconds.
+        if ( ! $this->check_rate_limit( 'resume_exp' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'resume_experiment' ) );
+            $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
+        }
+
         $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 
         if ( $id < 1 ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
         }
 
         $core = Core::get_instance();
@@ -269,21 +333,18 @@ class AdminHandlers {
 
         if ( ! $ab ) {
             $this->logger->error( 'ajax_ab_service_unavailable', array( 'action' => 'resume' ) );
-            wp_send_json_error( array( 'message' => __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) );
         }
 
         try {
             $ab->resume_experiment( $id );
-            wp_send_json_success( array(
-                'message' => __( 'Experiment resumed.', 'woo-agentic-checkout' ),
-                'id'      => $id,
-            ) );
+            $this->json_success( __( 'Experiment resumed.', 'woo-agentic-checkout' ), array( 'id' => $id ) );
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_resume_failed', array(
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            wp_send_json_error( array( 'message' => $e->getMessage() ) );
+            $this->json_error( $e->getMessage() );
         }
     }
 
@@ -293,11 +354,17 @@ class AdminHandlers {
     public function ajax_wac_reject_suggestion() {
         $this->check_ajax_permissions();
 
+        // Rate limit: max 1 rejection per 3 seconds.
+        if ( ! $this->check_rate_limit( 'reject_sugg' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'reject_suggestion' ) );
+            $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
+        }
+
         $id     = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
         $reason = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
 
         if ( $id < 1 ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid suggestion ID.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Invalid suggestion ID.', 'woo-agentic-checkout' ) );
         }
 
         $core   = Core::get_instance();
@@ -305,15 +372,12 @@ class AdminHandlers {
 
         if ( ! $suggest ) {
             $this->logger->error( 'ajax_suggest_service_unavailable', array( 'action' => 'reject' ) );
-            wp_send_json_error( array( 'message' => __( 'Suggestion engine unavailable.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Suggestion engine unavailable.', 'woo-agentic-checkout' ) );
         }
 
         $suggest->reject_suggestion( $id, $reason );
         $this->logger->info( 'suggestion_rejected_ajax', array( 'id' => $id, 'reason' => $reason ) );
-        wp_send_json_success( array(
-            'message' => __( 'Suggestion rejected.', 'woo-agentic-checkout' ),
-            'id'      => $id,
-        ) );
+        $this->json_success( __( 'Suggestion rejected.', 'woo-agentic-checkout' ), array( 'id' => $id ) );
     }
 
     /**
@@ -322,10 +386,16 @@ class AdminHandlers {
     public function ajax_wac_run_agent() {
         $this->check_ajax_permissions();
 
+        // Rate limit: max 1 agent run per 10 seconds (slower — agents do real work).
+        if ( ! $this->check_rate_limit( 'run_agent' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'run_agent' ) );
+            $this->json_error( __( 'Agent already running. Please wait a moment.', 'woo-agentic-checkout' ) );
+        }
+
         $agent_key = isset( $_POST['agent_key'] ) ? sanitize_key( wp_unslash( $_POST['agent_key'] ) ) : '';
 
         if ( empty( $agent_key ) ) {
-            wp_send_json_error( array( 'message' => __( 'Agent key is required.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Agent key is required.', 'woo-agentic-checkout' ) );
         }
 
         $core          = Core::get_instance();
@@ -333,7 +403,7 @@ class AdminHandlers {
 
         if ( ! $agent_manager ) {
             $this->logger->error( 'ajax_agents_service_unavailable', array( 'agent' => $agent_key ) );
-            wp_send_json_error( array( 'message' => __( 'Agent manager unavailable.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Agent manager unavailable.', 'woo-agentic-checkout' ) );
         }
 
         try {
@@ -341,35 +411,28 @@ class AdminHandlers {
             $this->logger->info( 'ajax_agent_run', array( 'agent' => $agent_key ) );
 
             if ( isset( $result['error'] ) ) {
-                wp_send_json_error( array(
-                    'message' => sprintf(
-                        /* translators: %1$s: agent name, %2$s: error message */
-                        __( "Agent '%1\$s' failed: %2\$s", 'woo-agentic-checkout' ),
-                        $agent_key,
-                        $result['error']
-                    ),
+                $this->json_error( sprintf(
+                    /* translators: %1$s: agent name, %2$s: error message */
+                    __( "Agent '%1\$s' failed: %2\$s", 'woo-agentic-checkout' ),
+                    $agent_key,
+                    $result['error']
                 ) );
             }
 
-            wp_send_json_success( array(
-                'message' => sprintf(
-                    /* translators: %s: agent name */
-                    __( "Agent '%s' completed successfully.", 'woo-agentic-checkout' ),
-                    $agent_key
-                ),
-                'result'  => $result,
-            ) );
+            $this->json_success( sprintf(
+                /* translators: %s: agent name */
+                __( "Agent '%s' completed successfully.", 'woo-agentic-checkout' ),
+                $agent_key
+            ), array( 'result' => $result ) );
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_agent_run_exception', array(
                 'agent' => $agent_key,
                 'error' => $e->getMessage(),
             ) );
-            wp_send_json_error( array(
-                'message' => sprintf(
-                    /* translators: %s: error message */
-                    __( 'Agent run failed: %s', 'woo-agentic-checkout' ),
-                    $e->getMessage()
-                ),
+            $this->json_error( sprintf(
+                /* translators: %s: error message */
+                __( 'Agent run failed: %s', 'woo-agentic-checkout' ),
+                $e->getMessage()
             ) );
         }
     }
@@ -383,25 +446,25 @@ class AdminHandlers {
         $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 
         if ( $id < 1 ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
         }
 
         $core = Core::get_instance();
         $ab   = $core->get_service( 'ab' );
 
         if ( ! $ab ) {
-            wp_send_json_error( array( 'message' => __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) );
         }
 
         try {
             $experiment = $ab->get_experiment( $id );
             if ( empty( $experiment ) ) {
-                wp_send_json_error( array( 'message' => __( 'Experiment not found.', 'woo-agentic-checkout' ) ) );
+                $this->json_error( __( 'Experiment not found.', 'woo-agentic-checkout' ) );
             }
 
             $bayesian = $ab->bayesian_analysis( $id );
 
-            wp_send_json_success( array(
+            $this->json_success( '', array(
                 'experiment' => $experiment,
                 'bayesian'   => $bayesian,
             ) );
@@ -410,7 +473,7 @@ class AdminHandlers {
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ) );
-            wp_send_json_error( array( 'message' => $e->getMessage() ) );
+            $this->json_error( $e->getMessage() );
         }
     }
 
@@ -431,13 +494,13 @@ class AdminHandlers {
             ) );
 
             if ( empty( $logs ) ) {
-                wp_send_json_success( array( 'logs' => array(), 'message' => __( 'No log entries found.', 'woo-agentic-checkout' ) ) );
+                $this->json_success( __( 'No log entries found.', 'woo-agentic-checkout' ), array( 'logs' => array(), 'count' => 0 ) );
             }
 
-            wp_send_json_success( array( 'logs' => $logs, 'count' => count( $logs ) ) );
+            $this->json_success( '', array( 'logs' => $logs, 'count' => count( $logs ) ) );
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_logs_failed', array( 'error' => $e->getMessage() ) );
-            wp_send_json_error( array( 'message' => __( 'Failed to retrieve logs.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Failed to retrieve logs.', 'woo-agentic-checkout' ) );
         }
     }
 
@@ -450,11 +513,11 @@ class AdminHandlers {
      */
     private function check_ajax_permissions() {
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['nonce'] ) ), 'wac_admin' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Security check failed. Please refresh the page and try again.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Security check failed. Please refresh the page and try again.', 'woo-agentic-checkout' ) );
         }
 
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'woo-agentic-checkout' ) ) );
+            $this->json_error( __( 'Insufficient permissions.', 'woo-agentic-checkout' ) );
         }
     }
 }
