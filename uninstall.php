@@ -18,6 +18,11 @@ if ( ! current_user_can( 'activate_plugins' ) ) {
     exit;
 }
 
+// Verify the current user has plugin activation capability.
+if ( ! current_user_can( 'activate_plugins' ) ) {
+    exit;
+}
+
 // Clean up options.
 $options = array(
     'wac_llm_provider',

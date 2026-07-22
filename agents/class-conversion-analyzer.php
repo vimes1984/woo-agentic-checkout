@@ -63,7 +63,6 @@ class ConversionAnalyzer {
      * Execute agent run.
      *
      * @return array Analysis results with standardised format (success, actions, errors, summary).
-     * @throws \Exception If required services are missing or LLM fails catastrophically.
      */
     public function run(): array {
         // Process lock: prevent concurrent runs.
