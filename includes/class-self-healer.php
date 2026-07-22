@@ -180,13 +180,19 @@ class SelfHealer {
      * @return int
      */
     public function get_total_heals(): int {
+        // Request-level cache for frequently-called dashboard metric.
+        static $cached = null;
+        if ( null !== $cached ) {
+            return $cached;
+        }
         global $wpdb;
-        return (int) $wpdb->get_var(
+        $cached = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log WHERE 1 = %d",
                 1
             )
         );
+        return $cached;
     }
 
     /**
