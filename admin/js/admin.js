@@ -35,15 +35,28 @@
         init: function () {
             this.$body = $(document.body);
 
+            // Guard against missing wacData before binding AJAX.
+            this.checkDependencies();
+            this._hasData = (typeof wacData !== 'undefined' && wacData && wacData.ajaxUrl);
+
             // Merge localised strings if available.
             if (window.wacData && window.wacData.strings) {
                 $.extend(this._strings, window.wacData.strings);
             }
 
             this.ensureToastContainer();
-            this.bindSuggestionActions();
-            this.bindExperimentActions();
-            this.bindAgentRun();
+
+            // Safe bindings — only bind AJAX actions if wacData is available.
+            if (this._hasData) {
+                this.bindSuggestionActions();
+                this.bindExperimentActions();
+                this.bindAgentRun();
+            } else {
+                if (window.console && window.console.warn) {
+                    window.console.warn('WAC Admin: wacData missing — AJAX actions disabled.');
+                }
+            }
+
             this.bindCreateExperiment();
             this.bindTableSorting();
             this.bindFilterInputs();
@@ -60,8 +73,11 @@
             // Start auto-refresh if on dashboard.
             this.startAutoRefresh();
 
-            // Guard against missing wacData.
-            this.checkDependencies();
+            // Clean up on page unload to prevent orphaned timers.
+            var self = this;
+            $(window).on('beforeunload', function () {
+                self.stopAutoRefresh();
+            });
 
             // Announce page loaded for screen readers.
             this.announce('Admin UI loaded', 'polite');
@@ -134,11 +150,15 @@
          *
          * @param {string} message  - Message text.
          * @param {string} type     - 'success', 'error', 'warning', 'info'.
-         * @param {number} duration - Auto-dismiss after ms (0 = manual).
+         * @param {number} duration - Auto-dismiss after ms (0 = manual, 0 = also for errors/warnings).
          */
         showToast: function (message, type, duration) {
             type = type || 'info';
-            duration = (typeof duration === 'number') ? duration : 4000;
+
+            // Default durations: errors/warnings manual dismiss, others auto.
+            if (typeof duration !== 'number') {
+                duration = (type === 'error' || type === 'warning') ? 0 : 4000;
+            }
 
             var icons = {
                 success: '\u2713',
@@ -178,6 +198,11 @@
 
             // Announce to screen readers.
             this.announce(message, 'polite');
+
+            // Scroll to error toasts so they're visible.
+            if (type === 'error') {
+                this.smoothScroll($toast, 80);
+            }
         },
 
         /**
@@ -238,6 +263,39 @@
                 }
                 $el.prop('disabled', false);
                 $el.removeAttr('aria-busy');
+            }
+        },
+
+        /**
+         * Focus management — move focus to the first focusable element
+         * inside a container after an AJAX update.
+         *
+         * @param {jQuery} $container - The updated container.
+         */
+        focusFirstFocusable: function ($container) {
+            if (!$container || !$container.length) {
+                return;
+            }
+            var $focusable = $container.find(
+                'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            ).first();
+            if ($focusable.length) {
+                $focusable.focus();
+            }
+        },
+
+        /**
+         * Smooth-scroll to an element.
+         *
+         * @param {jQuery} $el    - Target element.
+         * @param {number} offset - Extra offset from top (default: 40).
+         */
+        smoothScroll: function ($el, offset) {
+            offset = offset || 40;
+            if ($el && $el.length) {
+                $('html, body').animate({
+                    scrollTop: $el.offset().top - offset
+                }, 250);
             }
         },
 
