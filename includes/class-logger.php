@@ -120,6 +120,10 @@ class Logger {
         $params = array();
 
         if ( ! empty( $args['level'] ) ) {
+            $valid_levels = array( 'info', 'warning', 'error', 'debug' );
+            if ( ! in_array( $args['level'], $valid_levels, true ) ) {
+                $args['level'] = 'info';
+            }
             $where[] = 'level = %s';
             $params[] = $args['level'];
         }
