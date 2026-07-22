@@ -614,14 +614,26 @@
         bindAgentRun: function () {
             var self = this;
 
-            // Admin-post form submission — show inline spinners.
-            $(document).on('submit', 'form[action*="admin-post"]', function () {
+            // Admin-post form submission — confirm and show inline spinners.
+            $(document).on('submit', 'form.wac-quick-action-form, form.wac-agent-run-form', function (e) {
                 var $form = $(this);
+                var agentLabel = $form.find('input[name="agent_label"]').val();
+                if (!agentLabel) {
+                    var $select = $form.find('select[name="agent_key"]');
+                    agentLabel = $select.length ? $select.find('option:selected').text() : 'agent';
+                }
+
+                // Confirmation for agent run.
+                if (!window.confirm('Run "' + agentLabel + '" now?')) {
+                    e.preventDefault();
+                    return;
+                }
+
                 var $submitBtn = $form.find(':submit');
                 self.showLoading($submitBtn);
                 // Show any inline spinners.
                 $form.find('.wac-spinner').show();
-                self.showToast('Running agent...', 'info', 0);
+                self.showToast('Running ' + agentLabel + '...', 'info', 0);
 
                 setTimeout(function () {
                     self.hideLoading($submitBtn);

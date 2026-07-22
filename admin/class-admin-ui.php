@@ -74,32 +74,42 @@ class AdminUI {
             <nav class="nav-tab-wrapper wac-tabs" role="tablist" aria-label="Plugin tabs">
                 <a href="?page=wac-dashboard&tab=dashboard"
                    class="nav-tab <?php echo 'dashboard' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'dashboard' === $tab ? 'true' : 'false'; ?>">
+                   role="tab" aria-selected="<?php echo 'dashboard' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'dashboard' === $tab ? 'page' : 'false'; ?>">
                    📊 Dashboard
                 </a>
                 <a href="?page=wac-dashboard&tab=experiments"
                    class="nav-tab <?php echo 'experiments' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'experiments' === $tab ? 'true' : 'false'; ?>">
-                   🧪 Experiments
+                   role="tab" aria-selected="<?php echo 'experiments' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'experiments' === $tab ? 'page' : 'false'; ?>">
+                   <?php
+                   $exp_count = count( $this->ab->get_active_experiments() );
+                   ?>
+                   🧪 Experiments<?php if ( $exp_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $exp_count ); ?></span><?php endif; ?>
                 </a>
                 <a href="?page=wac-dashboard&tab=suggestions"
                    class="nav-tab <?php echo 'suggestions' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'suggestions' === $tab ? 'true' : 'false'; ?>">
-                   💡 Suggestions
+                   role="tab" aria-selected="<?php echo 'suggestions' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'suggestions' === $tab ? 'page' : 'false'; ?>">
+                   <?php $sugg_count = $this->suggest->get_pending_count(); ?>
+                   💡 Suggestions<?php if ( $sugg_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $sugg_count ); ?></span><?php endif; ?>
                 </a>
                 <a href="?page=wac-dashboard&tab=agents"
                    class="nav-tab <?php echo 'agents' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'agents' === $tab ? 'true' : 'false'; ?>">
+                   role="tab" aria-selected="<?php echo 'agents' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'agents' === $tab ? 'page' : 'false'; ?>">
                    🤖 Agents
                 </a>
                 <a href="?page=wac-dashboard&tab=settings"
                    class="nav-tab <?php echo 'settings' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'settings' === $tab ? 'true' : 'false'; ?>">
+                   role="tab" aria-selected="<?php echo 'settings' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'settings' === $tab ? 'page' : 'false'; ?>">
                    ⚙️ Settings
                 </a>
                 <a href="?page=wac-dashboard&tab=logs"
                    class="nav-tab <?php echo 'logs' === $tab ? 'nav-tab-active' : ''; ?>"
-                   role="tab" aria-selected="<?php echo 'logs' === $tab ? 'true' : 'false'; ?>">
+                   role="tab" aria-selected="<?php echo 'logs' === $tab ? 'true' : 'false'; ?>"
+                   aria-current="<?php echo 'logs' === $tab ? 'page' : 'false'; ?>">
                    📝 Logs
                 </a>
             </nav>
@@ -376,11 +386,12 @@ class AdminUI {
                     <a href="?page=wac-dashboard&tab=suggestions" class="button">Review Suggestions →</a>
                 <?php else : ?>
                     <p><?php esc_html_e( 'No pending suggestions. Next weekly run will generate new ones.', 'woo-agentic-checkout' ); ?></p>
-                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;" class="wac-agent-run-form">
                         <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
                         <input type="hidden" name="action" value="wac_manual_agent">
                         <input type="hidden" name="agent_key" value="suggestion_generator">
-                        <button type="submit" class="button button-secondary">
+                        <input type="hidden" name="agent_label" value="Suggestion Generator">
+                        <button type="submit" class="button button-secondary run-agent-btn">
                             <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
                             <?php esc_html_e( 'Generate Now', 'woo-agentic-checkout' ); ?>
                         </button>
@@ -559,11 +570,12 @@ class AdminUI {
                 __( 'The weekly suggestion generator will analyse your checkout data and propose improvements. You can also trigger a manual generation below.', 'woo-agentic-checkout' ),
                 __( 'Generate Suggestions Now', 'woo-agentic-checkout' )
             ); ?>
-            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;margin-top:12px;">
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;margin-top:12px;" class="wac-agent-run-form">
                 <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
                 <input type="hidden" name="action" value="wac_manual_agent">
                 <input type="hidden" name="agent_key" value="suggestion_generator">
-                <button type="submit" class="button button-secondary">
+                <input type="hidden" name="agent_label" value="Suggestion Generator">
+                <button type="submit" class="button button-secondary run-agent-btn">
                     <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
                     <?php esc_html_e( 'Generate Suggestions Now', 'woo-agentic-checkout' ); ?>
                 </button>
@@ -677,13 +689,14 @@ class AdminUI {
                                 </td>
                                 <td><?php echo esc_html( $agent['lastRun'] ?? __( 'Never run', 'woo-agentic-checkout' ) ); ?></td>
                                 <td>
-                                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+                                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;" class="wac-agent-run-form">
                                         <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
                                         <input type="hidden" name="action" value="wac_manual_agent">
                                         <input type="hidden" name="agent_key" value="<?php echo esc_attr( $key ); ?>">
-                                        <button type="submit" class="button button-small" title="<?php esc_attr_e( 'Run this agent now', 'woo-agentic-checkout' ); ?>">
+                                        <input type="hidden" name="agent_label" value="<?php echo esc_attr( $agent['label'] ?? $key ); ?>">
+                                        <button type="submit" class="button button-small run-agent-btn" title="<?php esc_attr_e( 'Run this agent now', 'woo-agentic-checkout' ); ?>">
                                             <span class="wac-spinner wac-spinner--sm" style="display:none;" aria-hidden="true"></span>
-                                            ▶ <?php esc_html_e( 'Run', 'woo-agentic-checkout' ); ?>
+                                            <span role="img" aria-label="Run">▶</span> <?php esc_html_e( 'Run', 'woo-agentic-checkout' ); ?>
                                         </button>
                                     </form>
                                 </td>
@@ -701,6 +714,26 @@ class AdminUI {
                 <li><strong>Conversion Analyzer + AB Optimizer:</strong> Daily</li>
                 <li><strong>Suggestion Generator:</strong> Weekly</li>
             </ul>
+
+            <?php
+            // Find the most recent lastRun across all agents.
+            $latest_run = '';
+            foreach ( $status as $agent ) {
+                if ( ! empty( $agent['lastRun'] ) && 'Never' !== $agent['lastRun'] && 'Never run' !== $agent['lastRun'] ) {
+                    if ( $agent['lastRun'] > $latest_run ) {
+                        $latest_run = $agent['lastRun'];
+                    }
+                }
+            }
+            if ( ! empty( $latest_run ) ) :
+                ?>
+                <p class="description" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--wac-border-light);">
+                    <?php
+                    /* translators: %s: last agent run time */
+                    echo esc_html( sprintf( __( 'Last agent run: %s ago', 'woo-agentic-checkout' ), human_time_diff( strtotime( $latest_run ) ) ) );
+                    ?>
+                </p>
+            <?php endif; ?>
         </div>
         <?php
     }
