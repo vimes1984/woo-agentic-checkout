@@ -49,7 +49,14 @@ class SuggestionGenerator {
 
         if ( 'yes' !== $settings->get( 'auto_suggest_enabled', 'yes' ) ) {
             $logger->info( 'suggestion_generator_skipped', array( 'reason' => 'auto_suggest_disabled' ) );
-            return array( 'skipped' => true, 'reason' => 'Auto-suggest disabled' );
+            return array(
+                'success' => false,
+                'actions' => 0,
+                'errors'  => array(),
+                'summary' => 'Auto-suggest disabled in settings.',
+                'skipped' => true,
+                'reason'  => 'Auto-suggest disabled',
+            );
         }
 
         // Build rich context for the LLM.
@@ -74,6 +81,13 @@ class SuggestionGenerator {
             $notifier->new_suggestion( $suggestion );
         }
 
+        $summary = count( $suggestions ) . ' suggestions generated';
+        if ( $auto_applied > 0 ) {
+            $summary .= ', ' . $auto_applied . ' auto-applied.';
+        } else {
+            $summary .= '.';
+        }
+
         $logger->info( 'suggestion_generator_run', array(
             'generated'    => count( $suggestions ),
             'auto_applied' => $auto_applied,
@@ -81,6 +95,10 @@ class SuggestionGenerator {
         ) );
 
         return array(
+            'success'      => true,
+            'actions'      => count( $suggestions ),
+            'errors'       => array(),
+            'summary'      => $summary,
             'suggestions'  => $suggestions,
             'auto_applied' => $auto_applied,
             'context'      => array_keys( $context ),

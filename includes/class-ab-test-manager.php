@@ -335,6 +335,55 @@ class ABTestManager {
     }
 
     /**
+     * Deduplication window in seconds.
+     */
+    const DEDUP_WINDOW = 1;
+
+    /**
+     * Check for duplicate event within the dedup window.
+     *
+     * @param int    $variant_id
+     * @param int    $experiment_id
+     * @param string $event_type
+     *
+     * @return bool True if duplicate.
+     */
+    private function is_duplicate_event( int $variant_id, int $experiment_id, string $event_type ): bool {
+        global $wpdb;
+
+        $cache_key = 'wac_dedup_' . $variant_id . '_' . $experiment_id . '_' . $event_type . '_' . $this->get_session_id();
+        $last_time = get_transient( $cache_key );
+
+        if ( false !== $last_time ) {
+            return true;
+        }
+
+        // Also check DB for any event within the dedup window.
+        $recent = $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$this->table_events}
+             WHERE variant_id = %d
+               AND experiment_id = %d
+               AND event_type = %s
+               AND session_id = %s
+               AND created_at >= DATE_SUB(NOW(), INTERVAL %d SECOND)",
+            $variant_id,
+            $experiment_id,
+            $event_type,
+            $this->get_session_id(),
+            self::DEDUP_WINDOW
+        ) );
+
+        if ( (int) $recent > 0 ) {
+            return true;
+        }
+
+        // Set transient to block rapid-fire repeats.
+        set_transient( $cache_key, time(), self::DEDUP_WINDOW );
+
+        return false;
+    }
+
+    /**
      * Record a conversion event for a variant.
      *
      * @param int    $variant_id
@@ -344,6 +393,10 @@ class ABTestManager {
      */
     public function record_conversion( int $variant_id, int $experiment_id, float $revenue = 0.0, string $user_id = '' ) {
         global $wpdb;
+
+        if ( $this->is_duplicate_event( $variant_id, $experiment_id, 'conversion' ) ) {
+            return;
+        }
 
         $wpdb->insert(
             $this->table_events,
@@ -370,6 +423,10 @@ class ABTestManager {
      */
     private function record_impression( int $variant_id, int $experiment_id ) {
         global $wpdb;
+
+        if ( $this->is_duplicate_event( $variant_id, $experiment_id, 'impression' ) ) {
+            return;
+        }
 
         $wpdb->insert(
             $this->table_events,
