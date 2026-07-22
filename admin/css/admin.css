@@ -253,6 +253,32 @@ body:not(.wac-ready) .wac-toast-container {
     gap: 6px;
 }
 
+.wac-card:focus-within {
+    box-shadow: 0 0 0 2px var(--wac-theme), var(--wac-shadow);
+}
+
+/* ─── Icon-only Button ──────────────────────── */
+
+.wac-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--wac-radius);
+    color: var(--wac-text-muted);
+    line-height: 1;
+}
+
+.wac-icon-btn:hover {
+    color: var(--wac-theme);
+    background: var(--wac-bg);
+}
+
+.wac-icon-btn:focus-visible {
+    outline: 2px solid var(--wac-theme);
+    outline-offset: 2px;
+}
+
 /* ─── Spinner ────────────────────────────────── */
 
 .wac-spinner {
@@ -1379,6 +1405,10 @@ html {
         grid-template-columns: 1fr;
     }
 
+    .wac-dashboard-grid .wac-card {
+        padding: 12px;
+    }
+
     .wac-tabs {
         display: flex;
         flex-wrap: wrap;
@@ -1417,8 +1447,25 @@ html {
         font-size: 12px;
     }
 
+    .widefat td .wac-badge--lg {
+        font-size: 10px;
+        padding: 2px 8px;
+    }
+
     .wac-filter-bar {
         justify-content: center;
+    }
+
+    .wac-filter-bar .button {
+        font-size: 11px;
+    }
+
+    .wac-page-intro__text {
+        max-width: 100%;
+    }
+
+    .wac-footer {
+        font-size: 10px;
     }
 }
 

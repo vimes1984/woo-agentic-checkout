@@ -483,7 +483,7 @@ class AdminUI {
 
         <?php if ( ! empty( $all_experiments ) ) : ?>
             <div class="wac-filter-row">
-                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter experiments…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter experiments', 'woo-agentic-checkout' ); ?>">
+                <input type="text" class="wac-table-filter" id="wac-filter-experiments" placeholder="<?php esc_attr_e( 'Filter experiments…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter experiments', 'woo-agentic-checkout' ); ?>">
             </div>
         <?php endif; ?>
 
@@ -620,7 +620,7 @@ class AdminUI {
         <?php else : ?>
             <p><?php printf( esc_html__( 'Showing %d pending suggestions.', 'woo-agentic-checkout' ), count( $pending ) ); ?></p>
             <div class="wac-filter-row">
-                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter suggestions…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter suggestions', 'woo-agentic-checkout' ); ?>">
+                <input type="text" class="wac-table-filter" id="wac-filter-suggestions" placeholder="<?php esc_attr_e( 'Filter suggestions…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter suggestions', 'woo-agentic-checkout' ); ?>">
             </div>
 
             <?php foreach ( $pending as $s ) : ?>
@@ -688,8 +688,10 @@ class AdminUI {
     private function render_agents_tab() {
         $status = $this->agents->get_status();
         ?>
-        <h2>🤖 Agents</h2>
-        <p><?php esc_html_e( 'Each agent runs autonomously on its schedule. Toggle them on/off in Settings.', 'woo-agentic-checkout' ); ?></p>
+        <div class="wac-page-intro">
+            <h2><span role="img" aria-label="Agents">🤖</span> Agents</h2>
+            <p class="wac-page-intro__text"><?php esc_html_e( 'Each agent runs autonomously on its schedule. Toggle them on/off in Settings. Agents detect errors, analyse conversion data, optimise A/B tests, generate suggestions, and heal checkout issues.', 'woo-agentic-checkout' ); ?></p>
+        </div>
 
         <?php if ( empty( $status ) ) : ?>
             <?php $this->render_empty_state(
@@ -980,7 +982,10 @@ class AdminUI {
 
         $logs   = $logger->get_logs( array( 'level' => $level, 'limit' => 200 ) );
         ?>
-        <h2>📝 Event Log</h2>
+        <div class="wac-page-intro">
+            <h2><span role="img" aria-label="Logs">📝</span> Event Log</h2>
+            <p class="wac-page-intro__text"><?php esc_html_e( 'View plugin activity and diagnostic events. Filter by severity level to find errors, warnings, or information entries.', 'woo-agentic-checkout' ); ?></p>
+        </div>
 
         <div class="wac-filter-bar" role="group" aria-label="Log level filter">
             <a href="?page=wac-dashboard&tab=logs" class="button <?php echo empty( $level ) ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo empty( $level ) ? 'true' : 'false'; ?>"><?php esc_html_e( 'All', 'woo-agentic-checkout' ); ?></a>
@@ -997,7 +1002,7 @@ class AdminUI {
             ); ?>
         <?php else : ?>
             <div class="wac-filter-row">
-                <input type="text" class="wac-table-filter" placeholder="<?php esc_attr_e( 'Filter logs…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter log entries', 'woo-agentic-checkout' ); ?>">
+                <input type="text" class="wac-table-filter" id="wac-filter-logs" placeholder="<?php esc_attr_e( 'Filter logs…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter log entries', 'woo-agentic-checkout' ); ?>">
             </div>
             <table class="widefat striped" id="wac-logs-table">
                 <thead>
