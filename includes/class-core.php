@@ -173,47 +173,55 @@ class Core {
 
     /**
      * Show admin notices for wac_msg query params.
+     *
+     * Notices are is-dismissible and rendered only on the wac-dashboard page.
      */
     public function admin_notices() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             return;
         }
 
-        if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification
+        // Check nonce for any GET action that may have triggered a notice.
+        // We permit notices without nonce since they're read-only display.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) {
             return;
         }
 
-        $msg    = sanitize_key( wp_unslash( $_GET['wac_msg'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
-        $agent  = isset( $_GET['wac_agent'] ) ? sanitize_key( wp_unslash( $_GET['wac_agent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+        $msg    = sanitize_key( wp_unslash( $_GET['wac_msg'] ) );
+        $agent  = isset( $_GET['wac_agent'] ) ? sanitize_key( wp_unslash( $_GET['wac_agent'] ) ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
         $notices = array(
-            'success'         => array( 'type' => 'success', 'text' => $agent
+            'success'              => array( 'type' => 'success', 'text' => $agent
                 ? sprintf(
                     /* translators: %s: agent name */
                     __( "Agent '%s' ran successfully.", 'woo-agentic-checkout' ),
                     $agent
                 )
-                : __( 'Action completed.', 'woo-agentic-checkout' )
+                : __( 'Action completed successfully.', 'woo-agentic-checkout' )
             ),
-            'error'           => array( 'type' => 'error',   'text' => $agent
+            'error'                => array( 'type' => 'error',   'text' => $agent
                 ? sprintf(
                     /* translators: %s: agent name */
-                    __( "Agent '%s' encountered an error.", 'woo-agentic-checkout' ),
+                    __( "Agent '%s' encountered an error. Check the logs for details.", 'woo-agentic-checkout' ),
                     $agent
                 )
-                : __( 'Action failed.', 'woo-agentic-checkout' )
+                : __( 'Action failed. Please try again or check the logs.', 'woo-agentic-checkout' )
             ),
-            'no_agent'        => array( 'type' => 'warning', 'text' => __( 'No agent selected.', 'woo-agentic-checkout' ) ),
-            'applied'         => array( 'type' => 'success', 'text' => __( 'Suggestion applied successfully.', 'woo-agentic-checkout' ) ),
-            'rejected'        => array( 'type' => 'info',    'text' => __( 'Suggestion rejected.', 'woo-agentic-checkout' ) ),
-            'exp_placeholder' => array( 'type' => 'info',    'text' => __( 'Experiment creation wizard coming in a future update!', 'woo-agentic-checkout' ) ),
-            'service_unavailable' => array( 'type' => 'error', 'text' => __( 'Service unavailable. Please try again.', 'woo-agentic-checkout' ) ),
+            'no_agent'             => array( 'type' => 'warning', 'text' => __( 'No agent selected.', 'woo-agentic-checkout' ) ),
+            'applied'              => array( 'type' => 'success', 'text' => __( 'Suggestion applied successfully.', 'woo-agentic-checkout' ) ),
+            'rejected'             => array( 'type' => 'info',    'text' => __( 'Suggestion rejected.', 'woo-agentic-checkout' ) ),
+            'exp_placeholder'      => array( 'type' => 'info',    'text' => __( 'Experiment creation wizard coming in a future update!', 'woo-agentic-checkout' ) ),
+            'service_unavailable'  => array( 'type' => 'error', 'text'  => __( 'Service unavailable. Please refresh and try again.', 'woo-agentic-checkout' ) ),
         );
 
         if ( isset( $notices[ $msg ] ) ) {
             $n = $notices[ $msg ];
             printf(
-                '<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
+                '<div class="notice notice-%s is-dismissible wac-notice" data-wac-msg="%s"><p>%s</p></div>',
                 esc_attr( $n['type'] ),
+                esc_attr( $msg ),
                 esc_html( $n['text'] )
             );
         }
@@ -230,6 +238,8 @@ class Core {
 
     /**
      * Enqueue admin CSS/JS.
+     *
+     * @param string $hook The current admin page hook.
      */
     public function enqueue_admin_assets( $hook ) {
         if ( ! str_contains( $hook, 'wac-' ) ) {
@@ -237,10 +247,35 @@ class Core {
         }
         wp_enqueue_style( 'wac-admin', WAC_URL . 'admin/css/admin.css', array(), WAC_VERSION );
         wp_enqueue_script( 'wac-admin', WAC_URL . 'admin/js/admin.js', array( 'jquery', 'wp-util' ), WAC_VERSION, true );
+
+        $ab_service     = $this->get_service( 'ab' );
+        $active_tests   = $ab_service ? $ab_service->get_active_experiments() : array();
+        $total_heals    = 0;
+        $healer_service = $this->get_service( 'healer' );
+        if ( $healer_service && method_exists( $healer_service, 'get_total_heals' ) ) {
+            $total_heals = $healer_service->get_total_heals();
+        }
+
         wp_localize_script( 'wac-admin', 'wacData', array(
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'wac_admin' ),
-            'restUrl' => rest_url( 'wac/v1' ),
+            'ajaxUrl'             => admin_url( 'admin-ajax.php' ),
+            'nonce'               => wp_create_nonce( 'wac_admin' ),
+            'restUrl'             => rest_url( 'wac/v1' ),
+            'version'             => WAC_VERSION,
+            'activeExperiments'   => count( $active_tests ),
+            'totalSelfHeals'      => (int) $total_heals,
+            'pluginUrl'           => WAC_URL,
+            'strings'             => array(
+                'confirmPause'    => __( 'Pause this experiment? Visitors will see the control variant.', 'woo-agentic-checkout' ),
+                'confirmResume'   => __( 'Resume this experiment?', 'woo-agentic-checkout' ),
+                'confirmApply'    => __( 'Apply this suggestion to your checkout?', 'woo-agentic-checkout' ),
+                'confirmReject'   => __( 'Reject this suggestion? It will be dismissed permanently.', 'woo-agentic-checkout' ),
+                'rejectReason'    => __( 'Reason for rejection (optional):', 'woo-agentic-checkout' ),
+                'loading'         => __( 'Loading…', 'woo-agentic-checkout' ),
+                'applying'        => __( 'Applying…', 'woo-agentic-checkout' ),
+                'rejecting'       => __( 'Rejecting…', 'woo-agentic-checkout' ),
+                'errorGeneric'    => __( 'Something went wrong. Please try again.', 'woo-agentic-checkout' ),
+                'errorNetwork'    => __( 'Network error. Please check your connection.', 'woo-agentic-checkout' ),
+            ),
         ) );
     }
 

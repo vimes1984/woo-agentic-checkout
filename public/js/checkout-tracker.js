@@ -96,12 +96,27 @@
         /**
          * Initialize beacon.
          */
+        /** Page load timestamp */
+        _pageLoadTime: Date.now(),
+
         init: function () {
             if (typeof wacBeacon === 'undefined') return;
 
+            this._pageLoadTime = Date.now();
             this.trackStep('checkout_started');
             this.bindEvents();
             this.trackFieldInteractions();
+            this._trackSessionDuration();
+        },
+
+        /** Report session duration after 30s to measure engagement */
+        _trackSessionDuration: function () {
+            var self = this;
+            setTimeout(function () {
+                self._sendThrottled('session_active_30s', {
+                    duration: Date.now() - self._pageLoadTime
+                });
+            }, 30000);
         },
 
         /**
@@ -182,6 +197,14 @@
                         timeOnPage: self.steps.timings[self.steps.current]
                     });
                 }
+            });
+
+            // Page unload — send final event via sendBeacon.
+            window.addEventListener('beforeunload', function () {
+                self._sendThrottled('checkout_unloaded', {
+                    step: self.steps.current,
+                    duration: Date.now() - self._pageLoadTime
+                });
             });
         },
 

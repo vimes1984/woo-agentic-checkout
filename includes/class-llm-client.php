@@ -94,7 +94,8 @@ class LLMClient {
      *
      * @return array Parsed JSON response.
      *
-     * @throws \RuntimeException On API failure or invalid response.
+     * @throws \RuntimeException     On API failure, invalid response, rate limit exceeded.
+     * @throws \InvalidArgumentException On missing required parameters.
      */
     public function analyze( string $system_prompt, string $user_prompt, array $response_schema = array(), int $cache_ttl = null ): array {
         $cache_ttl = $cache_ttl ?? $this->cache_ttl;
