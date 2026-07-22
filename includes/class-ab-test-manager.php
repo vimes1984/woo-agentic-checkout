@@ -1016,4 +1016,392 @@ class ABTestManager {
             'cr'          => $impressions > 0 ? round( ( $conversions / $impressions ) * 100, 2 ) : 0,
         );
     }
+
+    /**
+     * Detect overlapping experiments — warn if a visitor is in multiple experiments simultaneously.
+     *
+     * @return array List of active experiment names the current visitor is assigned to.
+     */
+    public function get_active_overlaps(): array {
+        $experiments = $this->get_active_experiments();
+        $overlaps    = array();
+
+        if ( count( $experiments ) < 2 ) {
+            return $overlaps;
+        }
+
+        $assigned = $this->get_session_variants();
+        foreach ( $assigned as $exp_name => $variant_key ) {
+            $overlaps[] = array(
+                'experiment' => $exp_name,
+                'variant'    => $variant_key,
+            );
+        }
+
+        return $overlaps;
+    }
+
+    /**
+     * Compute the expected loss of choosing a variant over control (E[Loss]).
+     *
+     * @param int $experiment_id
+     *
+     * @return array Variant key => expected loss.
+     */
+    public function get_expected_loss( int $experiment_id ): array {
+        $analysis = $this->bayesian_analysis( $experiment_id );
+        $losses   = array();
+
+        $best_prob = 0.0;
+        $best_key  = '';
+        foreach ( $analysis as $r ) {
+            if ( ! $r['is_control'] && $r['prob_better'] > $best_prob ) {
+                $best_prob = $r['prob_better'];
+                $best_key  = $r['variant_key'];
+            }
+        }
+
+        foreach ( $analysis as $r ) {
+            if ( $r['is_control'] ) {
+                continue;
+            }
+            // Expected loss = (1 - P(being best)) * potential upside.
+            $prob_being_best = $r['prob_better'] / 100.0;
+            $expected_loss   = ( 1.0 - $prob_being_best ) * ( $best_prob / 100.0 );
+            $losses[ $r['variant_key'] ] = round( $expected_loss, 4 );
+        }
+
+        return $losses;
+    }
+
+    /**
+     * Compute a 95% credible interval for each variant's conversion rate.
+     *
+     * @param int $experiment_id
+     *
+     * @return array Variant key => { cr_lower, cr_upper }.
+     */
+    public function get_credible_intervals( int $experiment_id ): array {
+        $variants = $this->get_variants( $experiment_id );
+        $intervals = array();
+
+        foreach ( $variants as $v ) {
+            $alpha = $v['conversions'] + 1;
+            $beta  = $v['impressions'] - $v['conversions'] + 1;
+
+            // Use approximation: mean ± 2 * std for Beta distribution.
+            $mean   = $alpha / ( $alpha + $beta );
+            $std    = sqrt( ( $alpha * $beta ) / ( ( $alpha + $beta ) ** 2 * ( $alpha + $beta + 1 ) ) );
+            $lower  = max( 0, ( $mean - 2 * $std ) * 100 );
+            $upper  = min( 100, ( $mean + 2 * $std ) * 100 );
+
+            $intervals[ $v['variant_key'] ] = array(
+                'cr_lower' => round( $lower, 2 ),
+                'cr_upper' => round( $upper, 2 ),
+            );
+        }
+
+        return $intervals;
+    }
+
+    /**
+     * Detect Sample Ratio Mismatch (SRM) — checks if observed traffic split matches expected.
+     *
+     * @param int $experiment_id
+     *
+     * @return array{ has_srm: bool, p_value: float }
+     */
+    public function detect_srm( int $experiment_id ): array {
+        $variants = $this->get_variants( $experiment_id );
+        if ( empty( $variants ) ) {
+            return array( 'has_srm' => false, 'p_value' => 1.0 );
+        }
+
+        $total_impressions = array_sum( array_column( $variants, 'impressions' ) );
+        if ( $total_impressions < 1 ) {
+            return array( 'has_srm' => false, 'p_value' => 1.0 );
+        }
+
+        $chi2 = 0.0;
+        foreach ( $variants as $v ) {
+            $expected = $total_impressions * ( $v['traffic_percent'] / 100.0 );
+            $observed = (int) $v['impressions'];
+            if ( $expected > 0 ) {
+                $chi2 += ( ( $observed - $expected ) ** 2 ) / $expected;
+            }
+        }
+
+        // Chi-squared with df = k-1. Approximate p-value using simple threshold.
+        $df      = count( $variants ) - 1;
+        $has_srm = $chi2 > ( $df > 0 ? 3.84 * $df : 3.84 ); // Approximate critical value.
+
+        return array(
+            'has_srm'  => $has_srm,
+            'chi2'     => round( $chi2, 4 ),
+            'p_value'  => round( exp( -$chi2 / 2 ), 4 ), // Rough approximation.
+        );
+    }
+
+    /**
+     * Export experiment data as an array suitable for JSON/CSV.
+     *
+     * @param int $experiment_id
+     *
+     * @return array
+     */
+    public function export_experiment( int $experiment_id ): array {
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp ) {
+            return array();
+        }
+
+        $data = array(
+            'experiment' => array(
+                'id'          => $exp['id'],
+                'name'        => $exp['name'],
+                'description' => $exp['description'],
+                'status'      => $exp['status'],
+                'created_at'  => $exp['created_at'],
+                'ended_at'    => $exp['ended_at'] ?? '',
+                'winner_key'  => $exp['winner_key'] ?? '',
+            ),
+            'variants' => array(),
+        );
+
+        foreach ( $exp['variants'] as $v ) {
+            $data['variants'][] = array(
+                'key'           => $v['variant_key'],
+                'name'          => $v['variant_name'],
+                'is_control'    => (bool) $v['is_control'],
+                'impressions'   => (int) $v['impressions'],
+                'conversions'   => (int) $v['conversions'],
+                'cr'            => $v['impressions'] > 0
+                    ? round( $v['conversions'] / $v['impressions'] * 100, 4 )
+                    : 0,
+                'revenue'       => (float) $v['revenue'],
+                'traffic_pct'   => (int) $v['traffic_percent'],
+                'config'        => json_decode( $v['config_snapshot'], true ),
+            );
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get day-of-week conversion analysis for an experiment.
+     *
+     * @param int $experiment_id
+     *
+     * @return array
+     */
+    public function get_dow_breakdown( int $experiment_id ): array {
+        global $wpdb;
+
+        $results = $wpdb->get_results( $wpdb->prepare(
+            "SELECT
+                DAYOFWEEK(ev.created_at) as dow,
+                ev.variant_id,
+                v.variant_key,
+                v.variant_name,
+                COUNT(*) as events,
+                SUM(CASE WHEN ev.event_type = 'conversion' THEN 1 ELSE 0 END) as conversions
+             FROM {$this->table_events} ev
+             INNER JOIN {$this->table_variants} v ON v.id = ev.variant_id
+             WHERE ev.experiment_id = %d
+             GROUP BY DAYOFWEEK(ev.created_at), ev.variant_id, v.variant_key, v.variant_name
+             ORDER BY dow, v.variant_key",
+            $experiment_id
+        ), ARRAY_A );
+
+        $this->log_db_error( 'get_dow_breakdown' );
+
+        return $results ?: array();
+    }
+
+    /**
+     * Get cumulative conversion data over time for charting.
+     *
+     * @param int    $experiment_id
+     * @param string $granularity 'hour'|'day'|'week'
+     *
+     * @return array
+     */
+    public function get_cumulative_data( int $experiment_id, string $granularity = 'day' ): array {
+        global $wpdb;
+
+        $date_format = ( 'hour' === $granularity ) ? '%Y-%m-%d %H:00:00' : ( 'week' === $granularity ? '%Y-%u' : '%Y-%m-%d' );
+
+        $results = $wpdb->get_results( $wpdb->prepare(
+            "SELECT
+                DATE_FORMAT(ev.created_at, '{$date_format}') as period,
+                ev.variant_id,
+                v.variant_key,
+                COUNT(*) as total_events,
+                SUM(CASE WHEN ev.event_type = 'conversion' THEN 1 ELSE 0 END) as conversions,
+                SUM(CASE WHEN ev.event_type = 'impression' THEN 1 ELSE 0 END) as impressions
+             FROM {$this->table_events} ev
+             INNER JOIN {$this->table_variants} v ON v.id = ev.variant_id
+             WHERE ev.experiment_id = %d
+             GROUP BY DATE_FORMAT(ev.created_at, '{$date_format}'), ev.variant_id, v.variant_key
+             ORDER BY period ASC, v.variant_key",
+            $experiment_id
+        ), ARRAY_A );
+
+        $this->log_db_error( 'get_cumulative_data' );
+
+        return $results ?: array();
+    }
+
+    /**
+     * Archive (soft-delete) an experiment.
+     *
+     * @param int $experiment_id
+     */
+    public function archive_experiment( int $experiment_id ) {
+        global $wpdb;
+        $wpdb->update(
+            $this->table_experiments,
+            array( 'status' => 'archived' ),
+            array( 'id' => $experiment_id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+        $this->log_db_error( 'archive_experiment' );
+    }
+
+    /**
+     * Estimate required sample size for given parameters.
+     *
+     * @param float $baseline_cr      Expected control conversion rate (0-1).
+     * @param float $minimum_effect   Minimum detectable effect (relative, 0-1).
+     * @param float $alpha            Significance level.
+     * @param float $power            Statistical power.
+     *
+     * @return int Estimated samples per variant.
+     */
+    public function estimate_sample_size( float $baseline_cr, float $minimum_effect = 0.10, float $alpha = 0.05, float $power = 0.80 ): int {
+        if ( $baseline_cr <= 0 || $baseline_cr >= 1 ) {
+            return 0;
+        }
+
+        $z_alpha = 1.96; // z for alpha=0.05
+        $z_beta  = 0.84;  // z for power=0.80
+
+        if ( 0.01 === $alpha ) {
+            $z_alpha = 2.576;
+        } elseif ( 0.10 === $alpha ) {
+            $z_alpha = 1.645;
+        }
+
+        if ( 0.90 === $power ) {
+            $z_beta = 1.282;
+        } elseif ( 0.95 === $power ) {
+            $z_beta = 1.645;
+        }
+
+        $p1 = $baseline_cr;
+        $p2 = $p1 * ( 1 + $minimum_effect );
+
+        if ( $p2 >= 1.0 ) {
+            return 0;
+        }
+
+        $p_avg = ( $p1 + $p2 ) / 2.0;
+        $num   = ( $z_alpha * sqrt( 2 * $p_avg * ( 1 - $p_avg ) ) + $z_beta * sqrt( $p1 * ( 1 - $p1 ) + $p2 * ( 1 - $p2 ) ) ) ** 2;
+        $den   = ( $p2 - $p1 ) ** 2;
+
+        $n = (int) ceil( $num / max( 0.0001, $den ) );
+
+        return max( 10, $n );
+    }
+
+    /**
+     * Get a list of recommended database indexes for the events table.
+     *
+     * @return array
+     */
+    public function get_recommended_indexes(): array {
+        return array(
+            'CREATE INDEX idx_wac_events_exp_var ON ' . $this->table_events . ' (experiment_id, variant_id);',
+            'CREATE INDEX idx_wac_events_session ON ' . $this->table_events . ' (session_id, event_type, created_at);',
+            'CREATE INDEX idx_wac_events_type_time ON ' . $this->table_events . ' (event_type, created_at);',
+        );
+    }
+
+    /**
+     * Get a summary of all experiments suitable for dashboard display.
+     *
+     * @return array
+     */
+    public function get_dashboard_summary(): array {
+        $experiments = $this->get_experiments();
+        $summary     = array(
+            'total_experiments' => count( $experiments ),
+            'active_count'      => 0,
+            'winner_count'      => 0,
+            'total_impressions' => 0,
+            'total_conversions' => 0,
+            'total_revenue'     => 0.0,
+            'active'            => array(),
+        );
+
+        foreach ( $experiments as $exp ) {
+            if ( 'active' === $exp['status'] ) {
+                $summary['active_count']++;
+            }
+            if ( 'winner' === $exp['status'] ) {
+                $summary['winner_count']++;
+            }
+
+            $impressions  = 0;
+            $conversions  = 0;
+            $revenue      = 0.0;
+            foreach ( $exp['variants'] as $v ) {
+                $impressions += (int) $v['impressions'];
+                $conversions += (int) $v['conversions'];
+                $revenue     += (float) $v['revenue'];
+            }
+
+            $summary['total_impressions'] += $impressions;
+            $summary['total_conversions'] += $conversions;
+            $summary['total_revenue']     += $revenue;
+
+            $summary['active'][] = array(
+                'id'          => $exp['id'],
+                'name'        => $exp['name'],
+                'status'      => $exp['status'],
+                'impressions' => $impressions,
+                'conversions' => $conversions,
+                'revenue'     => $revenue,
+                'winner'      => $exp['winner_key'] ?? '',
+            );
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Get the list of all possible events stored as CSV-friendly output.
+     *
+     * @param int    $experiment_id
+     * @param int    $limit
+     * @param int    $offset
+     *
+     * @return array
+     */
+    public function get_raw_events( int $experiment_id, int $limit = 100, int $offset = 0 ): array {
+        global $wpdb;
+
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT ev.*, v.variant_key, v.variant_name
+             FROM {$this->table_events} ev
+             INNER JOIN {$this->table_variants} v ON v.id = ev.variant_id
+             WHERE ev.experiment_id = %d
+             ORDER BY ev.created_at DESC
+             LIMIT %d OFFSET %d",
+            $experiment_id,
+            $limit,
+            $offset
+        ), ARRAY_A );
+    }
 }
