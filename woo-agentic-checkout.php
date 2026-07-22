@@ -22,12 +22,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-// Define plugin constants.
-define( 'WAC_VERSION', '0.1.0-alpha' );
-define( 'WAC_FILE', __FILE__ );
-define( 'WAC_PATH', plugin_dir_path( __FILE__ ) );
-define( 'WAC_URL', plugin_dir_url( __FILE__ ) );
-define( 'WAC_BASENAME', plugin_basename( __FILE__ ) );
+// Define plugin constants — guard against redefinition if loaded multiple times.
+defined( 'WAC_VERSION' ) || define( 'WAC_VERSION', '0.1.0-alpha' );
+defined( 'WAC_FILE' )    || define( 'WAC_FILE', __FILE__ );
+defined( 'WAC_PATH' )    || define( 'WAC_PATH', plugin_dir_path( __FILE__ ) );
+defined( 'WAC_URL' )     || define( 'WAC_URL', plugin_dir_url( __FILE__ ) );
+defined( 'WAC_BASENAME' )|| define( 'WAC_BASENAME', plugin_basename( __FILE__ ) );
 
 /**
  * Autoloader for plugin classes.
