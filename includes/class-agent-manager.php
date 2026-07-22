@@ -291,8 +291,12 @@ class AgentManager {
      * @return mixed
      */
     public function run_agent( $key ) {
-        $results = $this->run_agents( array( $key ) );
-        return isset( $results[ $key ] ) ? $results[ $key ] : null;
+        if ( ! is_string( $key ) || empty( $key ) ) {
+            return null;
+        }
+        $safe_key = sanitize_key( $key );
+        $results  = $this->run_agents( array( $safe_key ) );
+        return isset( $results[ $safe_key ] ) ? $results[ $safe_key ] : null;
     }
 
     /**

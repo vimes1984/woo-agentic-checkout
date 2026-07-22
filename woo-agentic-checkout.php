@@ -93,7 +93,13 @@ function wac_autoload_execute( $class ) {
 
     // Check flat class names.
     if ( isset( $file_map[ $relative_class ] ) ) {
-        require_once WAC_PATH . $file_map[ $relative_class ];
+        $file_path = WAC_PATH . $file_map[ $relative_class ];
+        // Guard against LFI: verify the resolved path is within the plugin directory.
+        $real_base = realpath( WAC_PATH );
+        $real_file = realpath( $file_path );
+        if ( false !== $real_file && false !== $real_base && str_starts_with( $real_file, $real_base ) && file_exists( $file_path ) ) {
+            require_once $file_path;
+        }
         return;
     }
 

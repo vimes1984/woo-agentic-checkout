@@ -139,8 +139,9 @@ class Notifier {
                 . '</pre>';
         }
 
-        $safe_title   = esc_html( $title );
-        $safe_message = esc_html( $message );
+        $safe_title      = esc_html( $title );
+        $safe_message    = esc_html( $message );
+        $dashboard_url   = esc_url( $this->get_dashboard_url() );
 
         return <<<HTML
 <!DOCTYPE html>
@@ -152,7 +153,8 @@ class Notifier {
         <p style="margin:0 0 16px;color:#50575e;font-size:14px;white-space:pre-wrap;">{$safe_message}</p>
         {$context_html}
         <p style="margin:16px 0 0;font-size:11px;color:#8c8f94;">
-            Woo Agentic Checkout &mdash; <a href="
+            Woo Agentic Checkout &mdash; <a href="{$dashboard_url}" style="color:#2271b1;">View Dashboard</a>
+        </p>
     </div>
 </body>
 </html>
@@ -190,12 +192,15 @@ HTML;
 
         $color = 'info' === $severity ? '#2271b1' : ( 'warning' === $severity ? '#dba617' : '#d63638' );
 
+        $safe_title   = esc_html( $title );
+        $safe_message = esc_html( $message );
+
         $payload = array(
             'attachments' => array(
                 array(
                     'color'      => $color,
-                    'title'      => $title,
-                    'text'       => $message,
+                    'title'      => $safe_title,
+                    'text'       => $safe_message,
                     'footer'     => 'Woo Agentic Checkout',
                     'ts'         => time(),
                     'fields'     => array(
