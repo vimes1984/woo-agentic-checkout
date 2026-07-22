@@ -42,6 +42,8 @@ class ABOptimizer {
 
     /**
      * Execute agent run.
+     *
+     * @return array Standardised result (success, actions, errors, summary).
      */
     public function run(): array {
         $ab      = $this->services['ab'] ?? null;

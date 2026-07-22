@@ -14,6 +14,11 @@ defined( 'ABSPATH' ) || exit;
 class SelfHealingAgent {
 
     /**
+     * Agent revision for tracking prompt/behaviour changes.
+     */
+    const REVISION = 'batch5.12';
+
+    /**
      * @var array Service dependencies.
      */
     private $services;
@@ -37,7 +42,7 @@ class SelfHealingAgent {
     /**
      * Execute agent run — health scan + try to fix anything broken.
      *
-     * @return array Healing results.
+     * @return array Standardised result (success, actions, errors, summary, healed, failed).
      */
     public function run(): array {
         $healer    = $this->services['healer'] ?? null;

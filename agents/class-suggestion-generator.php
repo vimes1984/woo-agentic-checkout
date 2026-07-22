@@ -43,7 +43,7 @@ class SuggestionGenerator {
     /**
      * Execute agent run.
      *
-     * @return array Generated suggestions.
+     * @return array Standardised result (success, actions, errors, summary, suggestions).
      */
     public function run(): array {
         $suggest_engine = $this->services['suggest'];

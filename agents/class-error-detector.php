@@ -42,7 +42,7 @@ class ErrorDetector {
     /**
      * Execute agent run. Checks recent errors and evaluates severity.
      *
-     * @return array Detected issues.
+     * @return array Standardised result (success, actions, errors, summary, issues, critical_count).
      */
     public function run(): array {
         $signals  = $this->services['signals'] ?? null;
