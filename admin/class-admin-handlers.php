@@ -209,7 +209,7 @@ class AdminHandlers {
      * Reject a suggestion (admin-post version).
      */
     public function handle_wac_reject_suggestion() {
-        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_reject_suggestion' ) ) {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['wac_nonce'] ), 'wac_reject_suggestion' ) ) {
             wp_die( 'Security check failed.' );
         }
 
@@ -240,7 +240,7 @@ class AdminHandlers {
      * Create experiment (placeholder — extended in later phases).
      */
     public function handle_wac_create_experiment() {
-        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_create_experiment' ) ) {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['wac_nonce'] ), 'wac_create_experiment' ) ) {
             wp_die( 'Security check failed.' );
         }
 
@@ -257,7 +257,7 @@ class AdminHandlers {
      * Handle advanced settings save (placeholder).
      */
     public function handle_wac_save_settings_advanced() {
-        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_save_settings_advanced' ) ) {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['wac_nonce'] ), 'wac_save_settings_advanced' ) ) {
             wp_die( 'Security check failed.' );
         }
 
@@ -512,7 +512,7 @@ class AdminHandlers {
      * Sends a JSON error response and exits if checks fail.
      */
     private function check_ajax_permissions() {
-        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['nonce'] ) ), 'wac_admin' ) ) {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['nonce'] ), 'wac_admin' ) ) {
             $this->json_error( __( 'Security check failed. Please refresh the page and try again.', 'woo-agentic-checkout' ) );
         }
 
