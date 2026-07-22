@@ -182,7 +182,7 @@ class SuggestionGenerator {
             'experiments'           => $experiments,
             'recent_errors'         => $safe_errors,
             'plugin_version'        => WAC_VERSION,
-            'wc_version'            => defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown',
+            'wc_version'            => apply_filters( 'wac_context_wc_version', defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown' ),
             'wp_version'            => get_bloginfo( 'version' ),
             'currency'              => get_woocommerce_currency(),
             'country'               => get_option( 'woocommerce_default_country', '' ),
