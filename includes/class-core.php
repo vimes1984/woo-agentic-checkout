@@ -337,9 +337,19 @@ class Core {
 
         $event   = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
         $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+
+        // Limit raw data to 10KB to prevent oversized payload storage.
+        if ( is_string( $raw_data ) && strlen( $raw_data ) > 10240 ) {
+            $raw_data = substr( $raw_data, 0, 10240 );
+        }
+
         $data    = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
         $data    = is_array( $data ) ? $data : array();
         $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
+
+        if ( strlen( $event ) > 100 || strlen( $session ) > 64 ) {
+            wp_send_json_error( array( 'message' => 'Invalid field length.' ), 400 );
+        }
 
         do_action( 'wac_beacon_event', $event, $data, $session );
 
