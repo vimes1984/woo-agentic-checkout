@@ -165,6 +165,9 @@ class Settings {
     /**
      * Sanitize setting values.
      *
+     * Preserves float precision for settings like ab_confidence_threshold (0.95)
+     * while still hardening against injection.
+     *
      * @param mixed $value
      *
      * @return mixed
@@ -177,7 +180,14 @@ class Settings {
             return array_map( array( $this, 'sanitize' ), $value );
         }
         if ( is_numeric( $value ) ) {
+            // Preserve float values (e.g. ab_confidence_threshold = 0.95).
+            if ( is_float( $value + 0 ) && false !== strpos( (string) $value, '.' ) ) {
+                return floatval( $value );
+            }
             return intval( $value );
+        }
+        if ( is_bool( $value ) ) {
+            return $value ? 'yes' : 'no';
         }
         return sanitize_text_field( (string) $value );
     }

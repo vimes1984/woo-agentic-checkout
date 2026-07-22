@@ -126,13 +126,13 @@ class SuggestionEngine {
         ), ARRAY_A );
 
         // Strict type casting for numeric fields.
-        foreach ( $rows as &\$row ) {
-            \$row["id"] = (int) \$row["id"];
-            \$row["score"] = (float) \$row["score"];
+        foreach ( $rows as &$row ) {
+            $row['id'] = (int) $row['id'];
+            $row['score'] = (float) $row['score'];
         }
-        unset( \$row );
+        unset( $row );
 
-        return \$rows;
+        return $rows;
     }
 
     /**
