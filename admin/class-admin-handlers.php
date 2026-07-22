@@ -198,6 +198,22 @@ class AdminHandlers {
         exit;
     }
 
+    /**
+     * Handle advanced settings save (placeholder).
+     */
+    public function handle_wac_save_settings_advanced() {
+        if ( ! isset( $_POST['wac_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['wac_nonce'] ) ), 'wac_save_settings_advanced' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die( 'Insufficient permissions.' );
+        }
+
+        wp_safe_redirect( add_query_arg( 'wac_msg', 'success', wp_get_referer() ) );
+        exit;
+    }
+
     // ─── AJAX Handlers ───────────────────────────────────────────
 
     /**
