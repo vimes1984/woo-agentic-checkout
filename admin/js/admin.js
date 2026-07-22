@@ -65,6 +65,7 @@
             this.bindKeyboardNav();
             this.bindFormValidation();
             this.bindBatchDismiss();
+            this.bindTabFocus();
             this.addAriaLiveRegion();
 
             // Auto-focus the first filter input on page load for quicker keyboard nav.
@@ -936,6 +937,22 @@
                     }
                 });
 
+                // Persist filter state in sessionStorage.
+                var filterKey = 'wac_filter_' + ($input.attr('id') || 'default');
+                if (query) {
+                    sessionStorage.setItem(filterKey, query);
+                } else {
+                    sessionStorage.removeItem(filterKey);
+                }
+
+                // Show visible count.
+                var $countEl = $input.closest('.wac-filter-row').find('.wac-filter-count');
+                if (!$countEl.length) {
+                    $countEl = $('<span class="wac-filter-count"></span>');
+                    $input.closest('.wac-filter-row').append($countEl);
+                }
+                $countEl.text(visibleCount + ' visible');
+
                 // Announce filter results for screen readers.
                 self.announce(
                     'Filtered to ' + visibleCount + ' visible ' + (visibleCount === 1 ? 'row' : 'rows'),
@@ -944,6 +961,26 @@
             }, 300);
 
             $(document).on('keyup', '.wac-table-filter', debouncedFilter);
+
+            // Restore saved filter queries from sessionStorage.
+            $('.wac-table-filter').each(function () {
+                var $input = $(this);
+                var filterKey = 'wac_filter_' + ($input.attr('id') || 'default');
+                var saved = sessionStorage.getItem(filterKey);
+                if (saved) {
+                    $input.val(saved);
+                    $input.trigger('keyup');
+                }
+            });
+
+            // Clear filter on Escape key.
+            $(document).on('keydown', '.wac-table-filter', function (e) {
+                if (e.key === 'Escape') {
+                    var $input = $(this);
+                    $input.val('').trigger('keyup');
+                    $input.blur();
+                }
+            });
         },
 
         // ─── Refresh Buttons ────────────────────────────────────
@@ -967,6 +1004,18 @@
         },
 
         // ─── Dismissible Error Blocks ───────────────────────────
+
+        /**
+         * Tab switch focus management — announce tab change to screen readers.
+         */
+        bindTabFocus: function () {
+            var self = this;
+            $(document).on('click', '.wac-tabs .nav-tab', function () {
+                var $tab = $(this);
+                var tabName = $tab.text().trim();
+                self.announce('Switched to ' + tabName + ' tab', 'polite');
+            });
+        },
 
         /**
          * Dismiss .wac-error blocks.

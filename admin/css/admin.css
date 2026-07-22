@@ -890,6 +890,15 @@
     opacity: 1;
 }
 
+.wac-filter-count {
+    font-size: 11px;
+    color: var(--wac-text-muted);
+    background: var(--wac-bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
 /* ─── Table Row Selection / Highlight ───────── */
 
 .widefat tr.wac-row-highlight td {
