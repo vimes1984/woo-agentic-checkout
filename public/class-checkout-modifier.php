@@ -193,13 +193,14 @@ class CheckoutModifier {
      */
     private function apply_field_labels( array $fields, array $labels ): array {
         foreach ( $labels as $field_key => $label ) {
+            $safe_label = sanitize_text_field( $label );
             foreach ( $fields as $section => &$section_fields ) {
                 if ( isset( $section_fields[ $field_key ] ) ) {
-                    $section_fields[ $field_key ]['label'] = $label;
+                    $section_fields[ $field_key ]['label'] = $safe_label;
                 }
                 $prefixed = $section . '_' . $field_key;
                 if ( isset( $section_fields[ $prefixed ] ) ) {
-                    $section_fields[ $prefixed ]['label'] = $label;
+                    $section_fields[ $prefixed ]['label'] = $safe_label;
                 }
             }
         }
