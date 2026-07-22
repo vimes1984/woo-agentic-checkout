@@ -151,6 +151,56 @@
     min-height: 60px;
 }
 
+.wac-spinner-wrap--loading {
+    min-height: 120px;
+}
+
+/* ─── Skeleton Loading ────────────────────────── */
+
+.wac-skeleton {
+    background: linear-gradient(90deg, var(--wac-bg) 25%, #e8e8e8 50%, var(--wac-bg) 75%);
+    background-size: 200% 100%;
+    animation: wac-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--wac-radius);
+    display: block;
+}
+
+.wac-skeleton--text {
+    height: 14px;
+    margin: 8px 0;
+    width: 100%;
+}
+
+.wac-skeleton--text-short {
+    height: 14px;
+    margin: 8px 0;
+    width: 60%;
+}
+
+.wac-skeleton--heading {
+    height: 20px;
+    margin: 12px 0;
+    width: 40%;
+}
+
+.wac-skeleton--number {
+    height: 36px;
+    margin: 8px 0;
+    width: 80px;
+}
+
+.wac-skeleton--badge {
+    height: 16px;
+    width: 60px;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+@keyframes wac-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
 @keyframes wac-spin {
     to { transform: rotate(360deg); }
 }
