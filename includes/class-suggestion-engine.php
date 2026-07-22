@@ -138,6 +138,10 @@ class SuggestionEngine {
     public function apply_suggestion( int $id ) {
         global $wpdb;
 
+        if ( $id < 1 ) {
+            return new \WP_Error( 'invalid_id', 'Suggestion ID must be a positive integer.' );
+        }
+
         $suggestion = $wpdb->get_row( $wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}wac_suggestions WHERE id = %d",
             $id
@@ -151,7 +155,14 @@ class SuggestionEngine {
             return new \WP_Error( 'already_applied', 'Suggestion already applied.' );
         }
 
+        if ( self::STATUS_ROLLED_BACK === $suggestion['status'] ) {
+            return new \WP_Error( 'rolled_back', 'Suggestion has been rolled back and cannot be applied again.' );
+        }
+
         $action_data = json_decode( $suggestion['action_data'], true );
+        if ( JSON_ERROR_NONE !== json_last_error() ) {
+            return new \WP_Error( 'invalid_action_data', 'Action data is not valid JSON: ' . json_last_error_msg() );
+        }
 
         // Execute the action.
         $success = $this->execute_action( $suggestion['action_type'], $action_data );
@@ -167,6 +178,8 @@ class SuggestionEngine {
                 array( '%s', '%s' ),
                 array( '%d' )
             );
+
+            do_action( 'wac_suggestion_applied', $id, $suggestion['action_type'] );
 
             return true;
         }
