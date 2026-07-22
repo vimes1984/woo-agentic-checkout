@@ -87,6 +87,11 @@ class SuggestionGenerator {
         // Generate suggestions.
         $suggestions = $suggest_engine->generate_suggestions( $context );
 
+        // Guard: ensure suggestions is an array before iterating.
+        if ( ! is_array( $suggestions ) ) {
+            $suggestions = array();
+        }
+
         // Auto-apply high-confidence suggestions if permissions allow.
         $permission = $settings->get_heal_permission();
         $auto_applied = 0;
