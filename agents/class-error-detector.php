@@ -324,6 +324,25 @@ class ErrorDetector {
      *
      * @return array
      */
+    /**
+     * Redact sensitive context fields from error samples before sending to LLM.
+     *
+     * @param array $critical Critical issues list.
+     * @return array Sanitized issues with only safe fields in samples.
+     */
+    private function redact_samples( array $critical ): array {
+        $safe_fields = array( 'id', 'event', 'message', 'level', 'created_at' );
+
+        return array_map( function ( $issue ) use ( $safe_fields ) {
+            if ( ! empty( $issue['samples'] ) && is_array( $issue['samples'] ) ) {
+                $issue['samples'] = array_map( function ( $sample ) use ( $safe_fields ) {
+                    return array_intersect_key( $sample, array_flip( $safe_fields ) );
+                }, $issue['samples'] );
+            }
+            return $issue;
+        }, $critical );
+    }
+
     private function llm_root_cause_analysis( array $critical, $llm ): array {
         // Cold start guard — if critical issues array is empty, skip LLM call entirely.
         if ( empty( $critical ) ) {
