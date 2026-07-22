@@ -86,6 +86,9 @@
                 self.stopAutoRefresh();
             });
 
+            // Observe dynamic content for event re-binding.
+            this.observeDynamicContent();
+
             // Mark body as ready for CSS targeting.
             $(document.body).addClass('wac-ready');
 
@@ -1153,6 +1156,28 @@
                 clearInterval(this._refreshInterval);
                 this._refreshInterval = null;
             }
+        },
+
+        /**
+         * MutationObserver to re-bind event handlers on dynamically
+         * loaded content (e.g., after AJAX table refresh).
+         */
+        observeDynamicContent: function () {
+            var self = this;
+            var observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length) {
+                        // Re-bind sortable headers if new tables were added.
+                        $(mutation.addedNodes).find('.wac-sortable').off('click.wacSort');
+                        $(mutation.addedNodes).find('.wac-error__dismiss').off('click.wacDismiss');
+                    }
+                });
+            });
+
+            observer.observe(document.querySelector('.wac-tab-content') || document.body, {
+                childList: true,
+                subtree: true
+            });
         },
 
         /**

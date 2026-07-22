@@ -908,6 +908,28 @@ body:not(.wac-ready) .wac-toast-container {
     color: var(--wac-text-muted);
 }
 
+/* ─── Collapsible Section Animations ────────── */
+
+details.wac-card summary {
+    padding: 8px 0;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+
+details.wac-card summary::-webkit-details-marker {
+    color: var(--wac-text-muted);
+}
+
+details.wac-card summary:hover {
+    color: var(--wac-theme);
+}
+
+details.wac-card[open] summary {
+    border-bottom: 1px solid var(--wac-border-light);
+    margin-bottom: 8px;
+}
+
 /* ─── Suggestion description row ────────────── */
 
 .wac-desc {
@@ -1309,6 +1331,29 @@ html {
     font-weight: 700;
 }
 
+/* ─── Consistency: Border-radius, shadows ───── */
+
+.wac-admin input,
+.wac-admin select,
+.wac-admin textarea,
+.wac-admin .button {
+    border-radius: var(--wac-radius);
+}
+
+/* ─── Interactive Transitions ────────────────── */
+
+.wac-admin a,
+.wac-admin button,
+.wac-admin .button,
+.wac-admin input,
+.wac-admin select,
+.wac-admin textarea,
+.widefat tr {
+    transition: background-color var(--wac-transition),
+                color var(--wac-transition),
+                border-color var(--wac-transition);
+}
+
 /* ─── Keyboard: visible focus ring ─────────── */
 
 .wac-admin a:focus-visible,
@@ -1319,6 +1364,12 @@ html {
 .wac-admin textarea:focus-visible {
     outline: 2px solid var(--wac-theme);
     outline-offset: 2px;
+}
+
+/* ─── Admin Notice inside WAC ────────────────── */
+
+.wac-admin .notice {
+    margin: 12px 0;
 }
 
 /* ─── Responsive ────────────────────────────── */
