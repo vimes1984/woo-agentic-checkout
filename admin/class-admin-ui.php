@@ -55,6 +55,12 @@ class AdminUI {
     public function render_page() {
         $tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 
+        // Whitelist: only known tabs are allowed.
+        $allowed_tabs = array( 'dashboard', 'experiments', 'suggestions', 'agents', 'settings', 'logs' );
+        if ( ! in_array( $tab, $allowed_tabs, true ) ) {
+            $tab = 'dashboard';
+        }
+
         ?>
         <div class="wrap wac-admin" data-wac-tab="<?php echo esc_attr( $tab ); ?>">
             <h1>
