@@ -16,22 +16,24 @@
 
 ➡ **YOU ARE HERE**
 
-## Phase 1: Core Functionality (Weeks 2-3)
-- [ ] **LLM prompt tuning** — Iterate on agent prompts for reliable structured JSON
-- [ ] **AJAX endpoints** for all admin actions (pause/resume exp, reject suggestions, manual agent runs)
-- [ ] **GA4 Data API** — Full OAuth2 integration (currently uses Measurement Protocol only)
-- [ ] **Error collection** — Proper PHP error handler integration via `set_error_handler()` + `register_shutdown_function()`
-- [ ] **Admin post handlers** — Register all `admin_post_wac_*` actions
-- [ ] **Uninstall routine** — Clean up all DB tables and options
+## Phase 1: Core Functionality (✅ Completed — Swarm Batch 1 + 2026-07-22)
+- [x] **LLM prompt tuning** — Structured JSON schema in all 5 agent prompts, `json_schema` mode for OpenAI/OpenRouter, `format: json` for Ollama
+- [x] **AJAX endpoints** — All admin actions via `wp_ajax_wac_*` with nonce + capability checks
+- [x] **GA4 Data API** — OAuth2 JWT bearer token flow for GA4 Data API, Measurement Protocol for real-time
+- [x] **Error collection** — `set_error_handler()`, `register_shutdown_function()`, `set_exception_handler()` with recursive guard and file fallback
+- [x] **Admin post handlers** — All `admin_post_wac_*` handlers registered with CSRF protection
+- [x] **Uninstall routine** — Drops 7 tables, cleans transients/options, removes cron jobs
 
-## Phase 2: Production Hardening (Weeks 4-5)
-- [ ] **Rate limiting** — LLM API call budgets, prevent runaway costs
-- [ ] **Caching** — Agent results cache to avoid redundant LLM calls
-- [ ] **Notification system** — Email/Slack/webhook alerts for critical issues + suggestions
-- [ ] **Multi-language support** — `__()` everywhere, .pot file
-- [ ] **Nonce verification** on all beacon AJAX (currently WIP)
-- [ ] **Sanitization audit** — All inputs/outputs properly escaped
-- [ ] **Capability checks** — `current_user_can('manage_woocommerce')` on all admin routes
+## Phase 2: Production Hardening (✅ Completed — Swarm Batches 2-6 + 2026-07-22)
+- [x] **Rate limiting** — 60 LLM calls/hour cap, 3s AJAX cooldown, token budget estimation (120K max), `_transient`-tracked
+- [x] **Caching** — LLM results cached via `set_transient()`, agent run deduplication (no concurrent runs)
+- [x] **Notification system** — Email (`wp_mail`) + Slack webhook integration, admin dashboard notices with `wac_msg` param
+- [x] **Multi-language support** — `__()`, `_e()`, `esc_html__()` etc with `woo-agentic-checkout` text domain
+- [x] **Nonce verification** — All endpoints: `check_admin_referer`, `wp_verify_nonce`, `wp_nonce_field` on all forms
+- [x] **Sanitization audit** — `sanitize_*()`, `intval()`, `absint()`, `wp_unslash()` on all inputs; `esc_*()` on all outputs
+- [x] **Capability checks** — `current_user_can('manage_woocommerce')` on every admin route and AJAX handler
+
+➡ **YOU ARE HERE**
 
 ## Phase 3: Agent Intelligence (Weeks 6-8)
 - [ ] **Long-term memory** — Agent query history + response caching so LLM can reference past decisions

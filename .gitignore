@@ -1,7 +1,8 @@
-# Woo Agentic Checkout - .gitignore
+# ─── Dependencies ─────────────────────────────────────────────
 vendor/
 node_modules/
-*.log
+
+# ─── OS / Editor artifacts ───────────────────────────────────
 .DS_Store
 Thumbs.db
 *.swp
@@ -9,3 +10,25 @@ Thumbs.db
 *~
 /.idea/
 /.vscode/
+*.sublime-
+*.sublime-workspace
+
+# ─── Generated / runtime files ───────────────────────────────
+*.log
+wac-errors.log
+blog/
+.env
+.env.local
+
+# ─── Build artifacts ─────────────────────────────────────────
+/dist/
+/build/
+*.zip
+*.tar.gz
+
+# ─── WordPress uploads / cache (if in-repo) ─────────────────
+wp-content/uploads/
+wp-content/cache/
+
+# ───.Composer auth ─────────────────────────────────────────
+auth.json
