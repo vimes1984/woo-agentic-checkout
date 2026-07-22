@@ -309,10 +309,36 @@ class LLMClient {
     }
 
     /**
+     * Denylist of loopback/protected hosts that must never be proxied to.
+     */
+    const BLOCKED_OLLAMA_HOSTS = array(
+        '169.254.169.254', // AWS/GCP/Azure metadata endpoint.
+        'metadata.google.internal',
+        'metadata.goog',
+        '100.100.100.200', // Alibaba Cloud.
+    );
+
+    /**
      * Call local Ollama.
      */
     private function call_ollama( string $api_key, string $model, string $system, string $user, array $schema ): string {
         $base_url = $this->settings->get( 'llm_ollama_url', 'http://localhost:11434' );
+
+        // Validate the custom Ollama URL against SSRF targets.
+        $parsed = wp_parse_url( $base_url );
+        if ( ! isset( $parsed['host'] ) ) {
+            throw new \RuntimeException( 'Ollama URL is malformed.' );
+        }
+        $host = strtolower( $parsed['host'] );
+        if ( in_array( $host, self::BLOCKED_OLLAMA_HOSTS, true ) ) {
+            throw new \RuntimeException( 'Ollama URL points to a blocked host (cloud metadata endpoint).' );
+        }
+        // Block private/reserved IP ranges (RFC 1918, loopback, etc.) except 127.0.0.1/localhost.
+        if ( ! in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) && filter_var( $host, FILTER_VALIDATE_IP ) ) {
+            if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                throw new \RuntimeException( 'Ollama URL must be localhost (127.0.0.1, ::1) or a public IP/hostname.' );
+            }
+        }
 
         $body = array(
             'model'    => $model,
