@@ -195,6 +195,7 @@ class SignalCollector {
      * @return array{orders: int, revenue: float, conversion_rate: float, aov: float}
      */
     public function get_recent_orders( int $hours = 24 ): array {
+        $hours     = min( 168, max( 1, $hours ) );
         $threshold = time() - ( $hours * HOUR_IN_SECONDS );
 
         $orders = wc_get_orders( array(
@@ -234,6 +235,7 @@ class SignalCollector {
     public function get_funnel_data( int $hours = 24 ): array {
         global $wpdb;
 
+        $hours     = min( 168, max( 1, $hours ) );
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
         // Query beacon events for funnel analysis with a safety limit.
@@ -300,6 +302,7 @@ class SignalCollector {
     public function get_recent_errors( int $hours = 1, int $limit = 50 ): array {
         global $wpdb;
 
+        $hours     = min( 168, max( 1, $hours ) );
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
         return $wpdb->get_results( $wpdb->prepare(
