@@ -75,10 +75,16 @@ class Logger {
             $level = 'info';
         }
 
+        // Cap context size to prevent log table bloat.
+        $context_data = is_string( $context ) ? $context : wp_json_encode( $context );
+        if ( is_string( $context_data ) && strlen( $context_data ) > 10000 ) {
+            $context_data = substr( $context_data, 0, 10000 );
+        }
+
         $data = array(
             'level'      => $level,
             'event'      => $event,
-            'context'    => is_string( $context ) ? $context : wp_json_encode( $context ),
+            'context'    => $context_data,
             'created_at' => current_time( 'mysql' ),
         );
 
