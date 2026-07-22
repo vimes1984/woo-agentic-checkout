@@ -180,7 +180,7 @@ class AdminHandlers {
             wp_die( 'Insufficient permissions.' );
         }
 
-        $suggestion_id = isset( $_POST['suggestion_id'] ) ? intval( $_POST['suggestion_id'] ) : 0;
+        $suggestion_id = isset( $_POST['suggestion_id'] ) ? intval( wp_unslash( $_POST['suggestion_id'] ) ) : 0;
 
         if ( $suggestion_id > 0 ) {
             $core   = Core::get_instance();
@@ -217,7 +217,7 @@ class AdminHandlers {
             wp_die( 'Insufficient permissions.' );
         }
 
-        $suggestion_id = isset( $_POST['suggestion_id'] ) ? intval( $_POST['suggestion_id'] ) : 0;
+        $suggestion_id = isset( $_POST['suggestion_id'] ) ? intval( wp_unslash( $_POST['suggestion_id'] ) ) : 0;
         $reason        = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
 
         if ( $suggestion_id > 0 ) {
@@ -283,7 +283,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+        $id = isset( $_POST['id'] ) ? intval( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
@@ -322,7 +322,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+        $id = isset( $_POST['id'] ) ? intval( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
@@ -360,7 +360,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id     = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+        $id     = isset( $_POST['id'] ) ? intval( wp_unslash( $_POST['id'] ) ) : 0;
         $reason = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
 
         if ( $id < 1 ) {
@@ -443,7 +443,7 @@ class AdminHandlers {
     public function ajax_wac_get_experiment_detail() {
         $this->check_ajax_permissions();
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+        $id = isset( $_POST['id'] ) ? intval( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
@@ -484,7 +484,7 @@ class AdminHandlers {
         $this->check_ajax_permissions();
 
         $level = isset( $_POST['level'] ) ? sanitize_key( wp_unslash( $_POST['level'] ) ) : '';
-        $limit = isset( $_POST['limit'] ) ? min( 500, intval( $_POST['limit'] ) ) : 100;
+        $limit = isset( $_POST['limit'] ) ? min( 500, intval( wp_unslash( $_POST['limit'] ) ) ) : 100;
 
         try {
             $logger = new Logger();
