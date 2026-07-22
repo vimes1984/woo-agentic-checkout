@@ -305,10 +305,21 @@ class SuggestionEngine {
     private function save_suggestion( array $suggestion ): array {
         global $wpdb;
 
+        $title = $suggestion['title'] ?? 'Untitled Suggestion';
+        $description = $suggestion['description'] ?? '';
+
+        // Validate max lengths to match DB schema limits.
+        if ( strlen( $title ) > 255 ) {
+            $title = substr( $title, 0, 255 );
+        }
+        if ( strlen( $description ) > 10000 ) {
+            $description = substr( $description, 0, 10000 );
+        }
+
         $score = $this->normalize_score( $suggestion['score'] ?? 0.5 );
 
         $data = array(
-            'title'       => sanitize_text_field( $suggestion['title'] ?? 'Untitled Suggestion' ),
+            'title'       => sanitize_text_field( $title ),
             'description' => sanitize_textarea_field( $suggestion['description'] ?? '' ),
             'action_type' => sanitize_key( $suggestion['action_type'] ?? 'css' ),
             'action_data' => wp_json_encode( $suggestion['action_data'] ?? array() ),
