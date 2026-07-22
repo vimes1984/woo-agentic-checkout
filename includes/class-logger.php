@@ -128,13 +128,19 @@ class Logger {
         $offset = max( 0, $args['offset'] ?? 0 );
         $order  = 'DESC' === strtoupper( $args['order'] ?? 'DESC' ) ? 'DESC' : 'ASC';
 
+        // Use keyset (cursor-based) pagination when an id_after filter is provided.
+        $after = isset( $args['id_after'] ) ? max( 0, (int) $args['id_after'] ) : 0;
+        if ( $after > 0 ) {
+            $where[] = 'id ' . ( 'ASC' === $order ? '>' : '<' ) . ' %d';
+            $params[] = $after;
+        }
+
         $sql = "SELECT * FROM {$wpdb->prefix}wac_logs
                 WHERE " . implode( ' AND ', $where ) . "
                 ORDER BY id {$order}
-                LIMIT %d OFFSET %d";
+                LIMIT %d";
 
         $params[] = $limit;
-        $params[] = $offset;
 
         return $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
     }
