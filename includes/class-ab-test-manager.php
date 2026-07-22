@@ -426,8 +426,8 @@ class ABTestManager {
         // Assign based on traffic_pct threshold and variant weighting.
         // Use multiple entropy sources to avoid bias when session/cookies are unavailable.
         $entropy  = $cookie_key . $this->get_session_id();
-        $entropy .= isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        $entropy .= isset( $_SERVER['HTTP_USER_AGENT'] ) ? wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $entropy .= isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+        $entropy .= isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
         $hash = crc32( $entropy );
         $mod  = abs( $hash ) % 100;
 
