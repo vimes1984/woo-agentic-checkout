@@ -18,12 +18,18 @@ class Schema {
     /**
      * Current schema version.
      */
-    const DB_VERSION = '0.1.0';
+    const DB_VERSION = '0.2.0';
 
     /**
-     * Create all plugin tables.
+     * Create all plugin tables only when schema version is outdated.
      */
     public function create_tables() {
+        // Skip if the database is already at the current schema version.
+        $installed_version = get_option( self::DB_VERSION_KEY, '' );
+        if ( version_compare( $installed_version, self::DB_VERSION, '>=' ) ) {
+            return;
+        }
+
         global $wpdb;
 
         $charset_collate = $wpdb->get_charset_collate();
