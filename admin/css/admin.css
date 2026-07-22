@@ -860,6 +860,122 @@
     animation: wac-spin 0.6s linear infinite;
 }
 
+/* ─── Dark Mode Support ─────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --wac-bg: #1d2327;
+        --wac-bg-card: #2c3338;
+        --wac-border: #50575e;
+        --wac-border-light: #3c434a;
+        --wac-text: #f0f0f1;
+        --wac-text-muted: #a7aaad;
+        --wac-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --wac-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.4);
+        --wac-success-bg: #1e3a1e;
+        --wac-warning-bg: #3a2e1e;
+        --wac-error-bg: #3a1e1e;
+        --wac-info-bg: #1e2e3a;
+    }
+
+    .wac-skeleton {
+        background: linear-gradient(90deg, #2c3338 25%, #3c434a 50%, #2c3338 75%);
+        background-size: 200% 100%;
+    }
+
+    .widefat {
+        background: var(--wac-bg-card);
+        color: var(--wac-text);
+    }
+
+    .widefat th {
+        background: var(--wac-bg);
+        color: var(--wac-text);
+    }
+
+    .widefat td,
+    .widefat th {
+        border-color: var(--wac-border);
+    }
+
+    .widefat tr:nth-child(odd) td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .wac-variant-row {
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .wac-log-error td { background: rgba(114, 28, 36, 0.15) !important; }
+    .wac-log-warning td { background: rgba(133, 100, 4, 0.15) !important; }
+
+    .wac-toast {
+        border: 1px solid var(--wac-border);
+    }
+
+    .wac-confirm-overlay {
+        background: rgba(0, 0, 0, 0.7);
+    }
+}
+
+/* ─── Reduced Motion ────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .wac-spinner {
+        animation-duration: 1.5s;
+    }
+
+    .wac-skeleton {
+        animation: none;
+        background: var(--wac-bg);
+    }
+
+    .wac-toast {
+        animation: none;
+    }
+
+    .wac-toast--removing {
+        animation: none;
+        opacity: 0;
+    }
+
+    .wac-status-dot--warning,
+    .wac-status-dot--error {
+        animation: none;
+    }
+
+    .wac-refresh-btn--spinning .dashicons {
+        animation-duration: 1.5s;
+    }
+
+    .wac-suggestion-card {
+        transition: none;
+    }
+
+    .wac-suggestion-card:hover {
+        transform: none;
+    }
+
+    .wac-progress-bar__fill {
+        transition: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+    }
+}
+
+/* ─── High Contrast Badge Variant ───────────── */
+
+.wac-badge--hc {
+    border: 1px solid currentColor;
+    background: transparent !important;
+    font-weight: 700;
+}
+
 /* ─── Keyboard: visible focus ring ─────────── */
 
 .wac-admin a:focus-visible,
@@ -925,6 +1041,7 @@
 @media (max-width: 600px) {
     .wac-admin h1 {
         flex-wrap: wrap;
+        font-size: 18px;
     }
 
     .wac-suggestion-card__header {
@@ -934,6 +1051,71 @@
 
     .wac-suggestion-card__actions {
         flex-wrap: wrap;
+    }
+
+    .wac-status-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .wac-number {
+        font-size: 24px;
+    }
+
+    .wac-filter-bar .button {
+        flex: 1 1 auto;
+        text-align: center;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wac-admin {
+        padding: 8px;
+    }
+
+    .wac-admin h1 {
+        font-size: 16px;
+    }
+
+    .wac-version {
+        font-size: 10px;
+        padding: 1px 6px;
+    }
+
+    .wac-tabs .nav-tab {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+
+    .wac-card {
+        padding: 10px;
+    }
+
+    .wac-card h3 {
+        font-size: 13px;
+    }
+
+    .wac-empty-state__icon {
+        font-size: 36px;
+    }
+
+    .wac-empty-state__title {
+        font-size: 14px;
+    }
+
+    .wac-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wac-filter-bar .button {
+        text-align: left;
+    }
+
+    .wac-suggestion-card__header {
+        flex-direction: column;
     }
 }
 
@@ -980,5 +1162,37 @@
         content: " (" attr(href) ")";
         font-size: 10px;
         color: #666;
+    }
+
+    .wac-suggestion-card {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+
+    .wac-suggestion-card__actions {
+        display: none !important;
+    }
+
+    .wac-toast-container,
+    .wac-toast {
+        display: none !important;
+    }
+
+    .wac-error {
+        border: 1px solid #ccc;
+        background: #f9f9f9 !important;
+        color: #000 !important;
+    }
+
+    .wac-empty-state {
+        border: 1px dashed #ccc;
+    }
+
+    .widefat tr th {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
