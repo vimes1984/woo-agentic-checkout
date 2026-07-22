@@ -142,7 +142,17 @@ class Logger {
 
         $params[] = $limit;
 
-        return $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
+        $rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
+
+        // Strict type casting for numeric fields.
+        foreach ( $rows as &$row ) {
+            if ( isset( $row["id"] ) ) {
+                $row["id"] = (int) $row["id"];
+            }
+        }
+        unset( $row );
+
+        return $rows;
     }
 
     /**
