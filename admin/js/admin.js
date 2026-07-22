@@ -50,10 +50,18 @@
             this.bindRefreshButtons();
             this.bindDismissibleErrors();
             this.bindKeyboardNav();
+            this.bindFormValidation();
+            this.bindBatchDismiss();
             this.addAriaLiveRegion();
 
             // Show notifications from query string (after redirect).
             this.showNotificationFromQuery();
+
+            // Start auto-refresh if on dashboard.
+            this.startAutoRefresh();
+
+            // Guard against missing wacData.
+            this.checkDependencies();
 
             // Announce page loaded for screen readers.
             this.announce('Admin UI loaded', 'polite');
@@ -376,38 +384,6 @@
                 applyDebounced($btn, id, $card, $row);
             });
 
-                    $.ajax({
-                        url: wacData.restUrl + '/suggestions/' + id + '/apply',
-                        type: 'POST',
-                        beforeSend: function (xhr) {
-                            xhr.setRequestHeader('X-WP-Nonce', wacData.nonce);
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                self.showToast(self.__('appliedNotice') || 'Suggestion applied successfully!', 'success');
-                                if ($card.length) {
-                                    $card.fadeOut(300, function () { $(this).remove(); });
-                                } else if ($row.length) {
-                                    $row.fadeOut(300, function () { $(this).remove(); });
-                                }
-                            } else {
-                                self.showToast(response.message || self.__('errorGeneric'), 'error');
-                                self.hideLoading($btn);
-                            }
-                        },
-                        error: function (jqXHR) {
-                            var msg = self.__('errorNetwork');
-                            try {
-                                var resp = JSON.parse(jqXHR.responseText);
-                                msg = resp.message || msg;
-                            } catch (e) { /* use default */ }
-                            self.showToast(msg, 'error');
-                            self.hideLoading($btn);
-                        }
-                    });
-                });
-            });
-
             // Debounced reject to prevent double-clicks.
             var rejectDebounced = this.debounce(function ($btn, id, $card, $row) {
                 self.confirmAction(self.__('confirmReject'), function () {
@@ -649,6 +625,129 @@
             });
         },
 
+        // ─── Form Validation ──────────────────────────────────
+
+        /**
+         * Client-side validation for settings forms.
+         * Highlights invalid fields and shows messages.
+         */
+        bindFormValidation: function () {
+            var self = this;
+
+            $(document).on('submit', '.wac-settings-form', function (e) {
+                var $form = $(this);
+                var isValid = true;
+
+                // Remove existing error states.
+                $form.find('.wac-field-error, .wac-field-valid').removeClass('wac-field-error wac-field-valid');
+                $form.find('.wac-field-error-message').remove();
+
+                // Validate required fields.
+                $form.find('[required]').each(function () {
+                    var $field = $(this);
+                    if (!$field.val() || $field.val().trim() === '') {
+                        self.markFieldError($field, 'This field is required.');
+                        isValid = false;
+                    } else {
+                        self.markFieldValid($field);
+                    }
+                });
+
+                // Validate pattern fields.
+                $form.find('[pattern]').each(function () {
+                    var $field = $(this);
+                    var pattern = $field.attr('pattern');
+                    if ($field.val() && $field.val().trim() !== '') {
+                        var re = new RegExp('^' + pattern + '$');
+                        if (!re.test($field.val())) {
+                            var title = $field.attr('title') || 'Invalid format.';
+                            self.markFieldError($field, title);
+                            isValid = false;
+                        } else {
+                            self.markFieldValid($field);
+                        }
+                    }
+                });
+
+                // Validate email fields.
+                $form.find('input[type="email"]').each(function () {
+                    var $field = $(this);
+                    var val = $field.val();
+                    if (val && val.trim() !== '') {
+                        var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRe.test(val)) {
+                            self.markFieldError($field, 'Please enter a valid email address.');
+                            isValid = false;
+                        } else {
+                            self.markFieldValid($field);
+                        }
+                    }
+                });
+
+                // Check conditional validation (API key required if provider not Ollama).
+                $form.find('[data-wac-validate="required-if-provider-not-ollama"]').each(function () {
+                    var $field = $(this);
+                    var providerFieldName = $field.data('wac-provider-field');
+                    var $provider = $form.find('[name="' + providerFieldName + '"]');
+                    var provider = $provider.val();
+                    if (provider !== 'ollama' && (!$field.val() || $field.val().trim() === '')) {
+                        self.markFieldError($field, 'API Key is required for this provider.');
+                        isValid = false;
+                    }
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    var $firstError = $form.find('.wac-field-error').first();
+                    if ($firstError.length) {
+                        $firstError.focus();
+                    }
+                    self.showToast('Please fix the highlighted fields before saving.', 'error', 4000);
+                    // Scroll to first error.
+                    $('html, body').animate({
+                        scrollTop: $firstError.offset().top - 100
+                    }, 200);
+                }
+            });
+
+            // Real-time validation on blur.
+            $(document).on('blur', '.wac-settings-form [required], .wac-settings-form [pattern]', function () {
+                var $field = $(this);
+                $field.removeClass('wac-field-error wac-field-valid');
+                $field.closest('td').find('.wac-field-error-message').remove();
+
+                if ($field.attr('required') && (!$field.val() || $field.val().trim() === '')) {
+                    self.markFieldError($field, 'This field is required.');
+                } else if ($field.attr('pattern') && $field.val() && $field.val().trim() !== '') {
+                    var re = new RegExp('^' + $field.attr('pattern') + '$');
+                    if (!re.test($field.val())) {
+                        self.markFieldError($field, $field.attr('title') || 'Invalid format.');
+                    } else {
+                        self.markFieldValid($field);
+                    }
+                } else if ($field.val() && $field.val().trim() !== '') {
+                    self.markFieldValid($field);
+                }
+            });
+        },
+
+        /**
+         * Mark a field as having an error.
+         */
+        markFieldError: function ($field, message) {
+            $field.addClass('wac-field-error');
+            var $td = $field.closest('td');
+            $td.find('.wac-field-error-message').remove();
+            $td.append('<p class="wac-field-error-message">\u26A0 ' + this.escHtml(message) + '</p>');
+        },
+
+        /**
+         * Mark a field as valid.
+         */
+        markFieldValid: function ($field) {
+            $field.addClass('wac-field-valid');
+        },
+
         // ─── Create Experiment ──────────────────────────────────
 
         /**
@@ -798,6 +897,8 @@
          * Enable Enter/Space keys on action buttons styled as links.
          */
         bindKeyboardNav: function () {
+            var self = this;
+
             $(document).on('keydown', '.wac-action-link, button.wac-view-exp, button.wac-pause-exp, button.wac-resume-exp, .wac-refresh-btn:not(.wac-refresh-btn--spinning)', function (e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -816,6 +917,157 @@
                     }
                 }
             });
+
+            // Escape key dismisses all toasts.
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    var $toasts = $('.wac-toast');
+                    if ($toasts.length) {
+                        $toasts.each(function () {
+                            self.dismissToast($(this));
+                        });
+                        self.announce('Notifications dismissed', 'polite');
+                    }
+                }
+            });
+
+            // Arrow key navigation between tabs.
+            $(document).on('keydown', '.wac-tabs', function (e) {
+                var $tabs = $(this).find('.nav-tab');
+                var $current = $tabs.filter('.nav-tab-active');
+                var index = $tabs.index($current);
+
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    var nextIndex = Math.min(index + 1, $tabs.length - 1);
+                    $tabs.eq(nextIndex).focus();
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    var prevIndex = Math.max(index - 1, 0);
+                    $tabs.eq(prevIndex).focus();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    $tabs.first().focus();
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    $tabs.last().focus();
+                }
+            });
+        },
+
+        // ─── Auto-Refresh / Polling ──────────────────────────
+
+        /**
+         * Start a polling interval to auto-refresh dashboard stats.
+         */
+        startAutoRefresh: function () {
+            var self = this;
+
+            // Only on the dashboard tab.
+            if ($('.wac-dashboard-grid').length === 0) {
+                return;
+            }
+
+            this._refreshInterval = setInterval(function () {
+                var href = window.location.href;
+                // Remove timestamp param if present to avoid cache.
+                var url = href.split('?')[0];
+                var params = new URLSearchParams(window.location.search);
+                params.set('wac_ts', Date.now());
+                url = url + '?' + params.toString();
+
+                $.get(url, function (html) {
+                    var $newContent = $(html).find('.wac-dashboard-grid').first();
+                    var $oldContent = $('.wac-dashboard-grid');
+                    if ($newContent.length && $oldContent.length) {
+                        $oldContent.replaceWith($newContent);
+                        self.announce('Dashboard refreshed', 'polite');
+                    }
+                }).fail(function () {
+                    // Silent fail — refresh will retry.
+                });
+            }, 120000); // Every 2 minutes.
+        },
+
+        /**
+         * Stop the auto-refresh interval.
+         */
+        stopAutoRefresh: function () {
+            if (this._refreshInterval) {
+                clearInterval(this._refreshInterval);
+                this._refreshInterval = null;
+            }
+        },
+
+        /**
+         * Add batch dismiss-all toasts button.
+         */
+        bindBatchDismiss: function () {
+            var self = this;
+
+            // Double-click on the toast container dismisses all.
+            $(document).on('dblclick', '.wac-toast-container', function () {
+                $('.wac-toast').each(function () {
+                    self.dismissToast($(this));
+                });
+                self.announce('All notifications dismissed', 'polite');
+            });
+
+            // On mobile, add a "Dismiss All" link when 3+ toasts are visible.
+            var observer = new MutationObserver(function () {
+                var $container = $('.wac-toast-container');
+                var count = $container.find('.wac-toast').length;
+                var $dismissAll = $container.find('.wac-toast-dismiss-all');
+
+                if (count >= 3 && $dismissAll.length === 0) {
+                    $container.append(
+                        '<button class="wac-toast-dismiss-all" style="pointer-events:auto;font-size:11px;color:var(--wac-text-muted);background:none;border:none;cursor:pointer;text-align:right;padding:4px 0;">Dismiss All</button>'
+                    );
+                    $container.find('.wac-toast-dismiss-all').on('click', function () {
+                        $('.wac-toast').each(function () {
+                            self.dismissToast($(this));
+                        });
+                        $(this).remove();
+                    });
+                } else if (count < 3) {
+                    $dismissAll.remove();
+                }
+            });
+
+            var container = document.querySelector('.wac-toast-container');
+            if (container) {
+                observer.observe(container, { childList: true, subtree: true });
+            }
+        },
+
+        /**
+         * Check that critical dependencies are loaded.
+         */
+        checkDependencies: function () {
+            if (typeof wacData === 'undefined') {
+                if (window.console && window.console.warn) {
+                    window.console.warn('WAC Admin: wacData is undefined. AJAX actions will fail.');
+                }
+                return;
+            }
+
+            if (typeof wacData.ajaxUrl === 'undefined' || !wacData.ajaxUrl) {
+                if (window.console && window.console.warn) {
+                    window.console.warn('WAC Admin: wacData.ajaxUrl is missing.');
+                }
+            }
+
+            if (typeof wacData.nonce === 'undefined' || !wacData.nonce) {
+                if (window.console && window.console.warn) {
+                    window.console.warn('WAC Admin: wacData.nonce is missing. AJAX security will fail.');
+                }
+            }
+
+            if (typeof jQuery === 'undefined') {
+                if (window.console && window.console.error) {
+                    window.console.error('WAC Admin: jQuery is required.');
+                }
+            }
         }
     };
 
