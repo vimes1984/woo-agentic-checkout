@@ -259,8 +259,17 @@ class Core {
 
     /**
      * Render admin page shell.
+     *
+     * Defense-in-depth: verify capability even though add_submenu_page
+     * enforces manage_woocommerce at the menu-registration layer.
      */
     public function render_admin_page() {
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die(
+                esc_html__( 'You do not have sufficient permissions to access this page.', 'woo-agentic-checkout' ),
+                403
+            );
+        }
         if ( isset( $this->services['admin'] ) ) {
             $this->services['admin']->render_page();
         }
