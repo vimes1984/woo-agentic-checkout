@@ -66,29 +66,46 @@ class ConversionAnalyzer {
      * @throws \Exception If required services are missing or LLM fails catastrophically.
      */
     public function run(): array {
+        // Process lock: prevent concurrent runs.
+        $lock_key = 'wac_conversion_analyzer_lock';
+        if ( get_transient( $lock_key ) ) {
+            return array(
+                'success' => true,
+                'actions' => 0,
+                'errors'  => array(),
+                'summary' => 'Conversion Analyzer is already running (process lock active).',
+            );
+        }
+        set_transient( $lock_key, time(), 10 * MINUTE_IN_SECONDS );
+        $release = function () use ( $lock_key ) {
+            delete_transient( $lock_key );
+        };
+
         $signals = $this->services['signals'] ?? null;
         $llm     = $this->services['llm'] ?? null;
         $logger  = $this->services['logger'] ?? null;
 
-        // Guard: missing required services.
-        if ( ! $signals || ! $llm ) {
-            $msg = 'Missing required services: signals or LLM.';
-            if ( $logger ) {
-                $logger->error( 'conversion_analyzer_missing_services', array( 'note' => $msg ) );
+        try {
+            // Guard: missing required services.
+            if ( ! $signals || ! $llm ) {
+                $msg = 'Missing required services: signals or LLM.';
+                if ( $logger ) {
+                    $logger->error( 'conversion_analyzer_missing_services', array( 'note' => $msg ) );
+                }
+                $release();
+                return array(
+                    'success' => false,
+                    'actions' => 0,
+                    'errors'  => array( $msg ),
+                    'summary' => $msg,
+                );
             }
-            return array(
-                'success' => false,
-                'actions' => 0,
-                'errors'  => array( $msg ),
-                'summary' => $msg,
-            );
-        }
 
-        // Gather data.
-        $orders_24h  = $signals->get_recent_orders( 24 );
-        $orders_7d   = $signals->get_recent_orders( 168 );
-        $funnel      = $signals->get_funnel_data( 24 );
-        $experiments = $this->services['ab']->get_active_experiments();
+            // Gather data.
+            $orders_24h  = $signals->get_recent_orders( 24 );
+            $orders_7d   = $signals->get_recent_orders( 168 );
+            $funnel      = $signals->get_funnel_data( 24 );
+            $experiments = $this->services['ab']->get_active_experiments();
 
         // Cold start / no-data guard.
         $empty_order = static function ( $orders ): bool {
