@@ -377,6 +377,8 @@ class ErrorHandler {
     /**
      * Check if an error came from a path we should monitor.
      * Strictly scoped — only our plugin + WooCommerce.
+     * Uses DIRECTORY_SEPARATOR to prevent matching paths like
+     * "woocommerce-malicious" or "woo-agentic-checkout-backdoor".
      *
      * @param string $file
      *
@@ -387,18 +389,27 @@ class ErrorHandler {
             return false; // Don't capture unknown-origin errors.
         }
 
-        // Check for our plugin.
-        if ( false !== strpos( $file, 'woo-agentic-checkout' ) ) {
+        $ds = DIRECTORY_SEPARATOR;
+
+        // Normalize to platform directory separator for matching.
+        $normalized = str_replace( array( '/', '\\' ), $ds, $file );
+
+        // Check for our plugin — exact plugin slug boundary.
+        if ( false !== strpos( $normalized, $ds . 'woo-agentic-checkout' . $ds ) ) {
+            return true;
+        }
+        // Also match the plugin root file itself (no trailing slash).
+        if ( false !== strpos( $normalized, $ds . 'woo-agentic-checkout.php' ) ) {
             return true;
         }
 
-        // Check for WooCommerce core.
-        if ( false !== strpos( $file, 'wp-content/plugins/woocommerce' ) ) {
+        // Check for WooCommerce core — exact plugin slug boundary.
+        if ( false !== strpos( $normalized, $ds . 'plugins' . $ds . 'woocommerce' . $ds ) ) {
             return true;
         }
 
         // Check for WooCommerce includes.
-        if ( false !== strpos( $file, 'wp-includes/class-wc-' ) ) {
+        if ( false !== strpos( $normalized, $ds . 'wp-includes' . $ds . 'class-wc-' ) ) {
             return true;
         }
 
