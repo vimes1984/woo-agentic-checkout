@@ -40,7 +40,15 @@ class CheckoutModifier {
     }
 
     /**
+     * Store removed fields so we can unhook their validation.
+     *
+     * @var array
+     */
+    private $removed_field_keys = array();
+
+    /**
      * Modify checkout fields based on active experiment variant.
+     * Also hooks into WooCommerce validation to skip removed fields.
      *
      * @param array $fields WooCommerce checkout fields.
      *
@@ -61,6 +69,8 @@ class CheckoutModifier {
         // Apply field removals.
         if ( isset( $config['remove_fields'] ) ) {
             $fields = $this->apply_field_removals( $fields, $config['remove_fields'] );
+            // Register filter to disable WooCommerce validation for removed fields.
+            $this->unvalidate_removed_fields();
         }
 
         // Apply field labels/placeholders.
@@ -74,6 +84,28 @@ class CheckoutModifier {
         }
 
         return $fields;
+    }
+
+    /**
+     * Remove WooCommerce validation for fields that the variant removed.
+     */
+    private function unvalidate_removed_fields() {
+        add_filter( 'woocommerce_checkout_posted_data', function ( $data ) {
+            foreach ( $this->removed_field_keys as $key ) {
+                unset( $data[ $key ] );
+            }
+            return $data;
+        }, 20 );
+
+        add_filter( 'woocommerce_checkout_required_field_notice', function ( $message, $field_label ) {
+            // If the field was removed by variant, suppress the required notice.
+            foreach ( $this->removed_field_keys as $key ) {
+                if ( false !== stripos( $field_label, $key ) ) {
+                    return '';
+                }
+            }
+            return $message;
+        }, 20, 2 );
     }
 
     /**
@@ -197,17 +229,21 @@ class CheckoutModifier {
      * Remove specified fields from checkout.
      */
     private function apply_field_removals( array $fields, array $remove_keys ): array {
+        $this->removed_field_keys = array();
+
         foreach ( $remove_keys as $key ) {
             // Key format could be "billing:city" or just "city" or "billing_city".
             foreach ( $fields as $section => &$section_fields ) {
                 if ( isset( $section_fields[ $key ] ) ) {
                     unset( $section_fields[ $key ] );
+                    $this->removed_field_keys[] = $key;
                 }
 
                 // Also check prefixed versions.
                 $prefixed = $section . '_' . $key;
                 if ( isset( $section_fields[ $prefixed ] ) ) {
                     unset( $section_fields[ $prefixed ] );
+                    $this->removed_field_keys[] = $prefixed;
                 }
             }
         }
