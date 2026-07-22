@@ -272,7 +272,7 @@ class ABOptimizer {
 
         // Cold start guard — no data to base an experiment on.
         $has_data = false;
-        if ( is_array( $recent_orders ) && isset( $recent_orders['total_orders'] ) && (int) $recent_orders['total_orders'] >= 5 ) {
+        if ( is_array( $recent_orders ) && isset( $recent_orders['orders'] ) && (int) $recent_orders['orders'] >= 5 ) {
             $has_data = true;
         }
         if ( ! $has_data && is_array( $funnel ) && ! empty( $funnel ) ) {
