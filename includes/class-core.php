@@ -186,13 +186,27 @@ class Core {
         $msg    = sanitize_key( wp_unslash( $_GET['wac_msg'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
         $agent  = isset( $_GET['wac_agent'] ) ? sanitize_key( wp_unslash( $_GET['wac_agent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
         $notices = array(
-            'success'         => array( 'type' => 'success', 'text' => $agent ? "Agent '{$agent}' ran successfully." : 'Action completed.' ),
-            'error'           => array( 'type' => 'error',   'text' => $agent ? "Agent '{$agent}' encountered an error." : 'Action failed.' ),
-            'no_agent'        => array( 'type' => 'warning', 'text' => 'No agent selected.' ),
-            'applied'         => array( 'type' => 'success', 'text' => 'Suggestion applied successfully.' ),
-            'rejected'        => array( 'type' => 'info',    'text' => 'Suggestion rejected.' ),
-            'exp_placeholder' => array( 'type' => 'info',    'text' => 'Experiment creation wizard coming in a future update!' ),
-            'service_unavailable' => array( 'type' => 'error', 'text' => 'Service unavailable. Please try again.' ),
+            'success'         => array( 'type' => 'success', 'text' => $agent
+                ? sprintf(
+                    /* translators: %s: agent name */
+                    __( "Agent '%s' ran successfully.", 'woo-agentic-checkout' ),
+                    $agent
+                )
+                : __( 'Action completed.', 'woo-agentic-checkout' )
+            ),
+            'error'           => array( 'type' => 'error',   'text' => $agent
+                ? sprintf(
+                    /* translators: %s: agent name */
+                    __( "Agent '%s' encountered an error.", 'woo-agentic-checkout' ),
+                    $agent
+                )
+                : __( 'Action failed.', 'woo-agentic-checkout' )
+            ),
+            'no_agent'        => array( 'type' => 'warning', 'text' => __( 'No agent selected.', 'woo-agentic-checkout' ) ),
+            'applied'         => array( 'type' => 'success', 'text' => __( 'Suggestion applied successfully.', 'woo-agentic-checkout' ) ),
+            'rejected'        => array( 'type' => 'info',    'text' => __( 'Suggestion rejected.', 'woo-agentic-checkout' ) ),
+            'exp_placeholder' => array( 'type' => 'info',    'text' => __( 'Experiment creation wizard coming in a future update!', 'woo-agentic-checkout' ) ),
+            'service_unavailable' => array( 'type' => 'error', 'text' => __( 'Service unavailable. Please try again.', 'woo-agentic-checkout' ) ),
         );
 
         if ( isset( $notices[ $msg ] ) ) {

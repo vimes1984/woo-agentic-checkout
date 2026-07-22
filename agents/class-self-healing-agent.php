@@ -62,10 +62,14 @@ class SelfHealingAgent {
         }
 
         $results = array(
-            'healed'          => 0,
-            'failed'          => 0,
-            'actions'         => array(),
-            'health_checks'   => array(),
+            'success'        => true,
+            'actions'        => 0,
+            'errors'         => array(),
+            'summary'        => 'Self-healing check completed.',
+            'healed'         => 0,
+            'failed'         => 0,
+            'actions_taken'  => array(),
+            'health_checks'  => array(),
         );
 
         // ─── Health Checks ─────────────────────────────────────
@@ -76,6 +80,17 @@ class SelfHealingAgent {
         $failing = array_filter( $health_checks, function ( $check ) {
             return ! $check['passed'];
         } );
+
+        // Cold start: everything healthy, no errors → skip LLM-heavy processing.
+        $recent_errors = $signals->get_recent_errors( 1, 5 );
+        if ( empty( $failing ) && empty( $recent_errors ) ) {
+            $logger->info( 'self_heal_cold_start', array(
+                'health_checked' => count( $health_checks ),
+                'note'           => 'All health checks pass, zero recent errors — no healing needed.',
+            ) );
+            $results['summary'] = 'All health checks pass, no errors detected.';
+            return $results;
+        }
 
         if ( ! empty( $failing ) ) {
             $logger->warning( 'health_checks_failing', array(
