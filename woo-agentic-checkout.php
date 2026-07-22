@@ -52,9 +52,12 @@ function wac_autoload( $class ) {
         'SelfHealer'        => 'includes/class-self-healer.php',
         'SuggestionEngine'  => 'includes/class-suggestion-engine.php',
         'Settings'          => 'includes/class-settings.php',
+        'ErrorHandler'      => 'includes/class-error-handler.php',
+        'Notifier'          => 'includes/class-notifier.php',
         'Logger'            => 'includes/class-logger.php',
         'Schema'            => 'database/class-schema.php',
         'AdminUI'           => 'admin/class-admin-ui.php',
+        'AdminHandlers'     => 'admin/class-admin-handlers.php',
         'CheckoutModifier'  => 'public/class-checkout-modifier.php',
         'Beacon'            => 'public/class-beacon.php',
         // Agents
@@ -121,6 +124,14 @@ function wac_init() {
 }
 
 add_action( 'plugins_loaded', 'wac_init' );
+
+/**
+ * Register the error handler early (fires on plugins_loaded, priority 1).
+ */
+function wac_register_error_handler() {
+    \WooAgenticCheckout\ErrorHandler::register();
+}
+add_action( 'plugins_loaded', 'wac_register_error_handler', 1 );
 
 /**
  * Deactivation cleanup.

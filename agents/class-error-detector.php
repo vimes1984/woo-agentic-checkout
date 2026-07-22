@@ -40,9 +40,10 @@ class ErrorDetector {
      * @return array Detected issues.
      */
     public function run(): array {
-        $signals = $this->services['signals'];
-        $logger  = $this->services['logger'];
-        $llm     = $this->services['llm'];
+        $signals  = $this->services['signals'];
+        $logger   = $this->services['logger'];
+        $llm      = $this->services['llm'];
+        $notifier = new \WooAgenticCheckout\Notifier();
 
         $issues = array();
 
@@ -103,7 +104,16 @@ class ErrorDetector {
             }
         }
 
-        // 5. Log what's happening.
+        // 5. Send notifications for critical issues.
+        foreach ( $critical as $issue ) {
+            $notifier->critical(
+                $issue['event'] ?? 'Checkout Error Detected',
+                $issue['details'] ?? $issue['event'] ?? 'Unknown critical issue',
+                $issue
+            );
+        }
+
+        // 6. Log what's happening.
         $logger->info( 'error_detector_run', array(
             'total_errors' => count( $errors ),
             'issues_found' => count( $issues ),

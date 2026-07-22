@@ -67,6 +67,7 @@ class Core {
         // Admin hooks.
         add_action( 'admin_menu', array( $this, 'register_admin_menu' ), 99 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+        add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
         // Public hooks.
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_assets' ) );
@@ -123,6 +124,7 @@ class Core {
                 $this->services['settings'],
                 $this->services['suggest']
             );
+            $this->services['handlers'] = new \WooAgenticCheckout\Admin\AdminHandlers();
         }
 
         $this->services['modifier'] = new CheckoutModifier( $this->services['ab'] );
@@ -160,6 +162,36 @@ class Core {
     }
 
     /**
+     * Show admin notices for wac_msg query params.
+     */
+    public function admin_notices() {
+        if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification
+            return;
+        }
+
+        $msg    = sanitize_key( wp_unslash( $_GET['wac_msg'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+        $agent  = isset( $_GET['wac_agent'] ) ? sanitize_key( wp_unslash( $_GET['wac_agent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+        $notices = array(
+            'success'         => array( 'type' => 'success', 'text' => $agent ? "Agent '{$agent}' ran successfully." : 'Action completed.' ),
+            'error'           => array( 'type' => 'error',   'text' => $agent ? "Agent '{$agent}' encountered an error." : 'Action failed.' ),
+            'no_agent'        => array( 'type' => 'warning', 'text' => 'No agent selected.' ),
+            'applied'         => array( 'type' => 'success', 'text' => 'Suggestion applied successfully.' ),
+            'rejected'        => array( 'type' => 'info',    'text' => 'Suggestion rejected.' ),
+            'exp_placeholder' => array( 'type' => 'info',    'text' => 'Experiment creation wizard coming in a future update!' ),
+            'service_unavailable' => array( 'type' => 'error', 'text' => 'Service unavailable. Please try again.' ),
+        );
+
+        if ( isset( $notices[ $msg ] ) ) {
+            $n = $notices[ $msg ];
+            printf(
+                '<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
+                esc_attr( $n['type'] ),
+                esc_html( $n['text'] )
+            );
+        }
+    }
+
+    /**
      * Render admin page shell.
      */
     public function render_admin_page() {
@@ -194,6 +226,7 @@ class Core {
         wp_enqueue_script( 'wac-beacon', WAC_URL . 'public/js/checkout-tracker.js', array( 'jquery' ), WAC_VERSION, true );
         wp_localize_script( 'wac-beacon', 'wacBeacon', array(
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'wac_beacon' ),
             'session' => md5( session_id() ?: uniqid( 'wac_', true ) ),
             'variants' => $this->get_active_variant_assignments(),
         ) );

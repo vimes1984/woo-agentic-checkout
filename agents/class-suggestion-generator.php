@@ -45,6 +45,7 @@ class SuggestionGenerator {
         $signals        = $this->services['signals'];
         $logger         = $this->services['logger'];
         $settings       = $this->services['settings'];
+        $notifier       = new \WooAgenticCheckout\Notifier();
 
         if ( 'yes' !== $settings->get( 'auto_suggest_enabled', 'yes' ) ) {
             $logger->info( 'suggestion_generator_skipped', array( 'reason' => 'auto_suggest_disabled' ) );
@@ -66,6 +67,11 @@ class SuggestionGenerator {
             if ( $applied ) {
                 $auto_applied++;
             }
+        }
+
+        // Notify about new suggestions.
+        foreach ( $suggestions as $suggestion ) {
+            $notifier->new_suggestion( $suggestion );
         }
 
         $logger->info( 'suggestion_generator_run', array(

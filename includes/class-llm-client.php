@@ -38,17 +38,36 @@ class LLMClient {
     }
 
     /**
-     * Send a prompt to the configured LLM and get structured JSON response.
+     * Cache TTL in seconds (default 1 hour for analysis, can be overridden).
      *
-     * @param string $system_prompt  System-level instructions.
-     * @param string $user_prompt    User message / data.
-     * @param array  $response_schema  Optional JSON schema specification.
+     * @var int
+     */
+    private $cache_ttl = HOUR_IN_SECONDS;
+
+    /**
+     * Send a prompt to the configured LLM and get structured JSON response.
+     * Results are cached by content hash to avoid duplicate API calls.
+     *
+     * @param string $system_prompt   System-level instructions.
+     * @param string $user_prompt     User message / data.
+     * @param array  $response_schema Optional JSON schema specification.
+     * @param int    $cache_ttl       Override cache TTL in seconds (0 = no cache).
      *
      * @return array Parsed JSON response.
      *
      * @throws \RuntimeException On API failure or invalid response.
      */
-    public function analyze( string $system_prompt, string $user_prompt, array $response_schema = array() ): array {
+    public function analyze( string $system_prompt, string $user_prompt, array $response_schema = array(), int $cache_ttl = null ): array {
+        $cache_ttl = $cache_ttl ?? $this->cache_ttl;
+
+        // Check cache first.
+        if ( $cache_ttl > 0 ) {
+            $cache_key = $this->build_cache_key( $system_prompt, $user_prompt, $response_schema );
+            $cached    = get_transient( $cache_key );
+            if ( false !== $cached ) {
+                return $cached;
+            }
+        }
         $provider = $this->settings->get( 'llm_provider', 'openai' );
         $api_key  = $this->settings->get( 'llm_api_key', '' );
         $model    = $this->settings->get( 'llm_model', 'gpt-4o' );
@@ -71,6 +90,11 @@ class LLMClient {
             throw new \RuntimeException(
                 'LLM returned invalid JSON: ' . json_last_error_msg()
             );
+        }
+
+        // Store in cache.
+        if ( $cache_ttl > 0 && isset( $cache_key ) ) {
+            set_transient( $cache_key, $parsed, $cache_ttl );
         }
 
         return $parsed;
@@ -273,6 +297,30 @@ class LLMClient {
 
         // Fallback: return raw (Anthropic or other).
         return $response;
+    }
+
+    /**
+     * Build a cache key from the prompt content.
+     *
+     * @param string $system_prompt
+     * @param string $user_prompt
+     * @param array  $schema
+     *
+     * @return string Transient key.
+     */
+    private function build_cache_key( string $system_prompt, string $user_prompt, array $schema ): string {
+        $raw = $system_prompt . '|' . $user_prompt . '|' . wp_json_encode( $schema );
+        return 'wac_llm_' . md5( $raw );
+    }
+
+    /**
+     * Clear all cached LLM responses.
+     */
+    public function clear_cache() {
+        global $wpdb;
+        $wpdb->query(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wac_llm_%'"
+        );
     }
 
     /**

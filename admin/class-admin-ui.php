@@ -502,6 +502,53 @@ class AdminUI {
                 </table>
             </div>
 
+            <div class="wac-card">
+                <h3>🔔 Notifications</h3>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="wac_notify_email_enabled">Email Notifications</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="wac_notify_email_enabled" name="wac_notify_email_enabled" value="yes"
+                                    <?php checked( get_option( 'wac_notify_email_enabled' ), 'yes' ); ?> />
+                                Send email alerts for critical errors and suggestions
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="wac_notify_email">Notification Email</label></th>
+                        <td>
+                            <input type="email" id="wac_notify_email" name="wac_notify_email"
+                                   value="<?php echo esc_attr( get_option( 'wac_notify_email', get_option( 'admin_email' ) ) ); ?>"
+                                   class="regular-text" />
+                            <p class="description">Leave blank to use the WordPress admin email.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="wac_slack_webhook">Slack Webhook URL</label></th>
+                        <td>
+                            <input type="url" id="wac_slack_webhook" name="wac_slack_webhook"
+                                   value="<?php echo esc_attr( get_option( 'wac_slack_webhook', '' ) ); ?>"
+                                   class="regular-text" placeholder="https://hooks.slack.com/services/..." />
+                            <p class="description">
+                                Create a webhook in Slack → Apps → Incoming Webhooks.
+                                <a href="https://api.slack.com/messaging/webhooks" target="_blank">Docs</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="wac_notify_slack_enabled">Slack Notifications</label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="wac_notify_slack_enabled" name="wac_notify_slack_enabled" value="yes"
+                                    <?php checked( get_option( 'wac_notify_slack_enabled' ), 'yes' ); ?> />
+                                Send Slack alerts for critical issues
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
             <?php submit_button( 'Save Settings' ); ?>
         </form>
         <?php

@@ -80,15 +80,83 @@ class SignalCollector {
             return array();
         }
 
-        // This would use OAuth2 + Google Client library in production.
-        // For now, we return a placeholder structure.
+        $credentials_array = json_decode( $credentials, true );
+        if ( JSON_ERROR_NONE !== json_last_error() || ! isset( $credentials_array['client_email'] ) ) {
+            return array( 'error' => 'Invalid GA4 credentials JSON format.' );
+        }
+
+        // Use JWT OAuth2 to get an access token from service account.
+        $access_token = $this->get_ga4_access_token( $credentials_array );
+        if ( ! $access_token ) {
+            return array( 'error' => 'Failed to obtain GA4 access token.' );
+        }
+
+        // Build the report request.
+        $body = array(
+            'dateRanges' => array(
+                array( 'startDate' => $start_date, 'endDate' => $end_date ),
+            ),
+            'metrics' => array(
+                array( 'name' => 'conversions' ),
+                array( 'name' => 'totalRevenue' ),
+                array( 'name' => 'conversionRate' ),
+                array( 'name' => 'sessions' ),
+                array( 'name' => 'averagePurchaseRevenue' ),
+            ),
+            'dimensions' => array(
+                array( 'name' => 'date' ),
+                array( 'name' => 'sessionDefaultChannelGroup' ),
+            ),
+        );
+
+        $url = sprintf( self::GA4_DATA_API, $property_id );
+        $response = wp_remote_post( $url, array(
+            'body'    => wp_json_encode( $body ),
+            'timeout' => 15,
+            'headers' => array(
+                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer ' . $access_token,
+            ),
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return array( 'error' => $response->get_error_message() );
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        if ( $code >= 400 ) {
+            return array(
+                'error' => "GA4 API returned {$code}: " . substr( wp_remote_retrieve_body( $response ), 0, 500 ),
+            );
+        }
+
+        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        // Calculate summary metrics from rows.
+        $total_conversions = 0;
+        $total_revenue     = 0.0;
+        $total_sessions    = 0;
+
+        if ( isset( $data['rows'] ) ) {
+            foreach ( $data['rows'] as $row ) {
+                $total_conversions += (int) ( $row['metricValues'][0]['value'] ?? 0 );
+                $total_revenue     += (float) ( $row['metricValues'][1]['value'] ?? 0 );
+                $total_sessions    += (int) ( $row['metricValues'][3]['value'] ?? 0 );
+            }
+        }
+
         return array(
-            'source'      => 'ga4',
-            'property_id' => $property_id,
-            'date_range'  => array( $start_date, $end_date ),
-            'metrics'     => array( 'conversions', 'totalRevenue', 'conversionRate' ),
-            'note'        => 'GA4 Data API integration requires Google Client library. ' .
-                             'Install via: composer require google/apiclient',
+            'source'        => 'ga4',
+            'property_id'   => $property_id,
+            'date_range'    => array( $start_date, $end_date ),
+            'total_conversions' => $total_conversions,
+            'total_revenue'     => round( $total_revenue, 2 ),
+            'total_sessions'    => $total_sessions,
+            'conversion_rate'   => $total_sessions > 0
+                ? round( ( $total_conversions / $total_sessions ) * 100, 2 )
+                : 0,
+            'rows'          => $data['rows'] ?? array(),
+            'row_count'     => count( $data['rows'] ?? array() ),
         );
     }
 
@@ -216,6 +284,95 @@ class SignalCollector {
             $threshold,
             $limit
         ), ARRAY_A );
+    }
+
+    /**
+     * Get a Google OAuth2 access token using JWT + service account credentials.
+     *
+     * Uses the OAuth 2.0 JWT Bearer flow (RFC 7523) for server-to-server
+     * interaction with the Google Analytics Data API.
+     *
+     * @param array $credentials Service account credentials array.
+     *
+     * @return string|null Access token or null on failure.
+     */
+    private function get_ga4_access_token( array $credentials ): ?string {
+        if ( ! isset( $credentials['client_email'], $credentials['private_key'] ) ) {
+            return null;
+        }
+
+        // Check cache.
+        $cached = get_transient( 'wac_ga4_token' );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
+        // Build JWT header + claim set.
+        $header = array(
+            'alg' => 'RS256',
+            'typ' => 'JWT',
+            'kid' => $credentials['private_key_id'] ?? '',
+        );
+
+        $now = time();
+        $claims = array(
+            'iss'   => $credentials['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
+            'aud'   => 'https://oauth2.googleapis.com/token',
+            'exp'   => $now + 3600,
+            'iat'   => $now,
+        );
+
+        // Encode header + claims.
+        $base64_header  = $this->base64url_encode( wp_json_encode( $header ) );
+        $base64_claims  = $this->base64url_encode( wp_json_encode( $claims ) );
+        $signature_input = $base64_header . '.' . $base64_claims;
+
+        // Sign with private key.
+        $private_key = $credentials['private_key'];
+        $signature   = '';
+
+        // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        $success = @openssl_sign( $signature_input, $signature, $private_key, 'sha256WithRSAEncryption' );
+        if ( ! $success ) {
+            return null;
+        }
+
+        $jwt = $signature_input . '.' . $this->base64url_encode( $signature );
+
+        // Exchange JWT for access token.
+        $response = wp_remote_post( 'https://oauth2.googleapis.com/token', array(
+            'body'    => array(
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion'  => $jwt,
+            ),
+            'timeout' => 10,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return null;
+        }
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( ! isset( $body['access_token'] ) ) {
+            return null;
+        }
+
+        // Cache for 55 minutes (tokens expire after 1 hour).
+        set_transient( 'wac_ga4_token', $body['access_token'], 55 * MINUTE_IN_SECONDS );
+
+        return $body['access_token'];
+    }
+
+    /**
+     * Base64 URL-safe encode (RFC 4648 section 5).
+     *
+     * @param string $data
+     *
+     * @return string
+     */
+    private function base64url_encode( string $data ): string {
+        return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
     }
 
     /**

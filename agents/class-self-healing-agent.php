@@ -47,6 +47,7 @@ class SelfHealingAgent {
         $llm       = $this->services['llm'];
 
         $permission = $settings->get_heal_permission();
+        $notifier   = new \WooAgenticCheckout\Notifier();
 
         if ( 'monitor' === $permission ) {
             $logger->info( 'self_heal_monitor_only', array() );
@@ -75,8 +76,37 @@ class SelfHealingAgent {
                 'checks' => array_keys( $failing ),
             ) );
 
+            // Notify about failing health checks.
+            foreach ( $failing as $check_key => $check ) {
+                $notifier->warning(
+                    "Health Check Failed: {$check_key}",
+                    $check['detail'] ?? 'No details',
+                    array( 'check' => $check )
+                );
+            }
+
             // Try LLM-assisted healing for failing checks.
             $heal_plan = $this->build_heal_plan( $failing, $llm );
+
+            foreach ( $heal_plan as $plan ) {
+                $result = $healer->attempt_heal(
+                    $plan['issue_id'] ?? uniqid( 'heal_' ),
+                    $plan['action'],
+                    $plan['params'] ?? array(),
+                    $permission
+                );
+
+                $results['actions'][] = $result;
+                $notifier->heal_applied( $result );
+            }
+        }
+
+        // ─── Recent Error Response ─────────────────────────────
+
+        $recent_errors = $signals->get_recent_errors( 1, 10 );
+
+        if ( ! empty( $recent_errors ) && empty( $failing ) ) {
+            $heal_plan = $this->build_heal_plan_from_errors( $recent_errors, $llm );
 
             foreach ( $heal_plan as $plan ) {
                 $result = $healer->attempt_heal(
