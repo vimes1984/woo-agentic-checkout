@@ -420,4 +420,64 @@ class LLMClient {
             );
         }
     }
+
+    // ─── Token Estimation ──────────────────────────────────────────────
+
+    /**
+     * Estimate token count from a string.
+     * Uses character-based heuristic: ~0.38 tokens per character for English.
+     *
+     * @param string $text
+     * @return int Estimated token count.
+     */
+    private function estimate_tokens( string $text ): int {
+        return (int) ceil( mb_strlen( $text ) * self::TOKEN_RATIO );
+    }
+
+    // ─── Rate Limiting ─────────────────────────────────────────────────
+
+    /**
+     * Check whether the current call is within the hourly rate limit.
+     *
+     * @return bool True if allowed, false if over limit.
+     */
+    private function check_rate_limit(): bool {
+        $count = $this->call_count;
+        if ( $count < 0 ) {
+            // Not initialized yet — fetch from transient.
+            $count = (int) get_transient( 'wac_llm_calls_hourly' );
+            $this->call_count = $count;
+        }
+        return $count < self::MAX_CALLS_PER_HOUR;
+    }
+
+    /**
+     * Increment the rate limit counter.
+     */
+    private function increment_rate_limit(): void {
+        if ( $this->call_count < 0 ) {
+            $this->call_count = 0;
+        }
+        $this->call_count++;
+        // Transient expires after 1 hour, auto-resetting the counter.
+        set_transient( 'wac_llm_calls_hourly', $this->call_count, HOUR_IN_SECONDS );
+    }
+
+    /**
+     * Get current hourly call count.
+     *
+     * @return int
+     */
+    public function get_hourly_call_count(): int {
+        return max( 0, $this->call_count );
+    }
+
+    /**
+     * Get the remaining calls allowed this hour.
+     *
+     * @return int
+     */
+    public function get_remaining_calls(): int {
+        return max( 0, self::MAX_CALLS_PER_HOUR - $this->get_hourly_call_count() );
+    }
 }
