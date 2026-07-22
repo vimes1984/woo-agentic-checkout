@@ -4,25 +4,37 @@ namespace WooAgenticCheckout;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Error Handler — hooks into PHP's error system to capture
- * checkout-related errors for the Error Detector agent.
+ * Error Handler — captures PHP errors relevant to WooCommerce checkout
+ * without crashing the site.
  *
- * Registers set_error_handler() + register_shutdown_function()
- * to catch everything from PHP notices to fatal errors.
+ * Features:
+ * - Recursive guard: if logging causes an error, we bail immediately
+ * - Scoped relevance: only captures errors from this plugin + WooCommerce
+ * - Table-safe logging: checks wac_logs table exists before inserting
+ * - File fallback: if DB is unavailable, writes to wp-content/wac-errors.log
+ * - Exceptions bubble if irrelevant (no silent swallowing)
  *
  * @since 0.1.0-alpha
  */
 class ErrorHandler {
 
     /**
-     * Is the handler currently active?
+     * Is the handler active?
      *
      * @var bool
      */
     private static $active = false;
 
     /**
-     * Previous error handler (for restoration).
+     * Are we currently inside handle_error?
+     * Prevents infinite recursion when logging triggers an error.
+     *
+     * @var bool
+     */
+    private static $handling = false;
+
+    /**
+     * Previous error handler (for chaining).
      *
      * @var callable|null
      */
@@ -31,27 +43,31 @@ class ErrorHandler {
     /**
      * Logger instance.
      *
-     * @var Logger
+     * @var Logger|null
      */
     private static $logger = null;
 
     /**
+     * Does the wac_logs table exist?
+     * Checked once to avoid hammering $wpdb on every error.
+     *
+     * @var bool|null
+     */
+    private static $table_checked = null;
+
+    /**
      * Register the error handler.
+     * Safe to call multiple times — only registers once.
      */
     public static function register() {
         if ( self::$active ) {
             return;
         }
 
-        self::$logger = new Logger();
-
-        // Capture PHP errors (notices, warnings, etc.)
+        // Only capture errors from our plugin + WooCommerce.
         self::$previous_handler = set_error_handler( array( __CLASS__, 'handle_error' ), E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED );
 
-        // Capture fatal errors on shutdown.
         register_shutdown_function( array( __CLASS__, 'handle_shutdown' ) );
-
-        // Capture uncaught exceptions.
         set_exception_handler( array( __CLASS__, 'handle_exception' ) );
 
         self::$active = true;
@@ -71,7 +87,7 @@ class ErrorHandler {
     }
 
     /**
-     * Handle a PHP error.
+     * Handle a PHP error with full recursive-loop protection.
      *
      * @param int    $errno   Error level.
      * @param string $errstr  Error message.
@@ -81,39 +97,54 @@ class ErrorHandler {
      * @return bool
      */
     public static function handle_error( int $errno, string $errstr, string $errfile = '', int $errline = 0 ): bool {
-        // Only capture errors from WooCommerce or our plugin.
-        if ( ! self::is_relevant_error( $errfile ) ) {
+        // 🚫 RECURSIVE GUARD: if logging itself caused this error, bail immediately.
+        if ( self::$handling ) {
+            // Still let the previous handler run so WordPress functions normally.
             if ( self::$previous_handler ) {
                 return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
             }
             return false;
         }
 
+        // Only capture errors from our plugin + WooCommerce core.
+        if ( ! self::is_relevant_path( $errfile ) ) {
+            if ( self::$previous_handler ) {
+                return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+            }
+            return false;
+        }
+
+        // Suppress E_NOTICE / E_WARNING from non-critical sources (noise).
+        if ( $errno <= E_WARNING && false === self::is_critical_checkout_error( $errstr, $errfile ) ) {
+            if ( self::$previous_handler ) {
+                return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+            }
+            return false;
+        }
+
+        self::$handling = true;
+
         $level = self::php_error_level_to_string( $errno );
         $event = 'php_error';
 
-        // Map to known event types.
-        if ( false !== strpos( $errstr, 'WooCommerce' ) || false !== strpos( $errstr, 'woocommerce' ) ) {
-            $event = 'checkout_php_error';
-        }
-
-        if ( false !== strpos( $errstr, 'session' ) ) {
-            $event = 'session_error';
-        }
-
-        if ( false !== strpos( $errfile, 'gateway' ) || false !== strpos( $errstr, 'payment' ) ) {
+        if ( false !== strpos( $errstr, 'payment' ) || false !== strpos( $errfile, 'gateway' ) ) {
             $event = 'payment_gateway_error';
+        } elseif ( false !== strpos( $errstr, 'session' ) ) {
+            $event = 'session_error';
+        } elseif ( false !== strpos( $errfile, 'checkout' ) ) {
+            $event = 'checkout_error';
         }
 
-        self::$logger->error( $event, array(
+        self::safe_log( $event, array(
             'type'    => $level,
             'message' => $errstr,
             'file'    => self::short_path( $errfile ),
             'line'    => $errline,
-            'trace'   => self::get_trace_summary(),
         ) );
 
-        // Continue to the previous handler for normal PHP error handling.
+        self::$handling = false;
+
+        // Chain to previous handler.
         if ( self::$previous_handler ) {
             return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
         }
@@ -131,19 +162,18 @@ class ErrorHandler {
             return;
         }
 
-        // Only care about fatal errors.
         if ( ! in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR ), true ) ) {
             return;
         }
 
-        // Only capture relevant errors.
-        if ( ! self::is_relevant_error( $error['file'] ?? '' ) ) {
+        if ( ! self::is_relevant_path( $error['file'] ?? '' ) ) {
             return;
         }
 
-        self::$logger->error( 'fatal_error', array(
+        // No recursion guard needed — this runs once on shutdown.
+        self::safe_log( 'fatal_error', array(
             'type'    => 'fatal',
-            'message' => $error['message'],
+            'message' => $error['message'] ?? '',
             'file'    => self::short_path( $error['file'] ?? '' ),
             'line'    => $error['line'] ?? 0,
         ) );
@@ -151,53 +181,195 @@ class ErrorHandler {
 
     /**
      * Handle uncaught exceptions.
+     * Irrelevant exceptions are re-thrown so WordPress handles them normally.
      *
      * @param \Throwable $exception
      */
     public static function handle_exception( $exception ) {
-        if ( ! self::is_relevant_error( $exception->getFile() ) ) {
-            return;
+        // Not our concern? Let WordPress handle it properly.
+        if ( ! self::is_relevant_path( $exception->getFile() ) ) {
+            // Restore default handler so WP shows its own error page.
+            restore_exception_handler();
+            throw $exception;
         }
 
-        self::$logger->error( 'uncaught_exception', array(
+        if ( self::$handling ) {
+            return; // Prevent loop.
+        }
+
+        self::$handling = true;
+
+        self::safe_log( 'uncaught_exception', array(
             'type'    => 'exception',
             'message' => $exception->getMessage(),
             'file'    => self::short_path( $exception->getFile() ),
             'line'    => $exception->getLine(),
         ) );
 
-        // Re-throw if possible (WordPress handles it from here).
-        if ( ! headers_sent() ) {
-            wp_die(
-                esc_html( $exception->getMessage() ),
-                esc_html__( 'WooCommerce Checkout Error', 'woo-agentic-checkout' ),
-                array( 'response' => 500 )
-            );
+        self::$handling = false;
+
+        // Let WP's own handler do its thing.
+        restore_exception_handler();
+        throw $exception;
+    }
+
+    // ─── Safe Logging ───────────────────────────────────────────
+
+    /**
+     * Log safely — checks table exists, falls back to error_log.
+     *
+     * @param string $event
+     * @param array  $data
+     */
+    private static function safe_log( string $event, array $data ) {
+        // Try DB logging first.
+        if ( self::can_db_log() ) {
+            self::ensure_logger();
+            if ( self::$logger ) {
+                try {
+                    self::$logger->error( $event, $data );
+                    return;
+                } catch ( \Throwable $e ) {
+                    // DB logging failed — fall through to file log.
+                    self::$table_checked = false;
+                }
+            }
+        }
+
+        // Fallback: file log (always works, never crashes).
+        self::file_log( $event, $data );
+    }
+
+    /**
+     * Check if the wac_logs table exists (cached).
+     *
+     * @return bool
+     */
+    private static function can_db_log(): bool {
+        if ( null !== self::$table_checked ) {
+            return self::$table_checked;
+        }
+
+        global $wpdb;
+
+        if ( ! $wpdb ) {
+            self::$table_checked = false;
+            return false;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $table = $wpdb->get_var(
+            $wpdb->prepare(
+                'SHOW TABLES LIKE %s',
+                $wpdb->prefix . 'wac_logs'
+            )
+        );
+
+        self::$table_checked = ! empty( $table );
+        return self::$table_checked;
+    }
+
+    /**
+     * Ensure Logger is instantiated.
+     */
+    private static function ensure_logger() {
+        if ( null === self::$logger ) {
+            try {
+                self::$logger = new Logger();
+            } catch ( \Throwable $e ) {
+                self::$logger = null;
+            }
         }
     }
 
     /**
-     * Check if an error occurred in a relevant file.
+     * Fallback file logger — writes to wp-content/wac-errors.log.
+     * Always safe, never triggers additional errors.
      *
-     * @param string $file Full file path.
+     * @param string $event
+     * @param array  $data
+     */
+    private static function file_log( string $event, array $data ) {
+        $log_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : sys_get_temp_dir() );
+        $log_file = rtrim( $log_dir, '/' ) . '/wac-errors.log';
+
+        $line = sprintf(
+            "[%s] [%s] %s: %s\n",
+            gmdate( 'Y-m-d\TH:i:s\Z' ),
+            strtoupper( $event ),
+            $data['type'] ?? 'unknown',
+            $data['message'] ?? 'No message'
+        );
+
+        // Suppress any PHP warnings from file writes.
+        // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        @file_put_contents( $log_file, $line, FILE_APPEND | LOCK_EX );
+    }
+
+    // ─── Path Relevance ─────────────────────────────────────────
+
+    /**
+     * Check if an error came from a path we should monitor.
+     * Strictly scoped — only our plugin + WooCommerce.
+     *
+     * @param string $file
      *
      * @return bool
      */
-    private static function is_relevant_error( string $file ): bool {
+    private static function is_relevant_path( string $file ): bool {
         if ( empty( $file ) ) {
-            return true; // Include errors with unknown files.
+            return false; // Don't capture unknown-origin errors.
         }
 
-        $relevant_patterns = array(
-            'woocommerce',
-            'woo-agentic-checkout',
-            'wp-content/plugins',
-            'wp-includes/class-wc-',
-            'themes' . DIRECTORY_SEPARATOR,
+        // Check for our plugin.
+        if ( false !== strpos( $file, 'woo-agentic-checkout' ) ) {
+            return true;
+        }
+
+        // Check for WooCommerce core.
+        if ( false !== strpos( $file, 'wp-content/plugins/woocommerce' ) ) {
+            return true;
+        }
+
+        // Check for WooCommerce includes.
+        if ( false !== strpos( $file, 'wp-includes/class-wc-' ) ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if an error is a critical checkout/payment error (not just a notice).
+     *
+     * @param string $message Error message.
+     * @param string $file    Error file path.
+     *
+     * @return bool
+     */
+    private static function is_critical_checkout_error( string $message, string $file ): bool {
+        $critical_keywords = array(
+            'checkout',
+            'payment',
+            'gateway',
+            'fatal',
+            'session',
+            'sql',
+            'database',
+            'cart',
+            'order',
+            'checkout',
+            'subscription',
+            'refund',
+            'capture',
+            'authorize',
         );
 
-        foreach ( $relevant_patterns as $pattern ) {
-            if ( false !== strpos( $file, $pattern ) ) {
+        foreach ( $critical_keywords as $keyword ) {
+            if ( false !== stripos( $message, $keyword ) ) {
+                return true;
+            }
+            if ( false !== stripos( $file, $keyword ) ) {
                 return true;
             }
         }
@@ -205,8 +377,10 @@ class ErrorHandler {
         return false;
     }
 
+    // ─── Utilities ──────────────────────────────────────────────
+
     /**
-     * Convert PHP error level integer to string.
+     * Convert PHP error level to string.
      *
      * @param int $level
      *
@@ -235,38 +409,17 @@ class ErrorHandler {
     /**
      * Shorten file path for readability.
      *
-     * @param string $path Full path.
+     * @param string $path
      *
      * @return string
      */
     private static function short_path( string $path ): string {
         $abspath = defined( 'ABSPATH' ) ? ABSPATH : '';
-        if ( ! empty( $abspath ) && 0 === strpos( $path, $abspath ) ) {
+
+        if ( ! empty( $abspath ) && str_starts_with( $path, $abspath ) ) {
             return substr( $path, strlen( $abspath ) );
         }
 
         return basename( dirname( $path ) ) . '/' . basename( $path );
-    }
-
-    /**
-     * Get a summary of the current backtrace (top 5 frames only).
-     *
-     * @return string
-     */
-    private static function get_trace_summary(): string {
-        $trace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 8 );
-
-        $summary = array();
-        foreach ( $trace as $i => $frame ) {
-            if ( $i < 2 ) {
-                continue; // Skip this handler.
-            }
-            $file = isset( $frame['file'] ) ? self::short_path( $frame['file'] ) : 'unknown';
-            $line = $frame['line'] ?? 0;
-            $fn   = $frame['function'] ?? 'unknown';
-            $summary[] = "{$file}:{$line} {$fn}()";
-        }
-
-        return implode( ' ← ', array_slice( $summary, 0, 5 ) );
     }
 }
