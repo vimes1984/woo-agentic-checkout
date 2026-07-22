@@ -383,7 +383,36 @@ body:not(.wac-ready) .wac-toast-container {
     filter: blur(0.5px);
 }
 
+/* Loading overlay for cards */
+.wac-is-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.wac-loading > * {
+    filter: blur(0.5px);
+}
+
 /* ─── Error State ────────────────────────────── */
+
+@keyframes wac-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.wac-error {
+    animation: wac-fade-in 0.3s ease-out;
+}
 
 .wac-error {
     background: var(--wac-error-bg);
@@ -560,6 +589,11 @@ body:not(.wac-ready) .wac-toast-container {
     font-size: 12px;
     padding: 4px 12px;
     border-radius: 4px;
+}
+
+/* Badge state transitions */
+.wac-badge {
+    transition: background var(--wac-transition), color var(--wac-transition), opacity var(--wac-transition);
 }
 
 .wac-badge-active,
@@ -759,6 +793,17 @@ body:not(.wac-ready) .wac-toast-container {
     margin-left: 6px;
 }
 
+/* Table row hover effect for experiments */
+#wac-experiments-table tbody tr[data-exp-id]:hover td {
+    background: var(--wac-bg);
+    cursor: pointer;
+}
+
+#wac-experiments-table .wac-variant-row td {
+    padding-left: 32px;
+    font-size: 12px;
+}
+
 .wac-count {
     font-size: 12px;
     color: #888;
@@ -783,6 +828,17 @@ body:not(.wac-ready) .wac-toast-container {
 }
 
 /* ─── Suggestion Cards ──────────────────────── */
+
+.wac-suggestions-grid {
+    display: grid;
+    gap: 12px;
+}
+
+@media (min-width: 1200px) {
+    .wac-suggestions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
 
 .wac-suggestion-card {
     background: var(--wac-bg-card);
@@ -1103,6 +1159,25 @@ details.wac-card[open] summary {
 
 .widefat tr.wac-row-clickable:hover td {
     background: #f0f6fc;
+}
+
+/* Table cell overflow handling */
+.widefat td,
+.widefat th {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.widefat td.wac-cell-break {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.widefat td:has(> :only-child) {
+    overflow: visible;
+    white-space: normal;
 }
 
 /* ─── Action Buttons as Links ──────────────── */

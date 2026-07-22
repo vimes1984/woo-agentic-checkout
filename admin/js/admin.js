@@ -399,6 +399,14 @@
             return params.get(name) || '';
         },
 
+        // ─── Keyboard Shortcuts (desktop) ──────────────────────
+        //
+        // Alt+Shift+F  Focus filter input on current tab
+        // Alt+Shift+R  Refresh dashboard data
+        // Escape      Close active toast / clear filter field
+        // Tab         Navigate cards and action buttons
+        // Enter/Space Activate the focused button or link
+        //
         // ─── Suggestion Actions ─────────────────────────────────
 
         /**
@@ -1254,6 +1262,19 @@
                     return self.__('unsavedWarning') || 'You have unsaved changes.';
                 }
             });
+        },
+
+        /**
+         * Scroll a target element into view with smooth animation.
+         */
+        smoothScroll: function (selector, offset) {
+            offset = offset || 0;
+            var $el = $(selector);
+            if ($el.length) {
+                $('html, body').animate({
+                    scrollTop: $el.offset().top - offset
+                }, 300);
+            }
         },
 
         /**

@@ -511,7 +511,7 @@ class AdminUI {
                     </thead>
                     <tbody>
                         <?php foreach ( $all_experiments as $exp ) : ?>
-                            <tr data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>">
+                            <tr data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>" data-status="<?php echo esc_attr( $exp['status'] ); ?>" data-name="<?php echo esc_attr( $exp['name'] ); ?>">
                                 <td>
                                     <strong><?php echo esc_html( $exp['name'] ); ?></strong>
                                     <?php if ( ! empty( $exp['winner_key'] ) ) : ?>
@@ -625,8 +625,9 @@ class AdminUI {
                 <input type="text" class="wac-table-filter" id="wac-filter-suggestions" placeholder="<?php esc_attr_e( 'Filter suggestions…', 'woo-agentic-checkout' ); ?>" aria-label="<?php esc_attr_e( 'Filter suggestions', 'woo-agentic-checkout' ); ?>">
             </div>
 
+            <div class="wac-suggestions-grid" role="list">
             <?php foreach ( $pending as $s ) : ?>
-                <div class="wac-suggestion-card" data-suggestion-id="<?php echo esc_attr( $s['id'] ); ?>">
+                <div class="wac-suggestion-card" data-suggestion-id="<?php echo esc_attr( $s['id'] ); ?>" role="listitem">
                     <div class="wac-suggestion-card__header">
                         <h4 class="wac-suggestion-card__title"><?php echo esc_html( $s['title'] ); ?></h4>
                         <div>
@@ -657,6 +658,7 @@ class AdminUI {
                     </div>
                 </div>
             <?php endforeach; ?>
+            </div>
         <?php endif; ?>
 
         <?php if ( ! empty( $all ) ) : ?>
