@@ -134,7 +134,14 @@ class LLMClient {
         $response = $this->$method( $api_key, $model, $system_prompt, $user_prompt, $response_schema );
 
         // ── Validate JSON with json_last_error() ────────────────────
+        // Try parsing raw first, then apply cleanup if it fails.
         $parsed = json_decode( $response, true );
+        if ( JSON_ERROR_NONE !== json_last_error() ) {
+            // Attempt cleanup of potential markdown-wrapped or prefixed JSON.
+            $cleaned = $this->clean_json_response( $response );
+            $parsed  = json_decode( $cleaned, true );
+        }
+
         if ( JSON_ERROR_NONE !== json_last_error() ) {
             $err_msg = 'LLM returned invalid JSON: ' . json_last_error_msg();
             do_action( 'wac_log_warning', 'llm_json_parse_failed', $err_msg );
@@ -143,7 +150,9 @@ class LLMClient {
             $retry_prompt = $user_prompt . "\n\nIMPORTANT: You MUST return ONLY valid JSON. No markdown, no code fences, no extra text. Parse this request and respond with the exact schema requested.";
             $response = $this->$method( $api_key, $model, $system_prompt, $retry_prompt, $response_schema );
 
-            $parsed = json_decode( $response, true );
+            // Clean retry response as well.
+            $cleaned = $this->clean_json_response( $response );
+            $parsed  = json_decode( $cleaned, true );
             if ( JSON_ERROR_NONE !== json_last_error() ) {
                 throw new \RuntimeException(
                     'LLM returned invalid JSON after retry: ' . json_last_error_msg()
