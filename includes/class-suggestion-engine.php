@@ -49,6 +49,7 @@ class SuggestionEngine {
      * @param array $context Context data (signals, experiments, errors, etc.)
      *
      * @return array Generated suggestions.
+     * @throws \RuntimeException If LLM communication fails.
      */
     public function generate_suggestions( array $context ): array {
         $system_prompt = $this->build_system_prompt();

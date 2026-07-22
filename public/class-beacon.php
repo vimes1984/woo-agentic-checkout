@@ -24,6 +24,7 @@ class Beacon {
         <script>
         // WAC Experiment Tracker — injected by server
         window._wacExperiments = <?php echo wp_json_encode( $experiments ); ?>;
+        window._wacNonce = '<?php echo esc_js( wp_create_nonce( 'wac_beacon_nonce' ) ); ?>';
 
         // localStorage bridge for cookie-disabled users.
         (function() {
