@@ -478,7 +478,7 @@ class Core {
      * POST /wac/v1/suggestions/{id}/apply
      */
     public function rest_apply_suggestion( \WP_REST_Request $request ) {
-        $id = (int) $request->get_param( 'id' );
+        $id = absint( $request->get_param( 'id' ) );
         if ( $id < 1 ) {
             return new \WP_Error( 'invalid_id', 'Invalid suggestion ID.', array( 'status' => 400 ) );
         }
@@ -551,8 +551,8 @@ class Core {
         $errors = ( $woocommerce && isset( $woocommerce->session ) ) ? $woocommerce->session->get( 'wac_checkout_errors', array() ) : array();
         if ( ! empty( $errors ) && isset( $this->services['logger'] ) ) {
             foreach ( $errors as $error ) {
-                $sanitized_error = $this->sanitize_log_context( $error );
-                $this->services['logger']->error( 'checkout_validation_error', $sanitized_error );
+                $safe_error = $this->sanitize_log_context( $error );
+                $this->services['logger']->error( 'checkout_validation_error', $safe_error );
             }
         }
     }
