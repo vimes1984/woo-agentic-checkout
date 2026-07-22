@@ -376,15 +376,17 @@ class SuggestionEngine {
      * Apply a CSS patch.
      */
     private function apply_css_patch( array $data ): bool {
+        // Sanitize CSS: strip any HTML tags, allow only safe CSS characters.
         $css = $data['css'] ?? '';
-        if ( empty( $css ) ) {
+        $css = wp_strip_all_tags( $css );
+        if ( empty( $css ) || strlen( $css ) > 50000 ) {
             return false;
         }
 
         $patches = get_option( 'wac_css_patches', array() );
         $patches[] = array(
             'css'       => $css,
-            'selector'  => $data['selector'] ?? '',
+            'selector'  => sanitize_text_field( $data['selector'] ?? '' ),
             'added_at'  => current_time( 'mysql' ),
         );
         update_option( 'wac_css_patches', $patches );
@@ -396,7 +398,7 @@ class SuggestionEngine {
      */
     private function apply_js_patch( array $data ): bool {
         $js = $data['javascript'] ?? '';
-        if ( empty( $js ) ) {
+        if ( empty( $js ) || strlen( $js ) > 50000 ) {
             return false;
         }
 
@@ -418,6 +420,10 @@ class SuggestionEngine {
             return false;
         }
 
+        // Sanitize each field key in the order array.
+        $field_order = array_map( 'sanitize_key', $field_order );
+        $field_order = array_values( array_filter( $field_order ) );
+
         update_option( 'wac_field_order', $field_order );
         return true;
     }
@@ -426,12 +432,15 @@ class SuggestionEngine {
      * Remove a checkout field.
      */
     private function remove_field( array $data ): bool {
-        $field = $data['field'] ?? '';
+        $field = isset( $data['field'] ) ? sanitize_key( $data['field'] ) : '';
         if ( empty( $field ) ) {
             return false;
         }
 
         $removed = get_option( 'wac_removed_fields', array() );
+        if ( ! is_array( $removed ) ) {
+            $removed = array();
+        }
         if ( ! in_array( $field, $removed, true ) ) {
             $removed[] = $field;
             update_option( 'wac_removed_fields', $removed );
