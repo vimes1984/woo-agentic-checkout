@@ -33,9 +33,9 @@ class SignalCollector {
         $measurement_id = $this->get_setting( 'ga4_measurement_id' );
         $api_secret     = $this->get_setting( 'ga4_api_secret' );
 
-        // Validate GA4 event name: alphanumeric + underscores only, max 40 chars.
+        // Validate GA4 event name: must start with alpha, alphanumeric + underscores, max 40 chars (Google spec).
         $event_name = sanitize_key( $event_name );
-        if ( strlen( $event_name ) > 40 || empty( $event_name ) ) {
+        if ( strlen( $event_name ) > 40 || empty( $event_name ) || ! preg_match( '/^[a-zA-Z]/', $event_name ) ) {
             return false;
         }
 
