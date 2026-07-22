@@ -162,9 +162,9 @@ class SuggestionEngine {
      *
      * @return bool|\WP_Error
      */
-    public function apply_suggestion( int $id ) {
-        // Capability check: only users with manage_options can apply suggestions.
-        if ( ! current_user_can( 'manage_options' ) ) {
+    public function apply_suggestion( int $id, bool $is_auto_apply = false ) {
+        // Capability check: skip for automated/cron execution, enforce for HTTP/AJAX requests.
+        if ( ! $is_auto_apply && ! current_user_can( 'manage_options' ) ) {
             return new \WP_Error( 'forbidden', 'You do not have permission to apply suggestions.' );
         }
 
@@ -238,7 +238,7 @@ class SuggestionEngine {
             return false;
         }
 
-        $result = $this->apply_suggestion( $suggestion['id'] );
+        $result = $this->apply_suggestion( $suggestion['id'], true );
         return ! is_wp_error( $result );
     }
 

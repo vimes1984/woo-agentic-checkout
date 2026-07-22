@@ -9,7 +9,7 @@
  */
 
 // Exit if called outside WordPress uninstall context.
-if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) || ! defined( 'ABSPATH' ) ) {
     exit;
 }
 

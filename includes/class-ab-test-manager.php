@@ -176,7 +176,7 @@ class ABTestManager {
                 'status'       => self::STATUS_ACTIVE,
                 'traffic_pct'  => min( 100, max( 1, $traffic_pct ) ),
                 'created_at'   => current_time( 'mysql' ),
-                'control_key'  => $variants[0]['key'] ?? 'control',
+                'control_key'  => sanitize_key( $variants[0]['key'] ?? 'control' ),
             ),
             array( '%s', '%s', '%s', '%d', '%s', '%s' )
         );
