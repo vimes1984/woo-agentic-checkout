@@ -15,6 +15,11 @@ defined( 'ABSPATH' ) || exit;
 class ABOptimizer {
 
     /**
+     * Agent revision for tracking prompt/behaviour changes.
+     */
+    const REVISION = 'batch5.12';
+
+    /**
      * @var array Service dependencies.
      */
     private $services;

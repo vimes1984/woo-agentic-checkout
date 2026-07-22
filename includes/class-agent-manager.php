@@ -283,7 +283,8 @@ class AgentManager {
      */
     public function manual_run( $key ) {
         if ( ! isset( $this->agents[ $key ] ) ) {
-            return array( 'error' => "Unknown agent: {$key}" );
+            $safe_key = is_string( $key ) ? sanitize_key( $key ) : 'invalid';
+            return array( 'error' => "Unknown agent: {$safe_key}" );
         }
         return $this->run_agents( array( $key ) );
     }
