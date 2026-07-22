@@ -103,11 +103,16 @@ spl_autoload_register( 'wac_autoload' );
  * Main plugin bootstrap.
  */
 function wac_init() {
-    // Check WooCommerce dependency.
+    // Check WooCommerce dependency — deactivate gracefully if missing.
     if ( ! class_exists( 'WooCommerce' ) ) {
+        if ( ! function_exists( 'deactivate_plugins' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        deactivate_plugins( WAC_BASENAME, true );
         add_action( 'admin_notices', function () {
-            echo '<div class="notice notice-warning"><p>';
-            esc_html_e( 'Woo Agentic Checkout requires WooCommerce to be installed and activated.', 'woo-agentic-checkout' );
+            unset( $_GET['activate'] ); // phpcs:ignore WordPress.Security.NonceVerification
+            echo '<div class="notice notice-error"><p>';
+            esc_html_e( 'Woo Agentic Checkout requires WooCommerce to be installed and activated. Plugin has been deactivated.', 'woo-agentic-checkout' );
             echo '</p></div>';
         } );
         return;
