@@ -478,11 +478,23 @@
     position: fixed;
     top: 32px;
     right: 16px;
-    z-index: 999999;
+    z-index: 100000;
     display: flex;
     flex-direction: column;
     gap: 8px;
     pointer-events: none;
+}
+
+/* ─── Responsive Table Wrapper ──────────────── */
+
+.wac-table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+}
+
+.wac-table-responsive table {
+    min-width: 600px;
 }
 
 .wac-toast {
@@ -597,11 +609,29 @@
     border-radius: var(--wac-radius);
     padding: 16px;
     margin-bottom: 12px;
-    transition: box-shadow var(--wac-transition);
+    transition: box-shadow var(--wac-transition), transform var(--wac-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.wac-suggestion-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--wac-theme);
+    opacity: 0.3;
 }
 
 .wac-suggestion-card:hover {
     box-shadow: var(--wac-shadow-hover);
+    transform: translateY(-1px);
+}
+
+.wac-suggestion-card:focus-within {
+    box-shadow: 0 0 0 2px var(--wac-theme);
 }
 
 .wac-suggestion-card__header {
@@ -725,6 +755,28 @@
 .wac-filter-row input,
 .wac-filter-row select {
     margin: 0;
+}
+
+.wac-filter-row:focus-within {
+    opacity: 1;
+}
+
+/* ─── Table Row Selection / Highlight ───────── */
+
+.widefat tr.wac-row-highlight td {
+    background: #f0f6fc !important;
+}
+
+.widefat tr.wac-row-active td {
+    border-left: 3px solid var(--wac-theme);
+}
+
+.widefat tr.wac-row-clickable {
+    cursor: pointer;
+}
+
+.widefat tr.wac-row-clickable:hover td {
+    background: #f0f6fc;
 }
 
 /* ─── Action Buttons as Links ──────────────── */
