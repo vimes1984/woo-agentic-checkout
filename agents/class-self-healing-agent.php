@@ -318,11 +318,12 @@ class SelfHealingAgent {
 
     /**
      * Build a healing plan from failing health checks using LLM.
+     * Falls back to predefined actions if LLM is unavailable.
      *
      * @param array      $failing
      * @param LLMClient  $llm
      *
-     * @return array
+     * @return array Heal actions.
      */
     private function build_heal_plan( array $failing, $llm ): array {
         if ( count( $failing ) > 1 ) {

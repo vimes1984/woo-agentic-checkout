@@ -21,6 +21,7 @@ class ABTestManager {
     const STATUS_PAUSED    = 'paused';
     const STATUS_WINNER    = 'winner';
     const STATUS_CONCLUDED = 'concluded';
+    const STATUS_ARCHIVED  = 'archived';
 
     /**
      * Table name (with prefix).
@@ -957,6 +958,10 @@ class ABTestManager {
      */
     public function pause_experiment( int $experiment_id ) {
         global $wpdb;
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp || ! $this->is_valid_transition( $exp['status'], self::STATUS_PAUSED ) ) {
+            return;
+        }
         $wpdb->update(
             $this->table_experiments,
             array( 'status' => self::STATUS_PAUSED ),
@@ -973,6 +978,10 @@ class ABTestManager {
      */
     public function resume_experiment( int $experiment_id ) {
         global $wpdb;
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp || ! $this->is_valid_transition( $exp['status'], self::STATUS_ACTIVE ) ) {
+            return;
+        }
         $wpdb->update(
             $this->table_experiments,
             array( 'status' => self::STATUS_ACTIVE ),
@@ -989,6 +998,10 @@ class ABTestManager {
      */
     public function conclude_experiment( int $experiment_id ) {
         global $wpdb;
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp || ! $this->is_valid_transition( $exp['status'], self::STATUS_CONCLUDED ) ) {
+            return;
+        }
         $wpdb->update(
             $this->table_experiments,
             array( 'status' => self::STATUS_CONCLUDED, 'ended_at' => current_time( 'mysql' ) ),
@@ -1684,5 +1697,183 @@ class ABTestManager {
                 'impressions_diff'  => ( $a['experiment']['id'] ? $b['experiment']['id'] : 0 ),
             ),
         );
+    }
+
+    /**
+     * Get an experiment by its name.
+     *
+     * @param string $name
+     *
+     * @return array|null
+     */
+    public function get_experiment_by_name( string $name ): ?array {
+        global $wpdb;
+        $id = $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$this->table_experiments} WHERE name = %s",
+            $name
+        ) );
+        if ( ! $id ) {
+            return null;
+        }
+        return $this->get_experiment( (int) $id );
+    }
+
+    /**
+     * Check if an experiment is currently running.
+     *
+     * @param int $experiment_id
+     *
+     * @return bool
+     */
+    public function is_running( int $experiment_id ): bool {
+        $exp = $this->get_experiment( $experiment_id );
+        return $exp && self::STATUS_ACTIVE === $exp['status'];
+    }
+
+    /**
+     * Get runtime in days for an experiment.
+     *
+     * @param int $experiment_id
+     *
+     * @return float
+     */
+    public function get_runtime_days( int $experiment_id ): float {
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp ) {
+            return 0.0;
+        }
+        $start = strtotime( $exp['created_at'] );
+        $end   = ! empty( $exp['ended_at'] ) ? strtotime( $exp['ended_at'] ) : time();
+        return round( ( $end - $start ) / DAY_IN_SECONDS, 2 );
+    }
+
+    /**
+     * Update the traffic percentage for an experiment.
+     *
+     * @param int $experiment_id
+     * @param int $traffic_pct
+     */
+    public function update_traffic_pct( int $experiment_id, int $traffic_pct ) {
+        global $wpdb;
+        $wpdb->update(
+            $this->table_experiments,
+            array( 'traffic_pct' => min( 100, max( 1, $traffic_pct ) ) ),
+            array( 'id' => $experiment_id ),
+            array( '%d' ),
+            array( '%d' )
+        );
+        $this->log_db_error( 'update_traffic_pct' );
+    }
+
+    /**
+     * Pause all active experiments.
+     *
+     * @return int Number of experiments paused.
+     */
+    public function pause_all(): int {
+        global $wpdb;
+        $count = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$this->table_experiments} SET status = %s WHERE status = %s",
+            self::STATUS_PAUSED,
+            self::STATUS_ACTIVE
+        ) );
+        $this->log_db_error( 'pause_all' );
+        return (int) $count;
+    }
+
+    /**
+     * Clean up events older than a given number of days.
+     *
+     * @param int $days Max age in days.
+     *
+     * @return int Number of events deleted.
+     */
+    public function cleanup_old_events( int $days = 90 ): int {
+        global $wpdb;
+        $count = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$this->table_events} WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+            $days
+        ) );
+        $this->log_db_error( 'cleanup_old_events' );
+        return (int) $count;
+    }
+
+    /**
+     * Get top-performing variants across all concluded/winner experiments.
+     *
+     * @param int $limit
+     *
+     * @return array
+     */
+    public function get_top_performers( int $limit = 10 ): array {
+        global $wpdb;
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT v.*, e.name as experiment_name
+             FROM {$this->table_variants} v
+             INNER JOIN {$this->table_experiments} e ON e.id = v.experiment_id
+             WHERE v.winner_flag = 1 AND e.status = 'winner'
+             ORDER BY (SELECT COUNT(*) FROM {$this->table_events} ev WHERE ev.variant_id = v.id AND ev.event_type = 'conversion') DESC
+             LIMIT %d",
+            $limit
+        ), ARRAY_A );
+    }
+
+    /**
+     * Get experiments in a date range.
+     *
+     * @param string $from Start date (Y-m-d).
+     * @param string $to   End date (Y-m-d).
+     *
+     * @return array
+     */
+    public function get_experiments_by_date( string $from, string $to ): array {
+        global $wpdb;
+        return $wpdb->get_results( $wpdb->prepare(
+            "SELECT e.*,
+                    (SELECT COUNT(*) FROM {$this->table_variants} v WHERE v.experiment_id = e.id) as variant_count
+             FROM {$this->table_experiments} e
+             WHERE DATE(e.created_at) BETWEEN %s AND %s
+             ORDER BY e.created_at DESC",
+            $from,
+            $to
+        ), ARRAY_A );
+    }
+
+    /**
+     * Update the description of an experiment.
+     *
+     * @param int    $experiment_id
+     * @param string $description
+     */
+    public function update_description( int $experiment_id, string $description ) {
+        global $wpdb;
+        $wpdb->update(
+            $this->table_experiments,
+            array( 'description' => $description ),
+            array( 'id' => $experiment_id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+        $this->log_db_error( 'update_description' );
+    }
+
+    /**
+     * Validate that a status transition is allowed.
+     *
+     * @param string $from Current status.
+     * @param string $to   Desired status.
+     *
+     * @return bool
+     */
+    public function is_valid_transition( string $from, string $to ): bool {
+        $allowed = array(
+            self::STATUS_DRAFT     => array( self::STATUS_ACTIVE ),
+            self::STATUS_ACTIVE    => array( self::STATUS_PAUSED, self::STATUS_WINNER, self::STATUS_CONCLUDED ),
+            self::STATUS_PAUSED    => array( self::STATUS_ACTIVE, self::STATUS_CONCLUDED ),
+            self::STATUS_WINNER    => array(),
+            self::STATUS_CONCLUDED => array(),
+            self::STATUS_ARCHIVED  => array(),
+        );
+        return isset( $allowed[ $from ] ) && in_array( $to, $allowed[ $from ], true );
     }
 }
