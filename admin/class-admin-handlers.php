@@ -452,6 +452,12 @@ class AdminHandlers {
     public function ajax_wac_get_experiment_detail() {
         $this->check_ajax_permissions();
 
+        // Rate limit: max 1 request per 2 seconds.
+        if ( ! $this->check_rate_limit( 'exp_detail' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'get_experiment_detail' ) );
+            $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
+        }
+
         $id = isset( $_POST['id'] ) ? intval( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
@@ -491,6 +497,12 @@ class AdminHandlers {
      */
     public function ajax_wac_get_logs() {
         $this->check_ajax_permissions();
+
+        // Rate limit: max 1 request per 2 seconds.
+        if ( ! $this->check_rate_limit( 'get_logs' ) ) {
+            $this->logger->warning( 'rate_limit_exceeded', array( 'action' => 'get_logs' ) );
+            $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
+        }
 
         $level = isset( $_POST['level'] ) ? sanitize_key( wp_unslash( $_POST['level'] ) ) : '';
         $limit = isset( $_POST['limit'] ) ? min( 500, intval( wp_unslash( $_POST['limit'] ) ) ) : 100;
