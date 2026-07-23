@@ -203,6 +203,8 @@ class Schema {
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( 30 * DAY_IN_SECONDS ) );
 
         // Chunked delete: 1000 rows at a time to avoid table locks on large datasets.
+        // Cap total deletions per cron run to prevent excessive query time.
+        $max_total = 50000;
         $total = 0;
         do {
             $deleted = $wpdb->query( $wpdb->prepare(
@@ -210,17 +212,19 @@ class Schema {
                 $threshold
             ) );
             $total += $deleted;
-        } while ( $deleted > 0 );
+        } while ( $deleted > 0 && $total < $max_total );
 
         // Also purge stale beacon events (> 90 days).
         $beacon_table = $wpdb->prefix . 'wac_beacon_events';
         $beacon_threshold = gmdate( 'Y-m-d H:i:s', time() - ( 90 * DAY_IN_SECONDS ) );
+        $beacon_total = 0;
         do {
             $deleted = $wpdb->query( $wpdb->prepare(
                 "DELETE FROM {$beacon_table} WHERE created_at < %s LIMIT 1000",
                 $beacon_threshold
             ) );
-        } while ( $deleted > 0 );
+            $beacon_total += $deleted;
+        } while ( $deleted > 0 && $beacon_total < $max_total );
     }
 
     /**

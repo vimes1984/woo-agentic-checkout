@@ -1448,12 +1448,12 @@ class ABTestManager {
 
             $summary['active'][] = array(
                 'id'          => $exp['id'],
-                'name'        => $exp['name'],
+                'name'        => isset( $exp['name'] ) ? sanitize_text_field( $exp['name'] ) : '',
                 'status'      => $exp['status'],
                 'impressions' => $impressions,
                 'conversions' => $conversions,
                 'revenue'     => $revenue,
-                'winner'      => $exp['winner_key'] ?? '',
+                'winner'      => isset( $exp['winner_key'] ) ? sanitize_key( $exp['winner_key'] ) : '',
             );
         }
 
@@ -1650,9 +1650,9 @@ class ABTestManager {
         $config = json_decode( $variant['config_snapshot'], true );
 
         return array(
-            'experiment' => $variant['experiment_name'],
-            'variant'    => $variant['variant_key'],
-            'name'       => $variant['variant_name'],
+            'experiment' => isset( $variant['experiment_name'] ) ? sanitize_text_field( $variant['experiment_name'] ) : '',
+            'variant'    => isset( $variant['variant_key'] ) ? sanitize_key( $variant['variant_key'] ) : '',
+            'name'       => isset( $variant['variant_name'] ) ? sanitize_text_field( $variant['variant_name'] ) : '',
             'config'     => is_array( $config ) ? $config : array(),
             'effects'    => array(
                 'removes_fields' => ! empty( $config['remove_fields'] ) ? $config['remove_fields'] : array(),
