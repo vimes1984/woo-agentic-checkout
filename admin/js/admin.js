@@ -1200,6 +1200,9 @@
                 clearInterval(this._refreshInterval);
                 this._refreshInterval = null;
             }
+            if (window._wacContentObserver) {
+                try { window._wacContentObserver.disconnect(); window._wacContentObserver = null; } catch(e) {}
+            }
         },
 
         /**
