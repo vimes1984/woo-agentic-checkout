@@ -70,7 +70,17 @@
             if (this._eventQueue.length >= 100) {
                 this._eventQueue.shift();
             }
-            this._eventQueue.push({ event: event, data: data, time: Date.now() });
+            // Cap individual event data size to prevent oversized batching.
+            var safeData = {};
+            if (typeof data === 'object' && data !== null) {
+                var count = 0;
+                for (var k in data) {
+                    if (data.hasOwnProperty(k) && count++ < 20) {
+                        safeData[k] = String(data[k]).substring(0, 500);
+                    }
+                }
+            }
+            this._eventQueue.push({ event: event, data: safeData, time: Date.now() });
 
             if (this._eventQueue.length >= 5) {
                 this._flushBatch();
