@@ -211,7 +211,12 @@ class Settings {
     public function get_all(): array {
         $settings = array();
         foreach ( array_keys( $this->defaults ) as $key ) {
-            $settings[ $key ] = $this->get( $key );
+            $value = $this->get( $key );
+            // Mask sensitive values for display.
+            if ( in_array( $key, self::API_KEY_SETTINGS, true ) && is_string( $value ) && strlen( $value ) > 4 ) {
+                $value = substr( $value, 0, 4 ) . str_repeat( '•', min( 20, strlen( $value ) - 4 ) );
+            }
+            $settings[ $key ] = $value;
         }
         return $settings;
     }
