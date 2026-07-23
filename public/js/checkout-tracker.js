@@ -150,10 +150,10 @@
 
             // Coupon applied
             $(document.body).on('applied_coupon', function (e, coupon) {
-                self.trackStep('coupon_applied', { coupon: coupon });
+                self.trackStep('coupon_applied', { coupon: String(coupon).substring(0, 100) });
             });
             $(document.body).on('removed_coupon', function (e, coupon) {
-                self.trackStep('coupon_removed', { coupon: coupon });
+                self.trackStep('coupon_removed', { coupon: String(coupon).substring(0, 100) });
             });
 
             // Shipping method changed
