@@ -579,6 +579,11 @@ class LLMClient {
     public function clear_cache(): int {
         global $wpdb;
 
+        // Guard against missing database (e.g. early loading).
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+            return 0;
+        }
+
         $like = $wpdb->esc_like( '_transient_wac_llm_' ) . '%';
         $table = $wpdb->options;
 
