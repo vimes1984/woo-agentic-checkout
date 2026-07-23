@@ -79,7 +79,7 @@ class SignalCollector {
         }
 
         $payload = array(
-            'client_id' => md5( function_exists( 'session_id' ) ? ( session_id() ?: uniqid( 'ga4_', true ) ) : uniqid( 'ga4_', true ) ),
+            'client_id' => md5( ( function_exists( 'session_status' ) && session_status() === PHP_SESSION_ACTIVE ) ? md5( session_id() ) : md5( uniqid( 'ga4_', true ) ) ),
             'events'    => array(
                 array(
                     'name'   => $event_name,
