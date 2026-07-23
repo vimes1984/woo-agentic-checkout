@@ -59,7 +59,7 @@ class ErrorHandler {
      * Register the error handler.
      * Safe to call multiple times — only registers once.
      */
-    public static function register() {
+    public static function register(): void {
         if ( self::$active ) {
             return;
         }
@@ -76,7 +76,7 @@ class ErrorHandler {
     /**
      * Unregister the error handler.
      */
-    public static function unregister() {
+    public static function unregister(): void {
         if ( ! self::$active ) {
             return;
         }
@@ -228,7 +228,7 @@ class ErrorHandler {
      * @param string $event
      * @param array  $data
      */
-    private static function safe_log( string $event, array $data ) {
+    private static function safe_log( string $event, array $data ): void {
         // Sanitize event name to prevent log injection (strip non-printable chars, cap length).
         $event = preg_replace( '/[^\x20-\x7E]/', '', $event );
         $event = substr( $event, 0, 100 );
@@ -299,7 +299,7 @@ class ErrorHandler {
     /**
      * Ensure Logger is instantiated.
      */
-    private static function ensure_logger() {
+    private static function ensure_logger(): void {
         if ( null === self::$logger ) {
             try {
                 self::$logger = new Logger();
