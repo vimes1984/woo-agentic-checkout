@@ -36,6 +36,8 @@ class SuggestionEngine {
     const MAX_TRAFFIC_PCT = 100;
     const CSS_MAX_LENGTH = 50000;
     const JS_MAX_LENGTH = 50000;
+    const DESCRIPTION_MAX_LENGTH = 10000;
+    const TITLE_MAX_LENGTH = 255;
     const MIN_TRAFFIC_PCT = 10;
 
     /**
