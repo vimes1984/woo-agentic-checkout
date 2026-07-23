@@ -258,7 +258,7 @@ class ABTestManager {
             $params[] = $status;
         }
 
-        $limit    = absint( $limit );
+        $limit    = min( 200, absint( $limit ) );
         $params[] = $limit;
 
         $sql = "SELECT e.*,
