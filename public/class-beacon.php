@@ -112,6 +112,10 @@ class Beacon {
 
         // Verify nonce.
         $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+        // Reject excessively long nonce values to prevent DoS.
+        if ( strlen( $nonce ) > 32 ) {
+            wp_send_json_error( array( 'message' => 'Invalid nonce length.' ), 403 );
+        }
         if ( ! wp_verify_nonce( $nonce, 'wac_beacon' ) ) {
             wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
         }
