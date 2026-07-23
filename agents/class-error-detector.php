@@ -19,6 +19,17 @@ class ErrorDetector {
     const REVISION = 'batch5.12';
 
     /**
+     * Critical error event patterns for severity classification.
+     */
+    const CRITICAL_EVENTS = array(
+        'checkout_fatal',
+        'payment_gateway_failure',
+        'database_error',
+        'session_expired',
+        'timeout',
+    );
+
+    /**
      * @var array Service dependencies.
      */
     private $services;
