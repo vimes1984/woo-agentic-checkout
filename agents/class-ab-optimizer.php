@@ -264,8 +264,18 @@ class ABOptimizer {
      * @return array|null Experiment proposal or null.
      */
     private function propose_next_experiment(): ?array {
-        $llm    = $this->services['llm'];
-        $signals = $this->services['signals'];
+        $llm     = $this->services['llm'] ?? null;
+        $signals = $this->services['signals'] ?? null;
+        $logger  = $this->services['logger'] ?? null;
+
+        if ( ! $llm || ! $signals ) {
+            if ( $logger ) {
+                $logger->warning( 'ab_optimizer_missing_llm_or_signals', array(
+                    'note' => 'Cannot propose experiment: LLM or Signals service missing.',
+                ) );
+            }
+            return null;
+        }
 
         $recent_orders = $signals->get_recent_orders( 168 );
         $funnel        = $signals->get_funnel_data( 24 );
@@ -284,7 +294,7 @@ class ABOptimizer {
             }
         }
         if ( ! $has_data ) {
-            $this->services['logger']->info( 'ab_no_data_for_experiment', array(
+            $logger->info( 'ab_no_data_for_experiment', array(
                 'note' => 'Insufficient data to propose experiment (cold start).',
             ) );
             return null;

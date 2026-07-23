@@ -261,10 +261,15 @@ class SelfHealer {
      * Revert a template override to default.
      */
     private function do_revert_template( array $params ): array {
-        $template = sanitize_file_name( $params['template'] ?? '' );
+        $template = $params['template'] ?? '';
 
         if ( empty( $template ) ) {
             throw new \InvalidArgumentException( 'Template name required.' );
+        }
+
+        // Prevent path traversal by disallowing '..', null bytes, and absolute paths.
+        if ( str_contains( $template, '..' ) || str_contains( $template, chr( 0 ) ) || str_starts_with( $template, '/' ) ) {
+            throw new \InvalidArgumentException( 'Invalid template name.' );
         }
 
         // Remove template override via filter.
@@ -276,7 +281,7 @@ class SelfHealer {
         }, 999, 2 );
 
         return array(
-            'message' => 'Reverted template: ' . sanitize_file_name( $template ),
+            'message' => 'Reverted template: ' . esc_html( $template ),
         );
     }
 

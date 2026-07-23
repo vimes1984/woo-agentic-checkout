@@ -425,11 +425,16 @@ class Core {
         $event    = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
         $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
 
+        // Use mb_strlen for multi-byte safety on event session validation.
+        if ( mb_strlen( $event ) > 100 ) {
+            $event = mb_substr( $event, 0, 100 );
+        }
+
         // Limit raw data to 10KB for storage safety. Sanitize the raw input.
         if ( is_string( $raw_data ) ) {
             $raw_data = sanitize_textarea_field( $raw_data );
-            if ( strlen( $raw_data ) > 10240 ) {
-                $raw_data = substr( $raw_data, 0, 10240 );
+            if ( mb_strlen( $raw_data ) > 10240 ) {
+                $raw_data = mb_substr( $raw_data, 0, 10240 );
             }
         }
 
@@ -437,8 +442,8 @@ class Core {
         $data    = is_array( $data ) ? $data : array();
         $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
 
-        if ( strlen( $event ) > 100 || strlen( $session ) > 64 ) {
-            wp_send_json_error( array( 'message' => 'Invalid field length.' ), 400 );
+        if ( mb_strlen( $session ) > 64 ) {
+            $session = mb_substr( $session, 0, 64 );
         }
 
         do_action( 'wac_beacon_event', $event, $data, $session );
