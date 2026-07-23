@@ -274,6 +274,8 @@ class SignalCollector {
         $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $hours * HOUR_IN_SECONDS ) );
 
         // Query beacon events for funnel analysis with a safety limit.
+        $threshold = substr( $threshold, 0, 19 );
+
         $results = $wpdb->get_results( $wpdb->prepare(
             "SELECT event, COUNT(DISTINCT session_id) as sessions
              FROM {$wpdb->prefix}wac_beacon_events
