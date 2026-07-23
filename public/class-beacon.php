@@ -127,7 +127,7 @@ class Beacon {
                 $depth--;
             }
         };
-
+        array_walk( \$data, \$sanitize_deep );
 
         if ( empty( $event ) || empty( $session ) ) {
             wp_send_json_error( array( 'message' => 'Missing required fields.' ), 400 );
