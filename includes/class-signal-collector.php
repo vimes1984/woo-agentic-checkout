@@ -25,6 +25,8 @@ class SignalCollector {
     const MAX_ERROR_SAMPLES = 500;
     const MAX_LOOKBACK_HOURS = 168;
     const MIN_LOOKBACK_HOURS = 1;
+    const MAX_FUNNEL_RESULTS = 50;
+    const MAX_RESPONSE_BYTES = 500000;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
