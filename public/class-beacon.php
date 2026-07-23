@@ -86,6 +86,10 @@ class Beacon {
         $data = array();
         foreach ( $variants as $exp_name => $variant_key ) {
             // Sanitize experiment metadata before sending to client.
+            // Cap total experiments to prevent oversized inline script.
+            if ( count( $data ) >= 20 ) {
+                break;
+            }
             $data[] = array(
                 'experiment'  => substr( sanitize_text_field( $exp_name ), 0, 255 ),
                 'variant'     => substr( sanitize_key( $variant_key ), 0, 100 ),
