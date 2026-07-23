@@ -68,6 +68,17 @@ foreach ( $options as $option ) {
     }
 }
 
+// Scan for any wac_ prefixed options not in the explicit list.
+$all_options = wp_load_alloptions();
+foreach ( $all_options as $opt_name => $opt_value ) {
+    if ( 0 === strpos( $opt_name, 'wac_' ) && ! in_array( $opt_name, $options, true ) ) {
+        delete_option( $opt_name );
+        if ( is_multisite() ) {
+            delete_site_option( $opt_name );
+        }
+    }
+}
+
 global $wpdb;
 
 // Drop custom tables via Schema class for consistent table management.
