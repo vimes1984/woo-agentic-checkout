@@ -187,7 +187,12 @@ class SignalCollector {
             );
         }
 
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+        $body = wp_remote_retrieve_body( $response );
+        // Guard: prevent oversized response from consuming memory.
+        if ( strlen( $body ) > 500000 ) {
+            return array( 'error' => 'GA4 API response exceeded 500KB limit.' );
+        }
+        $data = json_decode( $body, true );
 
         // Calculate summary metrics from rows.
         $total_conversions = 0;
