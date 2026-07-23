@@ -21,6 +21,7 @@ class ConversionAnalyzer {
      */
     const REVISION = 'batch5.12';
     const ANALYSIS_VERSION = '1.0';
+    const LOCK_TIMEOUT = 600;
 
     /**
      * @var array Service dependencies.
