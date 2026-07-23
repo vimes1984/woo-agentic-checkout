@@ -206,25 +206,30 @@ function wac_uninstall(): void {
         $schema->drop_tables();
     }
 
-    // Remove all plugin options.
-    delete_option( 'wac_db_version' );
-    delete_option( 'wac_settings' );
-    delete_option( 'wac_llm_calls_hourly' );
-    delete_option( 'wac_notify_email' );
-    delete_option( 'wac_slack_webhook' );
-    delete_option( 'wac_notify_email_enabled' );
-    delete_option( 'wac_notify_slack_enabled' );
-    delete_option( 'wac_agent_failure_counts' );
-    delete_option( 'wac_css_patches' );
-    delete_option( 'wac_js_patches' );
-    delete_option( 'wac_removed_fields' );
-    delete_option( 'wac_setting_rollbacks' );
-    delete_option( 'wac_heal_permission_level' );
+    // Remove all plugin options — use wildcard DELETE to catch any wac_ options
+    // including API keys (wac_llm_api_key, wac_ga4_api_secret) that would otherwise
+    // be left behind and leak credentials.
+    global $wpdb;
+    if ( isset( $wpdb ) ) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $wpdb->esc_like( 'wac_' ) . '%'
+        ) );
+    } else {
+        // Fallback if wpdb is unavailable.
+        delete_option( 'wac_db_version' );
+        delete_option( 'wac_settings' );
+        delete_option( 'wac_llm_calls_hourly' );
+    }
 
     // Remove network-only options if this is multisite.
-    if ( is_multisite() ) {
-        delete_site_option( 'wac_db_version' );
-        delete_site_option( 'wac_settings' );
+    if ( is_multisite() && isset( $wpdb ) ) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s",
+            $wpdb->esc_like( 'wac_' ) . '%'
+        ) );
     }
 
     // Clear all scheduled cron events.
