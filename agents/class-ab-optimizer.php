@@ -110,7 +110,8 @@ class ABOptimizer {
         if ( empty( $experiments ) || ! is_array( $experiments ) ) {
             $logger->info( 'ab_optimizer_no_experiments', array(
                 'note' => 'No active experiments to analyse.',
-            ) );
+                ) );
+            }
             delete_transient( $lock_key );
             return array(
                 'success'    => true,
