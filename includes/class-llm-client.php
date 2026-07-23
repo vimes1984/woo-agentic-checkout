@@ -576,7 +576,7 @@ class LLMClient {
      * Clear all cached LLM responses using chunked deletion
      * to avoid long table locks on large option tables.
      */
-    public function clear_cache() {
+    public function clear_cache(): void {
         global $wpdb;
 
         $like = $wpdb->esc_like( '_transient_wac_llm_' ) . '%';
