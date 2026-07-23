@@ -112,7 +112,7 @@ class Notifier {
         $subject = sprintf(
             '[%s] %s — %s',
             wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
-            esc_html( $title ),
+            sanitize_text_field( $title ),
             gmdate( 'Y-m-d H:i' )
         );
 

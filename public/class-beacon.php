@@ -38,8 +38,9 @@ class Beacon {
                     ls.setItem('wac_client_id', cid);
                 }
                 // Sync to a cookie so PHP can read it.
+                var secureFlag = window.location.protocol === 'https:' ? '; secure' : '';
                 document.cookie = 'wac_client_id=' + encodeURIComponent(cid) +
-                    '; path=/; max-age=2592000; samesite=lax';
+                    '; path=/; max-age=2592000; samesite=lax' + secureFlag + ';';
             } catch (e) {
                 // localStorage disabled or quota exceeded — fall back to server-side cookies.
             }

@@ -81,7 +81,14 @@ class Logger {
         }
 
         // Cap context size to prevent log table bloat.
-        $context_data = is_string( $context ) ? $context : wp_json_encode( $context );
+        if ( is_array( $context ) ) {
+            // Flatten deeply nested arrays to prevent stack overflow during JSON encoding.
+            $context = self::limit_array_depth( $context, 5 );
+        }
+        $context_data = is_string( $context ) ? $context : wp_json_encode( $context, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE );
+        if ( false === $context_data ) {
+            $context_data = '{}'; // Fallback if JSON encoding fails.
+        }
         if ( is_string( $context_data ) && strlen( $context_data ) > 10000 ) {
             $context_data = substr( $context_data, 0, 10000 );
         }
