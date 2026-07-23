@@ -229,6 +229,13 @@ class ErrorHandler {
      * @param array  $data
      */
     private static function safe_log( string $event, array $data ) {
+        // Sanitize event name to prevent log injection (strip non-printable chars, cap length).
+        $event = preg_replace( '/[^\x20-\x7E]/', '', $event );
+        $event = substr( $event, 0, 100 );
+        if ( '' === $event ) {
+            $event = 'unknown';
+        }
+
         // Try DB logging first.
         if ( self::can_db_log() ) {
             self::ensure_logger();
