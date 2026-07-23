@@ -711,7 +711,7 @@
                 // Timeout to restore after normal form submission reload.
                 setTimeout(function () {
                     self.hideLoading($submitBtn);
-                }, 30000);
+                }, Math.max(5000, Math.min(60000, 30000)));
             });
 
             // AJAX agent run.
