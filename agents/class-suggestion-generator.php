@@ -101,8 +101,12 @@ class SuggestionGenerator {
         // Auto-apply high-confidence suggestions if permissions allow.
         $permission = $settings->get_heal_permission();
         $auto_applied = 0;
+        $max_auto_apply = 5;
 
         foreach ( $suggestions as $suggestion ) {
+            if ( $auto_applied >= $max_auto_apply ) {
+                break;
+            }
             $applied = $suggest_engine->auto_apply_if_allowed( $suggestion, $permission );
             if ( $applied ) {
                 $auto_applied++;
