@@ -95,6 +95,11 @@ class Beacon {
      * Verifies nonce, stores event data.
      */
     public function handle_ajax() {
+        // Set a reasonable time limit to prevent resource exhaustion on AJAX calls.
+        if ( function_exists( 'set_time_limit' ) ) {
+            set_time_limit( 15 );
+        }
+
         // Verify nonce.
         $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
         if ( ! wp_verify_nonce( $nonce, 'wac_beacon' ) ) {
