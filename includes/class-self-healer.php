@@ -315,7 +315,7 @@ class SelfHealer {
     private function log_heal( string $issue_id, string $action, array $params, array $result ): string {
         global $wpdb;
 
-        $rollback_id = 'heal_' . uniqid();
+        $rollback_id = 'heal_' . wp_generate_uuid4();
 
         // Sanitize inputs before DB insertion.
         $safe_issue_id = substr( sanitize_text_field( $issue_id ), 0, 128 );

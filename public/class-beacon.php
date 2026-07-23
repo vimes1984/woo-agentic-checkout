@@ -40,7 +40,7 @@ class Beacon {
                 // Sync to a cookie so PHP can read it.
                 var secureFlag = window.location.protocol === 'https:' ? '; secure' : '';
                 document.cookie = 'wac_client_id=' + encodeURIComponent(cid) +
-                    '; path=/; max-age=2592000; samesite=lax' + secureFlag + ';';
+                    '; path=/; max-age=2592000; samesite=strict' + secureFlag + ';';
             } catch (e) {
                 // localStorage disabled or quota exceeded — fall back to server-side cookies.
             }

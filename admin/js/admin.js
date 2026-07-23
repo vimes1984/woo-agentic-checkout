@@ -127,7 +127,7 @@
         ensureToastContainer: function () {
             if ($('.wac-toast-container').length === 0) {
                 $('body').append(
-                    '<div class="wac-toast-container" aria-live="polite" aria-relevant="additions"></div>'
+                    '<div class="wac-toast-container" aria-live="polite" aria-relevant="additions" style="position:fixed;z-index:999999;"></div>'
                 );
             }
         },
