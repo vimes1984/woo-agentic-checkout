@@ -198,7 +198,8 @@ class ConversionAnalyzer {
             $logger->error( 'conversion_analyzer_failed', array(
                 'error_hash' => md5( $raw_msg ) ); }
                 'sanitized'  => $sanitized,
-            ) );
+                ) );
+            }
             return array(
                 'success' => false,
                 'actions' => 0,
