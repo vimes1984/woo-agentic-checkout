@@ -142,9 +142,11 @@ class ABOptimizer {
             $bayesian_ok = is_array( $bayesian );
 
             if ( ! $variants_ok ) {
-                $logger->info( 'ab_optimizer_no_variants', array(
+                if ( $logger ) {
+                    $logger->info( 'ab_optimizer_no_variants', array(
                     'exp_id' => $exp['id'],
-                ) );
+                    ) );
+                }
                 continue;
             }
 
