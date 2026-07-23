@@ -98,6 +98,10 @@ class Settings {
      * @return mixed
      */
     public function get( string $key, $default = null ): mixed {
+        // Cap key length to prevent MySQL option_name truncation (max 64 chars minus prefix).
+        if ( strlen( $key ) > 55 ) {
+            $key = substr( $key, 0, 55 );
+        }
         $value = get_option( self::PREFIX . $key, null );
 
         if ( null === $value ) {
