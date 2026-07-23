@@ -185,6 +185,9 @@
                 self.trackStep('place_order_clicked');
             });
 
+            // Track submission time with max cap to prevent anomalous reporting.
+            var MAX_SUBMIT_MS = 600000;
+
             // Order submission time (from click to success/error).
             var placeOrderTime = null;
             $(document.body).on('checkout_place_order', function () {
@@ -192,18 +195,20 @@
             });
             $(document.body).on('checkout_error', function () {
                 if (placeOrderTime) {
+                    var errDur = Math.min(Date.now() - placeOrderTime, MAX_SUBMIT_MS);
                     self._sendThrottled('checkout_submit_duration', {
                         result: 'error',
-                        durationMs: Date.now() - placeOrderTime
+                        durationMs: errDur
                     });
                     placeOrderTime = null;
                 }
             });
             $(document.body).on('checkout_place_order_success checkout_processed', function () {
                 if (placeOrderTime) {
+                    var okDur = Math.min(Date.now() - placeOrderTime, MAX_SUBMIT_MS);
                     self._sendThrottled('checkout_submit_duration', {
                         result: 'success',
-                        durationMs: Date.now() - placeOrderTime
+                        durationMs: okDur
                     });
                     placeOrderTime = null;
                 }
