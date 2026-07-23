@@ -23,6 +23,16 @@ class ErrorDetector {
      */
     const MIN_SAMPLES_FOR_LLM = 3;
     const FUNNEL_DROPOFF_THRESHOLD = 30;
+    const ALLOWED_HEAL_ACTIONS = array(
+        'rollback_setting',
+        'revert_template',
+        'disable_plugin',
+        'clear_cache',
+        'toggle_feature',
+        'patch_javascript',
+        'patch_css',
+        'escalate',
+    );
 
     const CRITICAL_EVENTS = array(
         'checkout_fatal',
