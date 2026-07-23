@@ -279,7 +279,7 @@ class ErrorHandler {
 
         global $wpdb;
 
-        if ( ! $wpdb ) {
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
             self::$table_checked = false;
             return false;
         }
