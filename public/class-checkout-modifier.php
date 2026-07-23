@@ -313,9 +313,9 @@ class CheckoutModifier {
     private function apply_field_removals( array $fields, array $remove_keys ): array {
         $this->removed_field_keys = array();
 
-        // Validate keys: only alphanumeric, underscore, colon allowed.
+        // Validate keys: only alphanumeric, underscore, colon allowed, max 100 chars.
         $remove_keys = array_filter( $remove_keys, function ( $key ) {
-            return is_string( $key ) && 1 === preg_match( '/^[a-zA-Z0-9_:]+$/', $key );
+            return is_string( $key ) && strlen( $key ) <= 100 && 1 === preg_match( '/^[a-zA-Z0-9_:]+$/', $key );
         } );
 
         foreach ( $remove_keys as $key ) {
