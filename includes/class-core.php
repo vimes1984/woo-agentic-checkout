@@ -42,7 +42,7 @@ class Core {
     /**
      * Boot the plugin.
      */
-    public function init() {
+    public function init(): void {
         $this->load_dependencies();
         $this->register_hooks();
         $this->init_services();
@@ -51,7 +51,7 @@ class Core {
     /**
      * Load all includes.
      */
-    private function load_dependencies() {
+    private function load_dependencies(): void {
         // Files are autoloaded — nothing else needed.
         // Schema is loaded explicitly for activation.
         require_once WAC_PATH . 'database/class-schema.php';
@@ -60,7 +60,7 @@ class Core {
     /**
      * Register WordPress hooks.
      */
-    private function register_hooks() {
+    private function register_hooks(): void {
         // Priority list to avoid conflict with 3rd-party plugins.
         $late  = 99;
         $early = 1;
@@ -103,7 +103,7 @@ class Core {
     /**
      * Initialize all service instances.
      */
-    private function init_services() {
+    private function init_services(): void {
         $this->services['logger']    = new Logger();
         $this->services['settings']  = new Settings();
         $this->services['llm']       = new LLMClient( $this->services['settings'] );
@@ -138,7 +138,7 @@ class Core {
     /**
      * Activation: create/upgrade DB tables.
      */
-    public function activate() {
+    public function activate(): void {
         // Check WooCommerce dependency at activation time.
         if ( ! class_exists( 'WooCommerce' ) ) {
             deactivate_plugins( WAC_BASENAME, true );
