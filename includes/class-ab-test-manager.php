@@ -485,7 +485,9 @@ class ABTestManager {
             return false;
         }
 
-        $cache_key = 'wac_dedup_' . $variant_id . '_' . $experiment_id . '_' . $event_type . '_' . $this->get_session_id();
+        // Use a hashed session ID to keep transient key length within WordPress limits (172 chars max).
+        $session_hash = substr( md5( $this->get_session_id() ), 0, 12 );
+        $cache_key    = 'wac_dedup_' . $variant_id . '_' . $experiment_id . '_' . $event_type . '_' . $session_hash;
         $last_time = get_transient( $cache_key );
 
         if ( false !== $last_time ) {

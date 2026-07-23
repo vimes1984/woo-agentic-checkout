@@ -72,7 +72,7 @@ class AdminUI {
             </h1>
 
             <nav class="nav-tab-wrapper wac-tabs" role="tablist" aria-label="Plugin tabs">
-                <a href="?page=wac-dashboard&tab=dashboard"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=dashboard' ) ); ?>"
                    class="nav-tab <?php echo 'dashboard' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'dashboard' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'dashboard' === $tab ? 'page' : 'false'; ?>">
