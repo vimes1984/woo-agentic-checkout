@@ -34,6 +34,7 @@ class SuggestionEngine {
     const MAX_REMOVED_FIELDS = 20;
     const EXP_NAME_MAX_LENGTH = 200;
     const EXP_DESC_MAX_LENGTH = 1000;
+    const MIN_AUTO_APPLY_SCORE = 0.9;
     const MAX_PENDING_LIMIT = 100;
     const LOCK_TIMEOUT = 600;
     const MAX_GET_LIMIT = 200;
