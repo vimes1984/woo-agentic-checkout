@@ -18,6 +18,7 @@ class ABOptimizer {
      * Agent revision for tracking prompt/behaviour changes.
      */
     const REVISION = 'batch5.12';
+    const MAX_VARIANTS = 5;
 
     /**
      * @var array Service dependencies.
