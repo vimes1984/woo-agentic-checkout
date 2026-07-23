@@ -178,9 +178,12 @@ class ErrorDetector {
             if ( $healer && $settings ) {
                 foreach ( $analysis as $issue ) {
                     if ( isset( $issue['heal_action'] ) ) {
+                        // Validate heal action against whitelist (defense in depth).
+                        $allowed_actions = array( 'rollback_setting', 'revert_template', 'disable_plugin', 'clear_cache', 'toggle_feature', 'patch_javascript', 'patch_css', 'escalate' );
+                        $safe_action = in_array( $issue['heal_action'], $allowed_actions, true ) ? $issue['heal_action'] : 'escalate';
                         $healer->attempt_heal(
                             $issue['issue_id'] ?? uniqid( 'err_' ),
-                            $issue['heal_action'],
+                            $safe_action,
                             $issue['heal_params'] ?? array(),
                             $settings->get_heal_permission()
                         );
