@@ -66,6 +66,10 @@
          * Batch low-priority events and flush periodically.
          */
         _enqueueBatched: function (event, data) {
+            // Cap queue to prevent memory exhaustion.
+            if (this._eventQueue.length >= 100) {
+                this._eventQueue.shift();
+            }
             this._eventQueue.push({ event: event, data: data, time: Date.now() });
 
             if (this._eventQueue.length >= 5) {
