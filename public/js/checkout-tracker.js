@@ -216,13 +216,15 @@
 
             // Order success (redirect) — also detect via URL hash for SPAs.
             if ($('.woocommerce-order').length) {
+                var orderId = parseInt($('.woocommerce-order .order').data('order-id'), 10) || 0;
                 self.trackStep('order_placed', {
-                    orderId: $('.woocommerce-order .order').data('order-id') || 0
+                    orderId: orderId
                 });
             } else if (window.location.href.indexOf('order-received') > -1) {
                 var params = new URLSearchParams(window.location.search);
+                var orderId = parseInt(params.get('order_id'), 10) || 0;
                 self.trackStep('order_placed', {
-                    orderId: params.get('order_id') || 0
+                    orderId: orderId
                 });
             }
 
