@@ -154,13 +154,39 @@ class CheckoutModifier {
             return;
         }
 
-        add_filter( 'woocommerce_locate_template', function ( $template, $template_name, $template_path ) use ( $custom_path, $template_file, $template_key ) {
+        // Validate template paths: ensure they resolve within the WP theme or plugin directory.
+        $wp_content_dir = WP_CONTENT_DIR;
+        $template_dir    = get_template_directory();
+        $stylesheet_dir  = get_stylesheet_directory();
+        $safe_paths      = array( $wp_content_dir, $template_dir, $stylesheet_dir, ABSPATH . 'wp-content' );
+
+        add_filter( 'woocommerce_locate_template', function ( $template, $template_name, $template_path ) use ( $custom_path, $template_file, $template_key, $safe_paths ) {
             // Override checkout template if custom template specified.
             if ( ! empty( $custom_path ) && file_exists( $custom_path ) ) {
-                return $custom_path;
+                $resolved = realpath( $custom_path );
+                if ( false === $resolved ) {
+                    return $template;
+                }
+                foreach ( $safe_paths as $allowed ) {
+                    $allowed_resolved = realpath( $allowed );
+                    if ( false !== $allowed_resolved && 0 === strpos( $resolved, $allowed_resolved ) ) {
+                        return $custom_path;
+                    }
+                }
+                return $template;
             }
             if ( ! empty( $template_file ) && $template_name === $template_file && file_exists( $template_file ) ) {
-                return $template_file;
+                $resolved = realpath( $template_file );
+                if ( false === $resolved ) {
+                    return $template;
+                }
+                foreach ( $safe_paths as $allowed ) {
+                    $allowed_resolved = realpath( $allowed );
+                    if ( false !== $allowed_resolved && 0 === strpos( $resolved, $allowed_resolved ) ) {
+                        return $template_file;
+                    }
+                }
+                return $template;
             }
             return $template;
         }, 10, 3 );

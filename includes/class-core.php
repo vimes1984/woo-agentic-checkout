@@ -520,16 +520,21 @@ class Core {
     public function rest_apply_suggestion( \WP_REST_Request $request ) {
         $id = absint( $request->get_param( 'id' ) );
         if ( $id < 1 ) {
-            return new \WP_Error( 'invalid_id', 'Invalid suggestion ID.', array( 'status' => 400 ) );
+            return new \WP_Error( 'invalid_id', __( 'Invalid suggestion ID.', 'woo-agentic-checkout' ), array( 'status' => 400 ) );
         }
         if ( ! isset( $this->services['suggest'] ) ) {
-            return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
+            return new \WP_Error( 'service_unavailable', __( 'Suggestion engine not initialized.', 'woo-agentic-checkout' ), array( 'status' => 503 ) );
         }
         $result = $this->services['suggest']->apply_suggestion( $id );
         if ( is_wp_error( $result ) ) {
-            return rest_ensure_response( $result );
+            // Return sanitized error message to avoid leaking internal details.
+            return rest_ensure_response( new \WP_Error(
+                $result->get_error_code(),
+                __( 'Failed to apply suggestion.', 'woo-agentic-checkout' ),
+                array( 'status' => 500 )
+            ) );
         }
-        return rest_ensure_response( array( 'success' => true, 'message' => 'Suggestion applied.' ) );
+        return rest_ensure_response( array( 'success' => true, 'message' => __( 'Suggestion applied.', 'woo-agentic-checkout' ) ) );
     }
 
     // ─── Checkout Modification ───────────────────────────────────

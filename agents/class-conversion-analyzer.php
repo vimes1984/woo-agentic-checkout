@@ -50,11 +50,11 @@ class ConversionAnalyzer {
     public function get_capabilities(): array {
         return array(
             'id'             => 'conversion_analyzer',
-            'label'          => $this->get_label(),
+            'label'          => $this->get_label() ); }
             'revision'       => self::REVISION,
             'llm_dependent'  => true,
             'schedule'       => 'daily',
-            'data_sources'   => array( 'orders', 'funnel', 'experiments' ),
+            'data_sources'   => array( 'orders', 'funnel', 'experiments' ) ); }
             'description'    => 'Analyses conversion rate changes and attributes them to experiments, external factors, or regressions.',
         );
     }
@@ -71,7 +71,7 @@ class ConversionAnalyzer {
             return array(
                 'success' => true,
                 'actions' => 0,
-                'errors'  => array(),
+                'errors'  => array() ); }
                 'summary' => 'Conversion Analyzer is already running (process lock active).',
             );
         }
@@ -95,7 +95,7 @@ class ConversionAnalyzer {
                 return array(
                     'success' => false,
                     'actions' => 0,
-                    'errors'  => array( $msg ),
+                    'errors'  => array( $msg ) ); }
                     'summary' => $msg,
                 );
             }
@@ -115,14 +115,14 @@ class ConversionAnalyzer {
             $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
 
             if ( $is_cold_start ) {
-                $logger->info( 'conversion_analysis_cold_start', array(
+                if ( $logger ) { $logger->info( 'conversion_analysis_cold_start', array(
                     'note' => 'No order data available yet — returning baseline.',
                 ) );
                 $release();
                 return array(
                     'success'             => true,
                     'actions'             => 0,
-                    'errors'              => array(),
+                    'errors'              => array() ); }
                     'summary'             => 'No order data available yet. This is normal during cold start (e.g., first 24h after install).',
                     'conversion_rate_24h' => 0,
                     'conversion_rate_7d'  => 0,
@@ -130,10 +130,10 @@ class ConversionAnalyzer {
                     'analysis'            => array(
                         'verdict'         => 'no_data',
                         'cr_assessment'   => 'No orders recorded in the analysis window.',
-                        'funnel_issues'   => array(),
+                        'funnel_issues'   => array() ); }
                         'likely_cause'    => 'Insufficient data — plugin may be newly installed or no traffic.',
-                        'recommendations' => array( 'Wait for data to accumulate before acting on this analysis.' ),
-                    ),
+                        'recommendations' => array( 'Wait for data to accumulate before acting on this analysis.' ) ); }
+                    ) ); }
                     'funnel'              => $funnel,
                 );
             }
@@ -142,7 +142,7 @@ class ConversionAnalyzer {
                 'last_24h' => $orders_24h,
                 'last_7d'  => $orders_7d,
                 'funnel'   => $funnel,
-                'active_experiments' => count( $experiments ),
+                'active_experiments' => count( $experiments ) ); }
             );
 
             // Send to LLM for analysis.
@@ -178,7 +178,7 @@ class ConversionAnalyzer {
             return array(
                 'success'             => true,
                 'actions'             => 1,
-                'errors'              => array(),
+                'errors'              => array() ); }
                 'summary'             => $result['cr_assessment'] ?? 'Conversion analysis completed.',
                 'conversion_rate_24h' => $orders_24h['conversion_rate'],
                 'conversion_rate_7d'  => $orders_7d['conversion_rate'],
@@ -192,19 +192,19 @@ class ConversionAnalyzer {
             $raw_msg   = $e->getMessage();
             $sanitized = sanitize_text_field( substr( $raw_msg, 0, 500 ) );
             $logger->error( 'conversion_analyzer_failed', array(
-                'error_hash' => md5( $raw_msg ),
+                'error_hash' => md5( $raw_msg ) ); }
                 'sanitized'  => $sanitized,
             ) );
             return array(
                 'success' => false,
                 'actions' => 0,
-                'errors'  => array( $sanitized ),
+                'errors'  => array( $sanitized ) ); }
                 'summary' => 'Conversion analysis failed: ' . $sanitized,
                 'fallback' => array(
                     'conversion_rate_24h' => $orders_24h['conversion_rate'],
                     'conversion_rate_7d'  => $orders_7d['conversion_rate'],
                     'revenue_24h'         => $orders_24h['revenue'],
-                ),
+                ) ); }
             );
         }
     }
@@ -289,20 +289,20 @@ PROMPT;
             'properties' => array(
                 'verdict'         => array(
                     'type' => 'string',
-                    'enum' => array( 'healthy', 'declining', 'critical', 'no_data' ),
-                ),
-                'cr_assessment'   => array( 'type' => 'string' ),
+                    'enum' => array( 'healthy', 'declining', 'critical', 'no_data' ) ); }
+                ) ); }
+                'cr_assessment'   => array( 'type' => 'string' ) ); }
                 'funnel_issues'   => array(
                     'type'  => 'array',
-                    'items' => array( 'type' => 'string' ),
-                ),
-                'likely_cause'    => array( 'type' => 'string' ),
+                    'items' => array( 'type' => 'string' ) ); }
+                ) ); }
+                'likely_cause'    => array( 'type' => 'string' ) ); }
                 'recommendations' => array(
                     'type'  => 'array',
-                    'items' => array( 'type' => 'string' ),
-                ),
-            ),
-            'required'   => array( 'verdict', 'cr_assessment', 'recommendations' ),
+                    'items' => array( 'type' => 'string' ) ); }
+                ) ); }
+            ) ); }
+            'required'   => array( 'verdict', 'cr_assessment', 'recommendations' ) ); }
             'additionalProperties' => false,
         );
     }
