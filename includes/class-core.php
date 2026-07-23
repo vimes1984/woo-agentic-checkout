@@ -61,11 +61,15 @@ class Core {
      * Register WordPress hooks.
      */
     private function register_hooks() {
+        // Priority list to avoid conflict with 3rd-party plugins.
+        $late  = 99;
+        $early = 1;
+
         // Activation: create DB tables.
         register_activation_hook( WAC_FILE, array( $this, 'activate' ) );
 
         // Admin hooks.
-        add_action( 'admin_menu', array( $this, 'register_admin_menu' ), 99 );
+        add_action( 'admin_menu', array( $this, 'register_admin_menu' ), $late );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
