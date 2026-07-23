@@ -41,7 +41,7 @@
          * Throttled send — max 1 event per event type per 200ms, batch heavy events.
          */
         _sendThrottled: function (event, data) {
-            if (!this.sessionId) return;
+            if (!this.sessionId || !event) return;
 
             var now = Date.now();
             var key = event;
