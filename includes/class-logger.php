@@ -244,7 +244,7 @@ class Logger {
 
         // Clamp days to safe range (1–365) to prevent accidental mass deletion.
         $days      = max( 1, min( 365, $days ) );
-        $threshold = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
+        $threshold = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - ( $days * DAY_IN_SECONDS ) );
         $table     = $wpdb->prefix . 'wac_logs';
 
         // Chunked delete: 5000 rows per iteration to avoid long table locks.
