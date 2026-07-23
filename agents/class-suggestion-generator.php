@@ -107,6 +107,9 @@ class SuggestionGenerator {
             if ( $auto_applied >= $max_auto_apply ) {
                 break;
             }
+            if ( ! is_array( $suggestion ) ) {
+                continue;
+            }
             $applied = $suggest_engine->auto_apply_if_allowed( $suggestion, $permission );
             if ( $applied ) {
                 $auto_applied++;
