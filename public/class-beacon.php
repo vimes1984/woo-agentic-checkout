@@ -102,7 +102,7 @@ class Beacon {
      */
     public function handle_ajax() {
         // Set a reasonable time limit to prevent resource exhaustion on AJAX calls.
-        if ( function_exists( 'set_time_limit' ) ) {
+        if ( function_exists( 'set_time_limit' ) && false === strpos( ini_get( 'disable_functions' ), 'set_time_limit' ) ) {
             set_time_limit( 15 );
         }
 
