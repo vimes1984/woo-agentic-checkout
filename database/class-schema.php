@@ -245,7 +245,7 @@ class Schema {
         } while ( $deleted > 0 && $beacon_total < $max_total );
 
 
-        error_log( sprintf( 'WAC purge complete: deleted %d log rows, %d beacon rows', $total, $beacon_total ) );
+        error_log( sprintf( 'WAC purge: deleted %d log rows, %d beacon rows (max %d)', $total, $beacon_total, $max_total ) );
     }
 
     /**
