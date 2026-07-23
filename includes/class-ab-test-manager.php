@@ -479,6 +479,12 @@ class ABTestManager {
     private function is_duplicate_event( int $variant_id, int $experiment_id, string $event_type ): bool {
         global $wpdb;
 
+        // Validate event_type against allowed values to prevent injection into DB query and cache key.
+        $allowed_event_types = array( 'impression', 'conversion' );
+        if ( ! in_array( $event_type, $allowed_event_types, true ) ) {
+            return false;
+        }
+
         $cache_key = 'wac_dedup_' . $variant_id . '_' . $experiment_id . '_' . $event_type . '_' . $this->get_session_id();
         $last_time = get_transient( $cache_key );
 
