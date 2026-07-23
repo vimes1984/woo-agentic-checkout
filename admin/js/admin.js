@@ -151,6 +151,8 @@
          */
         announce: function (message, polite) {
             var $el = $('#wac-aria-live');
+            // Truncate long announcements to prevent performance issues.
+            message = String(message).substring(0, 200);
             if ($el.length === 0) {
                 return;
             }
@@ -1152,8 +1154,8 @@
 
             this._refreshInterval = setInterval(function () {
                 var href = window.location.href;
-                // Remove timestamp param if present to avoid cache.
-                var url = href.split('?')[0];
+                // Use origin + pathname to avoid query/hash injection.
+                var url = window.location.origin + window.location.pathname;
                 var params = new URLSearchParams(window.location.search);
                 params.set('wac_ts', Date.now());
                 url = url + '?' + params.toString();

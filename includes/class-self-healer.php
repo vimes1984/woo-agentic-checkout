@@ -217,9 +217,13 @@ class SelfHealer {
             $limit
         ), ARRAY_A );
 
-        // Strict type casting for numeric fields.
+        // Strict type casting for numeric fields and sanitize text fields for dashboard display.
         foreach ( $rows as &$row ) {
-            $row['id'] = (int) $row['id'];
+            $row['id']          = (int) $row['id'];
+            $row['issue_id']    = isset( $row['issue_id'] ) ? sanitize_text_field( $row['issue_id'] ) : '';
+            $row['action']      = isset( $row['action'] ) ? sanitize_key( $row['action'] ) : '';
+            $row['result']      = isset( $row['result'] ) ? sanitize_text_field( $row['result'] ) : '';
+            $row['rollback_id'] = isset( $row['rollback_id'] ) ? sanitize_key( $row['rollback_id'] ) : '';
         }
         unset( $row );
 
