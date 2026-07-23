@@ -41,6 +41,7 @@ $options = array(
     'wac_ab_confidence_threshold',
     'wac_ab_max_concurrent',
     'wac_auto_suggest_enabled',
+    'wac_ab_testing_enabled',
     'wac_debug_mode',
     'wac_db_version',
     'wac_css_patches',
