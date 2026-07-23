@@ -654,6 +654,9 @@ class Core {
      * @return array
      */
     public function plugin_action_links( $links ): array {
+        if ( ! is_array( $links ) ) {
+            $links = array();
+        }
         $settings_link = sprintf(
             '<a href="%s">%s</a>',
             admin_url( 'admin.php?page=wac-dashboard' ),
