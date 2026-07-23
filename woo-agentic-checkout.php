@@ -181,7 +181,7 @@ function wac_init(): void {
     $plugin->init();
 
     // Start background agent cron if not already scheduled.
-    if ( ! wp_next_scheduled( 'wac_agent_tick' ) ) {
+    if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( 'wac_agent_tick' ) ) {
         wp_schedule_event( time(), 'hourly', 'wac_agent_tick' );
     }
 }
