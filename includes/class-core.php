@@ -63,7 +63,7 @@ class Core {
     private function register_hooks(): void {
         // Priority list to avoid conflict with 3rd-party plugins.
         $late  = 99;
-        $early = 1;
+
 
         // Activation: create DB tables.
         register_activation_hook( WAC_FILE, array( $this, 'activate' ) );
