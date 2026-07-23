@@ -194,13 +194,14 @@ class Logger {
     public function get_last_run( string $agent_key ): ?string {
         global $wpdb;
 
-        return $wpdb->get_var( $wpdb->prepare(
+        $result = $wpdb->get_var( $wpdb->prepare(
             "SELECT created_at FROM {$wpdb->prefix}wac_logs
              WHERE event = 'agent_run'
              AND context LIKE %s
              ORDER BY id DESC LIMIT 1",
             '%' . $wpdb->esc_like( $agent_key ) . '%'
         ) );
+        return false !== $result ? $result : null;
     }
 
     /**
