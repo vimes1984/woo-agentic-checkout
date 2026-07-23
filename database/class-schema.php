@@ -135,7 +135,6 @@ class Schema {
             INDEX idx_status (status),
             INDEX idx_category (category),
             INDEX idx_score (score DESC),
-            INDEX idx_score_asc (score),
             INDEX idx_status_score (status, score DESC)
         ) ENGINE=InnoDB {$charset_collate};";
 
