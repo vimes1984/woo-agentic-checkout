@@ -417,7 +417,7 @@ class Core {
      *
      * @param array $agent_keys Agent keys to run.
      */
-    private function run_agent_list( array $agent_keys ) {
+    private function run_agent_list( array $agent_keys ): void {
         $valid = array_intersect( $agent_keys, self::ALLOWED_AGENTS );
         if ( ! empty( $valid ) ) {
             $this->services['agents']->run_agents( array_values( $valid ) );
@@ -653,7 +653,7 @@ class Core {
      * @param array $links Existing action links.
      * @return array
      */
-    public function plugin_action_links( $links ) {
+    public function plugin_action_links( $links ): array {
         $settings_link = sprintf(
             '<a href="%s">%s</a>',
             admin_url( 'admin.php?page=wac-dashboard' ),
@@ -669,7 +669,7 @@ class Core {
      * @param string $key Service identifier.
      * @return object|null
      */
-    public function get_service( string $key ) {
+    public function get_service( string $key ): mixed {
         return isset( $this->services[ $key ] ) ? $this->services[ $key ] : null;
     }
 }
