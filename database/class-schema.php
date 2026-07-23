@@ -33,6 +33,10 @@ class Schema {
         global $wpdb;
 
         $charset_collate = $wpdb->get_charset_collate();
+        // Ensure utf8mb4 is used for full Unicode support and emoji compatibility.
+        if ( false === strpos( $charset_collate, 'utf8mb4' ) ) {
+            $charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+        }
 
         // ─── Logs ──────────────────────────────────────────────
         $table_logs = $wpdb->prefix . 'wac_logs';
