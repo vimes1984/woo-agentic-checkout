@@ -197,10 +197,7 @@ class SelfHealer {
         }
         global $wpdb;
         $cached = (int) $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log WHERE 1 = %d",
-                1
-            )
+            "SELECT COUNT(*) FROM {$wpdb->prefix}wac_heal_log"
         );
         return $cached;
     }

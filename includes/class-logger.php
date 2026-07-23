@@ -165,9 +165,11 @@ class Logger {
         $sql = "SELECT * FROM {$wpdb->prefix}wac_logs
                 WHERE " . implode( ' AND ', $where ) . "
                 ORDER BY id {$order}
-                LIMIT %d";
+                LIMIT %d
+                OFFSET %d";
 
         $params[] = $limit;
+        $params[] = $offset;
 
         $rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
 
