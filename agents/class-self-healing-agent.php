@@ -94,7 +94,10 @@ class SelfHealingAgent {
         }
 
         $permission = $settings->get_heal_permission();
-        $notifier   = new \WooAgenticCheckout\Notifier();
+        $notifier   = null;
+        if ( class_exists( 'WooAgenticCheckout\\Notifier' ) ) {
+            $notifier = new WooAgenticCheckout\\Notifier();
+        }
 
         if ( 'monitor' === $permission ) {
             $logger && $logger->info( 'self_heal_monitor_only', array() );
@@ -151,7 +154,7 @@ class SelfHealingAgent {
 
             // Notify about failing health checks.
             foreach ( $failing as $check_key => $check ) {
-                $notifier->warning(
+                $notifier && $notifier->warning(
                     "Health Check Failed: {$check_key}",
                     $check['detail'] ?? 'No details',
                     array( 'check' => $check )
@@ -191,7 +194,7 @@ class SelfHealingAgent {
 
                 $this->set_heal_cooldown( $issue_id );
                 $results['actions_taken'][] = $result;
-                $notifier->heal_applied( $result );
+                $notifier && $notifier->heal_applied( $result );
                 $actions_taken++;
                 if ( $actions_taken >= $max_heal_actions ) {
                     break;
