@@ -196,7 +196,7 @@ class Core {
         // Check nonce for any GET action that may have triggered a notice.
         // We permit notices without nonce since they're read-only display.
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== $_GET['page'] ) {
+        if ( ! isset( $_GET['wac_msg'] ) || ! isset( $_GET['page'] ) || 'wac-dashboard' !== ( is_string( $_GET['page'] ) ? $_GET['page'] : '' ) ) {
             return;
         }
 
