@@ -26,6 +26,10 @@ class Schema {
     public function create_tables() {
         // Skip if the database is already at the current schema version.
         $installed_version = get_option( self::DB_VERSION_KEY, '' );
+        // Safely compare versions: ensure string type for PHP 8.0+ strict typing.
+        if ( ! is_string( $installed_version ) ) {
+            $installed_version = '';
+        }
         if ( version_compare( $installed_version, self::DB_VERSION, '>=' ) ) {
             return;
         }
