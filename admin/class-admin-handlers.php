@@ -320,7 +320,7 @@ class AdminHandlers {
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_pause_failed', array(
                 'id'    => $id,
-                'error' => $e->getMessage(),
+                'error' => substr( $e->getMessage(), 0, 500 ),
             ) );
             $this->json_error( __( 'Failed to pause experiment. Please try again.', 'woo-agentic-checkout' ) );
         }
@@ -358,7 +358,7 @@ class AdminHandlers {
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_resume_failed', array(
                 'id'    => $id,
-                'error' => $e->getMessage(),
+                'error' => substr( $e->getMessage(), 0, 500 ),
             ) );
             $this->json_error( __( 'Failed to resume experiment. Please try again.', 'woo-agentic-checkout' ) );
         }
@@ -450,7 +450,7 @@ class AdminHandlers {
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_agent_run_exception', array(
                 'agent' => $agent_key,
-                'error' => $e->getMessage(),
+                'error' => substr( $e->getMessage(), 0, 500 ),
             ) );
             $this->json_error( __( 'Agent run failed. Please check the logs for details.', 'woo-agentic-checkout' ) );
         }
@@ -497,7 +497,7 @@ class AdminHandlers {
         } catch ( \Exception $e ) {
             $this->logger->error( 'ajax_experiment_detail_failed', array(
                 'id'    => $id,
-                'error' => $e->getMessage(),
+                'error' => substr( $e->getMessage(), 0, 500 ),
             ) );
             $this->json_error( __( 'Failed to load experiment details. Please try again.', 'woo-agentic-checkout' ) );
         }
@@ -531,7 +531,7 @@ class AdminHandlers {
 
             $this->json_success( '', array( 'logs' => $logs, 'count' => count( $logs ) ) );
         } catch ( \Exception $e ) {
-            $this->logger->error( 'ajax_logs_failed', array( 'error' => $e->getMessage() ) );
+            $this->logger->error( 'ajax_logs_failed', array( 'error' => substr( $e->getMessage(), 0, 500 ) ) );
             $this->json_error( __( 'Failed to retrieve logs.', 'woo-agentic-checkout' ) );
         }
     }
