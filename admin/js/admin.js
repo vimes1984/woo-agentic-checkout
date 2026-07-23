@@ -433,7 +433,10 @@
                                     $row.fadeOut(300, function () { $(this).remove(); });
                                 }
                             } else {
-                                self.showToast(response.message || self.__('errorGeneric'), 'error');
+                                var errMsg = response.data && response.data.message
+                                    ? response.data.message
+                                    : self.__('errorGeneric');
+                                self.showToast(errMsg, 'error');
                                 self.hideLoading($btn);
                             }
                         },
@@ -485,7 +488,10 @@
                                     $row.fadeOut(300, function () { $(this).remove(); });
                                 }
                             } else {
-                                self.showToast(response.message || self.__('errorGeneric'), 'error');
+                                var errMsg = response.data && response.data.message
+                                    ? response.data.message
+                                    : self.__('errorGeneric');
+                                self.showToast(errMsg, 'error');
                                 self.hideLoading($btn);
                             }
                         },
@@ -688,7 +694,12 @@
             $(document).on('click', '.wac-run-agent-ajax', function (e) {
                 e.preventDefault();
                 var $btn = $(this);
-                var agentKey = $btn.data('agent-key');
+                var agentKey = String($btn.data('agent-key') || '').trim();
+
+                if (!agentKey) {
+                    self.showToast(self.__('noAgentNotice') || 'No agent selected.', 'warning');
+                    return;
+                }
 
                 self.confirmAction('Run "' + agentKey + '" agent now?', function () {
                     self.showLoading($btn);
