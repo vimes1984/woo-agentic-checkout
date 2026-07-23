@@ -450,7 +450,7 @@ class Core {
 
         $data    = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
         $data    = is_array( $data ) ? $data : array();
-        $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
+        $session = isset( $_POST['session'] ) && is_string( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
 
         if ( mb_strlen( $session ) > 64 ) {
             $session = mb_substr( $session, 0, 64 );
