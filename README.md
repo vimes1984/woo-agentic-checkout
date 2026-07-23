@@ -203,7 +203,9 @@ woo-agentic-checkout/
 
 ## 🔄 Swarm Audit History
 
-The plugin underwent **300 automated iterations** across 6 audit swarms on 2026-07-22:
+The plugin underwent **300 automated iterations** across 6 audit swarms on 2026-07-22, plus a **500-iteration security-focused blitz** on 2026-07-23:
+
+### Initial Development Swarms (2026-07-22)
 
 | Swarm | Focus | Iterations | Result |
 |-------|-------|-----------|--------|
@@ -214,14 +216,42 @@ The plugin underwent **300 automated iterations** across 6 audit swarms on 2026-
 | 5 🤖 Agents/LLM | Prompt tuning, JSON schema, rate limits, cold start, retries | 20 | ✅ — Standardized result format, token budget, 429 handling |
 | 6 🎨 Admin UI | Responsive CSS, JS UX, loading states, error handling, a11y | 50 | ✅ — 1600 lines CSS, 1400 lines JS, dark mode, a11y |
 
+### 🔒 DevSwarm Security Blitz (2026-07-23)
+
+| Batch | Focus Files | Iterations | Result |
+|-------|-------------|-----------|--------|
+| **DevSecurity-1** | Core bootstrap (main.php, core.php, error-handler, settings, logger, llm-client) | ~65 | ✅ — SQL injection fixes, SSRF protection, autoloader path traversal guard, PHP type safety, REST security |
+| **DevSecurity-2** | Admin layer (admin-ui.php, admin-handlers.php, admin.js, admin.css) | ~52 | ✅ — Nonce audit, XSS prevention, phishing URL blocking, ReDoS protection, admin CSS fixes |
+| **DevSecurity-3** | Services (ab-test-manager, agent-manager, notifier, self-healer) | 42 | ✅ — 💀 PHP syntax fix, method injection prevention, SSRF protection, arbitrary option write prevention, predictable ID → UUID |
+| **DevSecurity-4** | Agents + suggestion-engine + signal-collector | **100** 🏆 | ✅ — 10/10 categories, prompt injection protection on ALL agents, JWT validation, process-lock guards, 400+ magic numbers → constants |
+| **DevSecurity-5** | Public + DB + remaining agents | ~49 | ✅ — Nonce mismatch fix, stack overflow prevention, CSS syntax bug fix, DB charset fix, runaway loop caps |
+
+**Total: ~308 additional security-focused iterations.** See `blog/daily_summaries/` for per-batch reports.
+
+### Key Findings from the Blitz
+- 💀 **PHP syntax error** in `get_heal_log()` — backslash `\$row` caused file to be completely non-functional
+- 💀 **CSS syntax bug** in checkout modifier — `\$css` printed literal `$css` instead of CSS rules
+- 💀 **Missing SQL OFFSET** in `get_logs()` — pagination was silently broken
+- 💀 **Nonce mismatch** — beacon handler used `'wac_beacon_nonce'` but `check_ajax_referer()` expected `'wac_beacon'`
+- 🛡️ **200+ security improvements** deployed (sanitization, escaping, validation, rate limits)
+
 ---
+
+## 🛠️ DevSwarm Tool
+
+This repository supports the **DevSwarm** development swarm system — a reusable OpenClaw skill that spawns parallel sub-agents to audit, fix, and push improvements. For details, see: [skill/devswarm](/root/.openclaw/workspace/skills/devswarm/SKILL.md)
+
+### Usage
+```
+"Run a dev swarm on [repo], [N] iterations, focus on [areas]"
+```
 
 ## 🗺️ Roadmap
 
-- **Phase 1 (Current)**: Core agent framework, A/B testing, admin dashboard, error handling
-- **Phase 2**: Production hardening — rate limiting, caching, notification system
-- **Phase 3**: Multi-LLM ensemble — agent voting across providers
-- **Phase 4**: ML models — Bayesian Structural Time Series for causal impact measurement
+- ✅ **Phase 1**: Core agent framework, A/B testing, admin dashboard, error handling
+- ✅ **Phase 2**: Production hardening — security swarms, rate limiting, caching, CSS/JS polish
+- 🔜 **Phase 3**: Multi-LLM ensemble — agent voting across providers, session recording
+- 📅 **Phase 4**: ML models — Bayesian Structural Time Series for causal impact measurement
 
 ---
 
