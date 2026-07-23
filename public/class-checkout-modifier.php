@@ -257,8 +257,11 @@ class CheckoutModifier {
     private function apply_field_order( array $fields, array $order ): array {
         $ordered = array();
 
+        // Validate section keys against known WooCommerce checkout sections.
+        $known_sections = array( 'billing', 'shipping', 'account', 'order' );
+
         foreach ( $order as $section => $field_keys ) {
-            if ( ! isset( $fields[ $section ] ) ) {
+            if ( ! in_array( $section, $known_sections, true ) || ! isset( $fields[ $section ] ) ) {
                 continue;
             }
 
