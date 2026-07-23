@@ -327,6 +327,8 @@
          * Track a checkout step.
          */
         trackStep: function (stepName, extraData) {
+            if (!stepName || typeof stepName !== 'string') return;
+            stepName = stepName.substring(0, 100);
             this.steps.current = stepName;
             this.steps.timings[stepName] = Date.now();
 
