@@ -32,6 +32,8 @@ class SuggestionEngine {
     const REVISION = 'batch5.18';
     const MAX_FIELDS = 50;
     const MAX_REMOVED_FIELDS = 20;
+    const EXP_NAME_MAX_LENGTH = 200;
+    const EXP_DESC_MAX_LENGTH = 1000;
     const MAX_PENDING_LIMIT = 100;
     const LOCK_TIMEOUT = 600;
     const MAX_GET_LIMIT = 200;
