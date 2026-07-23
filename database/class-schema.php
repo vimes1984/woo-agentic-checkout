@@ -30,6 +30,8 @@ class Schema {
         if ( ! is_string( $installed_version ) ) {
             $installed_version = '';
         }
+        // Trim whitespace and limit version string length to prevent processing issues.
+        $installed_version = substr( trim( $installed_version ), 0, 50 );
         if ( version_compare( $installed_version, self::DB_VERSION, '>=' ) ) {
             return;
         }

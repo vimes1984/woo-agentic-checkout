@@ -269,6 +269,7 @@
          * Show loading state on a button/element.
          */
         showLoading: function ($el) {
+            if (!$el || !$el.length || typeof $el.addClass !== 'function') { return; }
             $el.addClass('wac-loading');
             if ($el.is('button, input[type="submit"]')) {
                 $el.data('wac-original-text', $el.val ? $el.val() : $el.text());
