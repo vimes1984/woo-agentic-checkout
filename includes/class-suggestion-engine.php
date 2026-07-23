@@ -33,6 +33,8 @@ class SuggestionEngine {
     const MAX_FIELDS = 50;
     const MAX_REMOVED_FIELDS = 20;
     const MAX_PENDING_LIMIT = 100;
+    const MAX_TRAFFIC_PCT = 100;
+    const MIN_TRAFFIC_PCT = 10;
 
     /**
      * @param LLMClient $llm
