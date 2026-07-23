@@ -92,6 +92,9 @@ wp_clear_scheduled_hook( 'wac_agent_tick' );
 wp_clear_scheduled_hook( 'wac_daily_agent_run' );
 wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
 
+// Delete plugin transients.
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wac_%' OR option_name LIKE '_transient_timeout_wac_%'" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+
 // Clean up user meta for all users.
 $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( 'wac_beacon_session', 'wac_ab_variants', 'wac_ignored_notice' )" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 
