@@ -347,6 +347,8 @@ class CheckoutModifier {
      * Uses wp_add_inline_style if available for late-loading safety.
      */
     private function apply_hidden_fields( array $fields, array $hide_keys ): array {
+        // Cap hidden fields at 20 to prevent excessive CSS generation.
+        $hide_keys = array_slice( $hide_keys, 0, 20 );
         $css_rules = array();
         foreach ( $hide_keys as $key ) {
             $safe_key    = sanitize_html_class( $key );
