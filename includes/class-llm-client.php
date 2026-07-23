@@ -520,6 +520,11 @@ class LLMClient {
         $http_code = wp_remote_retrieve_response_code( $response );
         $body_raw  = wp_remote_retrieve_body( $response );
 
+        // Guard against non-string body for substr() safety.
+        if ( ! is_string( $body_raw ) ) {
+            $body_raw = '';
+        }
+
         if ( $http_code >= 400 ) {
             // Rate-limit handling: 429 means we should back off.
             if ( 429 === $http_code ) {
