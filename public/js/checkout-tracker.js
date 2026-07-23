@@ -371,7 +371,7 @@
 
             // Validate event name before sending.
             if (typeof event !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(event)) {
-                if (window.console && console.warn) {
+                if (window.console && typeof console.warn === 'function') {
                     console.warn('WAC beacon: invalid event name, skipping send');
                 }
                 return;
@@ -379,7 +379,7 @@
 
             // Validate sessionId format before sending.
             if (!/^[a-zA-Z0-9_-]+$/.test(this.sessionId)) {
-                if (window.console && console.warn) {
+                if (window.console && typeof console.warn === 'function') {
                     console.warn('WAC beacon: invalid sessionId, skipping send');
                 }
                 return;
@@ -392,14 +392,14 @@
                     if (data.hasOwnProperty(k)) { dataSize += String(k).length + String(data[k]).length; }
                 }
                 if (dataSize > 5000) {
-                    if (window.console && console.warn) {
+                    if (window.console && typeof console.warn === 'function') {
                         console.warn('WAC beacon: data too large (' + dataSize + ' bytes), truncating');
                     }
                     data = { _truncated: true };
                 }
                 payload = JSON.stringify(data || {});
             } catch (e) {
-                if (window.console && console.warn) {
+                if (window.console && typeof console.warn === 'function') {
                     console.warn('WAC beacon: failed to stringify data', e);
                 }
                 return;
@@ -418,7 +418,7 @@
                 timeout: 3000,
                 error: function (jqXHR, textStatus, errorThrown) {
                     // Silently log, don't disrupt checkout.
-                    if (window.console && console.warn) {
+                    if (window.console && typeof console.warn === 'function') {
                         console.warn('WAC beacon error:', textStatus, errorThrown);
                     }
                 },
