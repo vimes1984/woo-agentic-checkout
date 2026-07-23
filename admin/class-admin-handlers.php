@@ -189,26 +189,30 @@ class AdminHandlers {
 
         $suggestion_id = isset( $_POST['suggestion_id'] ) ? absint( wp_unslash( $_POST['suggestion_id'] ) ) : 0;
 
-        if ( $suggestion_id > 0 ) {
-            $core   = Core::get_instance();
-            $suggest = $core->get_service( 'suggest' );
-            if ( $suggest ) {
-                $result = $suggest->apply_suggestion( $suggestion_id );
-                if ( is_wp_error( $result ) ) {
-                    $this->logger->error( 'apply_suggestion_failed', array(
-                        'id'    => $suggestion_id,
-                        'error' => $result->get_error_message(),
-                    ) );
-                    wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
-                    exit;
-                }
-                $this->logger->info( 'suggestion_applied', array( 'id' => $suggestion_id ) );
-                wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'applied', 'wac_js' => '1' ), wp_get_referer() ) );
-                exit;
-            }
+        if ( $suggestion_id < 1 ) {
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
+            exit;
         }
 
-        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
+        $core   = Core::get_instance();
+        $suggest = $core->get_service( 'suggest' );
+        if ( ! $suggest ) {
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
+            exit;
+        }
+
+        $result = $suggest->apply_suggestion( $suggestion_id );
+        if ( is_wp_error( $result ) ) {
+            $this->logger->error( 'apply_suggestion_failed', array(
+                'id'    => $suggestion_id,
+                'error' => $result->get_error_message(),
+            ) );
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'error', 'wac_js' => '1' ), wp_get_referer() ) );
+            exit;
+        }
+
+        $this->logger->info( 'suggestion_applied', array( 'id' => $suggestion_id ) );
+        wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'applied', 'wac_js' => '1' ), wp_get_referer() ) );
         exit;
     }
 
@@ -507,7 +511,7 @@ class AdminHandlers {
         }
 
         $level = isset( $_POST['level'] ) ? sanitize_key( wp_unslash( $_POST['level'] ) ) : '';
-        $limit = isset( $_POST['limit'] ) ? min( 500, intval( wp_unslash( $_POST['limit'] ) ) ) : 100;
+        $limit = isset( $_POST['limit'] ) ? max( 1, min( 500, intval( wp_unslash( $_POST['limit'] ) ) ) ) : 100;
 
         try {
             $logger = new Logger();

@@ -247,7 +247,7 @@
          */
         escHtml: function (str) {
             var div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
+            div.appendChild(document.createTextNode(String(str)));
             return div.innerHTML;
         },
 
@@ -400,7 +400,7 @@
          */
         getQueryParam: function (name) {
             var params = new URLSearchParams(window.location.search);
-            return params.get(name) || '';
+            return (params.get(name) || '').trim();
         },
 
         // ─── Keyboard Shortcuts (desktop) ──────────────────────
@@ -1247,7 +1247,7 @@
             // On mobile, add a "Dismiss All" link when 3+ toasts are visible.
             var observer = new MutationObserver(function () {
                 var $container = $('.wac-toast-container');
-                var count = $container.find('.wac-toast').length;
+                var count = $container.find('.wac-toast').length || 0;
                 var $dismissAll = $container.find('.wac-toast-dismiss-all');
 
                 if (count >= 3 && $dismissAll.length === 0) {
