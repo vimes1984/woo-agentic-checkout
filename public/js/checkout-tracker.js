@@ -134,8 +134,10 @@
         _trackSessionDuration: function () {
             var self = this;
             setTimeout(function () {
+                var dur = Date.now() - self._pageLoadTime;
+                if (dur > 3600000) return; // Cap at 1 hour to prevent reporting anomalies
                 self._sendThrottled('session_active_30s', {
-                    duration: Date.now() - self._pageLoadTime
+                    duration: dur
                 });
             }, 30000);
         },
