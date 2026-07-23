@@ -155,7 +155,13 @@ class SelfHealer {
         }
 
         $rollback_data = json_decode( $log['rollback_data'], true );
-        $action = $log['action'];
+        $action = sanitize_key( $log['action'] );
+
+        // Prevent method name injection by validating action against known types.
+        if ( ! in_array( $action, self::ACTIONS, true ) ) {
+            return false;
+        }
+
         $method = "undo_{$action}";
 
         if ( method_exists( $this, $method ) ) {
