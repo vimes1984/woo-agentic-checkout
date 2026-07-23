@@ -565,9 +565,10 @@ class Core {
      * @param array $fields WooCommerce checkout fields.
      * @return array
      */
-    public function maybe_modify_checkout_fields( $fields ) {
+    public function maybe_modify_checkout_fields( array $fields ): array {
         if ( isset( $this->services['modifier'] ) ) {
-            return $this->services['modifier']->modify_fields( $fields );
+            $modified = $this->services['modifier']->modify_fields( $fields );
+            return is_array( $modified ) ? $modified : $fields;
         }
         return $fields;
     }
