@@ -155,10 +155,11 @@ class CheckoutModifier {
         }
 
         // Validate template paths: ensure they resolve within the WP theme or plugin directory.
+        // Cap template directory depth to prevent directory traversal.
         $wp_content_dir = WP_CONTENT_DIR;
         $template_dir    = get_template_directory();
         $stylesheet_dir  = get_stylesheet_directory();
-        $safe_paths      = array( $wp_content_dir, $template_dir, $stylesheet_dir, ABSPATH . 'wp-content' );
+        $safe_paths      = array( realpath( $wp_content_dir ), realpath( $template_dir ), realpath( $stylesheet_dir ), realpath( ABSPATH . 'wp-content' ) );
 
         add_filter( 'woocommerce_locate_template', function ( $template, $template_name, $template_path ) use ( $custom_path, $template_file, $template_key, $safe_paths ) {
             // Override checkout template if custom template specified.
