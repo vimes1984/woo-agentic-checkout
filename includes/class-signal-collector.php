@@ -64,7 +64,7 @@ class SignalCollector {
         // Sanitize GA4 parameter values: only strings and numbers allowed, max 100 chars per value.
         $sanitized_params = array();
         $defaults = array(
-            'currency' => get_woocommerce_currency(),
+            'currency' => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'USD',
             'plugin'   => 'woo-agentic-checkout',
         );
         $merged = wp_parse_args( $params, $defaults );
