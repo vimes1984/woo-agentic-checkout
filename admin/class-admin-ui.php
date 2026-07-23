@@ -78,7 +78,7 @@ class AdminUI {
                    aria-current="<?php echo 'dashboard' === $tab ? 'page' : 'false'; ?>">
                    📊 Dashboard
                 </a>
-                <a href="?page=wac-dashboard&tab=experiments"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=experiments' ) ); ?>"
                    class="nav-tab <?php echo 'experiments' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'experiments' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'experiments' === $tab ? 'page' : 'false'; ?>">
@@ -87,26 +87,26 @@ class AdminUI {
                    ?>
                    🧪 Experiments<?php if ( $exp_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $exp_count ); ?></span><?php endif; ?>
                 </a>
-                <a href="?page=wac-dashboard&tab=suggestions"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=suggestions' ) ); ?>"
                    class="nav-tab <?php echo 'suggestions' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'suggestions' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'suggestions' === $tab ? 'page' : 'false'; ?>">
                    <?php $sugg_count = $this->suggest->get_pending_count(); ?>
                    💡 Suggestions<?php if ( $sugg_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $sugg_count ); ?></span><?php endif; ?>
                 </a>
-                <a href="?page=wac-dashboard&tab=agents"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=agents' ) ); ?>"
                    class="nav-tab <?php echo 'agents' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'agents' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'agents' === $tab ? 'page' : 'false'; ?>">
                    🤖 Agents
                 </a>
-                <a href="?page=wac-dashboard&tab=settings"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=settings' ) ); ?>"
                    class="nav-tab <?php echo 'settings' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'settings' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'settings' === $tab ? 'page' : 'false'; ?>">
                    ⚙️ Settings
                 </a>
-                <a href="?page=wac-dashboard&tab=logs"
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=logs' ) ); ?>"
                    class="nav-tab <?php echo 'logs' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'logs' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'logs' === $tab ? 'page' : 'false'; ?>">
@@ -330,13 +330,13 @@ class AdminUI {
                     <?php esc_html_e( 'This plugin uses AI agents to optimise your WooCommerce checkout. Agents run autonomously on schedules — detect errors, analyse conversion data, generate suggestions, and heal issues automatically.', 'woo-agentic-checkout' ); ?>
                 </p>
                 <div class="wac-welcome-card__links">
-                    <a href="?page=wac-dashboard&tab=agents" class="button button-secondary">
+                    <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=agents" ) ); ?>" class="button button-secondary">
                         <span role="img" aria-label="Agents">🤖</span> <?php esc_html_e( 'View Agents', 'woo-agentic-checkout' ) ?>
                     </a>
-                    <a href="?page=wac-dashboard&tab=suggestions" class="button button-secondary">
+                    <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=suggestions" ) ); ?>" class="button button-secondary">
                         <span role="img" aria-label="Suggestions">💡</span> <?php esc_html_e( 'Review Suggestions', 'woo-agentic-checkout' ) ?>
                     </a>
-                    <a href="?page=wac-dashboard&tab=settings" class="button button-secondary">
+                    <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=settings" ) ); ?>" class="button button-secondary">
                         <span role="img" aria-label="Settings">⚙️</span> <?php esc_html_e( 'Configure', 'woo-agentic-checkout' ) ?>
                     </a>
                 </div>
@@ -382,7 +382,7 @@ class AdminUI {
                     </table>
                 <?php endif; ?>
                 <p style="margin:12px 0 0;">
-                    <a href="?page=wac-dashboard&tab=agents" class="button button-secondary">Manage Agents →</a>
+                    <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=agents" ) ); ?>" class="button button-secondary">Manage Agents →</a>
                 </p>
             </div>
 

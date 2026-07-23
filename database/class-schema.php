@@ -66,7 +66,7 @@ class Schema {
             ended_at DATETIME DEFAULT NULL,
             INDEX idx_status (status),
             INDEX idx_created (created_at),
-            INDEX idx_name_status (name(100), status)
+            INDEX idx_name_status (name(50), status)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── A/B Variants ─────────────────────────────────────
