@@ -225,7 +225,12 @@ class ABOptimizer {
                     $exp_description = sanitize_textarea_field( $new_exp['description'] );
                     $exp_traffic     = min( 100, max( 10, absint( $new_exp['traffic_pct'] ?? 50 ) ) );
                     $exp_variants    = array();
+                    $variant_count = 0;
                     foreach ( $new_exp['variants'] as $v ) {
+                        if ( $variant_count >= 5 ) {
+                            break; // Max 5 variants (including control).
+                        }
+                        $variant_count++;
                         $exp_variants[] = array(
                             'key'             => sanitize_key( $v['key'] ?? '' ),
                             'name'            => sanitize_text_field( $v['name'] ?? '' ),
