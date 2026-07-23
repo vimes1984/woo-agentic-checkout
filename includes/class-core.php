@@ -145,6 +145,11 @@ class Core {
             );
         }
 
+        // Verify the user actually triggered activation (defense-in-depth).
+        if ( ! current_user_can( 'activate_plugins' ) ) {
+            return;
+        }
+
         $schema = new Schema();
         $schema->create_tables();
 
