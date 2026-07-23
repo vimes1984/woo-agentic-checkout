@@ -356,7 +356,7 @@ class Core {
      * Enqueue public (checkout) assets.
      */
     public function enqueue_public_assets(): void {
-        if ( ! is_checkout() ) {
+        if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
             return;
         }
         wp_enqueue_script( 'wac-beacon', WAC_URL . 'public/js/checkout-tracker.js', array( 'jquery' ), WAC_VERSION, true );
