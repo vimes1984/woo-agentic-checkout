@@ -106,14 +106,28 @@ class Beacon {
             $raw_data = substr( $raw_data, 0, 10240 );
         }
 
-        $data    = json_decode( $raw_data, true );
+        $data    = json_decode( $raw_data, true, 10 );
 
         if ( ! is_array( $data ) ) {
             $data = array();
         }
 
-        // Recursively sanitize data values to prevent stored XSS.
-        array_walk_recursive( $data, function ( &$value ) {
+        // Recursively sanitize data values to prevent stored XSS (max depth 50).
+        $depth = 0;
+        $sanitize_deep = function ( &$item, $key ) use ( &$sanitize_deep, &$depth ) {
+            if ( $depth > 50 ) {
+                $item = '';
+                return;
+            }
+            if ( is_string( $item ) ) {
+                $item = sanitize_textarea_field( $item );
+            } elseif ( is_array( $item ) ) {
+                $depth++;
+                array_walk( $item, $sanitize_deep );
+                $depth--;
+            }
+        };
+        array_walk( $data, $sanitize_deep );
             if ( is_string( $value ) ) {
                 $value = sanitize_textarea_field( $value );
             }
