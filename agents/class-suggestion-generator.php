@@ -154,6 +154,11 @@ class SuggestionGenerator {
         $orders_24h    = $signals->get_recent_orders( 24 );
         $orders_7d     = $signals->get_recent_orders( 168 );
         $funnel        = $signals->get_funnel_data( 168 );
+
+        // Cap funnel steps to prevent oversized LLM context. Limit array items.
+        if ( is_array( $funnel ) && count( $funnel ) > 10 ) {
+            $funnel = array_slice( $funnel, 0, 10 );
+        }
         $experiments   = $ab->get_experiments( '', 10 );
         $recent_errors = $signals->get_recent_errors( 24, 20 );
 
