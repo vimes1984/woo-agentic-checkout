@@ -290,7 +290,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST["id"] ) ) : 0;
+        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
@@ -329,7 +329,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST["id"] ) ) : 0;
+        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );
@@ -367,7 +367,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id     = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST["id"] ) ) : 0;
+        $id     = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
         $reason = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
 
         if ( $id < 1 ) {
@@ -458,7 +458,7 @@ class AdminHandlers {
             $this->json_error( __( 'Please wait a moment before trying again.', 'woo-agentic-checkout' ) );
         }
 
-        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST["id"] ) ) : 0;
+        $id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid experiment ID.', 'woo-agentic-checkout' ) );

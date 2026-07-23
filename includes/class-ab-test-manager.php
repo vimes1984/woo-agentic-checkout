@@ -1465,6 +1465,9 @@ class ABTestManager {
     public function get_raw_events( int $experiment_id, int $limit = 100, int $offset = 0 ): array {
         global $wpdb;
 
+        $limit  = min( 1000, max( 1, $limit ) );
+        $offset = max( 0, $offset );
+
         return $wpdb->get_results( $wpdb->prepare(
             "SELECT ev.*, v.variant_key, v.variant_name
              FROM {$this->table_events} ev
@@ -1857,6 +1860,7 @@ class ABTestManager {
      */
     public function get_top_performers( int $limit = 10 ): array {
         global $wpdb;
+        $limit = min( 100, max( 1, $limit ) );
         return $wpdb->get_results( $wpdb->prepare(
             "SELECT v.*, e.name as experiment_name
              FROM {$this->table_variants} v
