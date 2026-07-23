@@ -85,9 +85,10 @@ class Beacon {
 
         $data = array();
         foreach ( $variants as $exp_name => $variant_key ) {
+            // Sanitize experiment metadata before sending to client.
             $data[] = array(
-                'experiment'  => $exp_name,
-                'variant'     => $variant_key,
+                'experiment'  => substr( sanitize_text_field( $exp_name ), 0, 255 ),
+                'variant'     => substr( sanitize_key( $variant_key ), 0, 100 ),
             );
         }
 
