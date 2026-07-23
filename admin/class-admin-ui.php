@@ -392,7 +392,7 @@ class AdminUI {
                     <div class="wac-empty-state" style="padding:20px;">
                         <span class="wac-empty-state__icon" aria-hidden="true">🧪</span>
                         <p class="wac-empty-state__text">No active experiments. The AB Optimizer will auto-create them, or you can create one manually.</p>
-                        <a href="?page=wac-dashboard&tab=experiments" class="button">Go to Experiments →</a>
+                        <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&tab=experiments" ) ); ?>" class="button">Go to Experiments →</a>
                     </div>
                 <?php else : ?>
                     <ul class="wac-experiment-list">
@@ -420,7 +420,7 @@ class AdminUI {
                     <?php echo esc_html( $suggestions ); ?>
                 </p>
                 <?php if ( $suggestions > 0 ) : ?>
-                    <a href="?page=wac-dashboard&tab=suggestions" class="button">Review Suggestions →</a>
+                    <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&tab=suggestions" ) ); ?>" class="button">Review Suggestions →</a>
                 <?php else : ?>
                     <p><?php esc_html_e( 'No pending suggestions. Next weekly run will generate new ones.', 'woo-agentic-checkout' ); ?></p>
                     <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;" class="wac-agent-run-form">
