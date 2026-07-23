@@ -370,6 +370,7 @@ class AdminHandlers {
 
         $id     = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
         $reason = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
+        $reason = mb_substr( $reason, 0, 500 ); // Max 500 chars.
 
         if ( $id < 1 ) {
             $this->json_error( __( 'Invalid suggestion ID.', 'woo-agentic-checkout' ) );

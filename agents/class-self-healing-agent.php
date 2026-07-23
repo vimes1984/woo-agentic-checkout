@@ -162,6 +162,10 @@ class SelfHealingAgent {
             $heal_plan = $this->build_heal_plan( $failing, $llm );
 
             foreach ( $heal_plan as $plan ) {
+                if ( $actions_taken >= $max_heal_actions ) {
+                    break;
+                }
+
                 $issue_id = isset( $plan['issue_id'] ) ? sanitize_key( $plan['issue_id'] ) : uniqid( 'heal_' );
 
                 // Skip if this issue is in heal cooldown.
@@ -203,6 +207,10 @@ class SelfHealingAgent {
             $heal_plan = $this->build_heal_plan_from_errors( $heal_errors, $llm );
 
             foreach ( $heal_plan as $plan ) {
+                if ( $actions_taken >= $max_heal_actions ) {
+                    break;
+                }
+
                 $issue_id = isset( $plan['issue_id'] ) ? sanitize_key( $plan['issue_id'] ) : uniqid( 'heal_' );
 
                 // Skip if this issue is in heal cooldown.
