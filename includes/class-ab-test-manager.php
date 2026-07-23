@@ -1228,20 +1228,20 @@ class ABTestManager {
         $data = array(
             'experiment' => array(
                 'id'          => $exp['id'],
-                'name'        => $exp['name'],
-                'description' => $exp['description'],
-                'status'      => $exp['status'],
+                'name'        => isset( $exp['name'] ) ? sanitize_text_field( $exp['name'] ) : '',
+                'description' => isset( $exp['description'] ) ? sanitize_textarea_field( $exp['description'] ) : '',
+                'status'      => sanitize_key( $exp['status'] ),
                 'created_at'  => $exp['created_at'],
                 'ended_at'    => $exp['ended_at'] ?? '',
-                'winner_key'  => $exp['winner_key'] ?? '',
+                'winner_key'  => isset( $exp['winner_key'] ) ? sanitize_key( $exp['winner_key'] ) : '',
             ),
             'variants' => array(),
         );
 
         foreach ( $exp['variants'] as $v ) {
             $data['variants'][] = array(
-                'key'           => $v['variant_key'],
-                'name'          => $v['variant_name'],
+                'key'           => isset( $v['variant_key'] ) ? sanitize_key( $v['variant_key'] ) : '',
+                'name'          => isset( $v['variant_name'] ) ? sanitize_text_field( $v['variant_name'] ) : '',
                 'is_control'    => (bool) $v['is_control'],
                 'impressions'   => (int) $v['impressions'],
                 'conversions'   => (int) $v['conversions'],
