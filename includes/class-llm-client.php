@@ -300,20 +300,20 @@ class LLMClient {
         // Anthropic returns tool use in a different format. Extract content.
         $decoded = json_decode( $response, true );
 
-        if ( ! empty( $schema ) && isset( $decoded['content'] ) ) {
+        if ( ! empty( $schema ) && isset( $decoded['content'] ) && is_array( $decoded['content'] ) ) {
             foreach ( $decoded['content'] as $block ) {
-                if ( 'tool_use' === $block['type'] && 'respond' === $block['name'] ) {
-                    return wp_json_encode( $block['input'] );
+                if ( is_array( $block ) && 'tool_use' === ( $block['type'] ?? '' ) && 'respond' === ( $block['name'] ?? '' ) ) {
+                    return wp_json_encode( $block['input'] ?? array() );
                 }
             }
         }
 
         // Fallback: standard text content.
         $text = '';
-        if ( isset( $decoded['content'] ) ) {
+        if ( isset( $decoded['content'] ) && is_array( $decoded['content'] ) ) {
             foreach ( $decoded['content'] as $block ) {
-                if ( 'text' === $block['type'] ) {
-                    $text .= $block['text'];
+                if ( is_array( $block ) && 'text' === ( $block['type'] ?? '' ) ) {
+                    $text .= $block['text'] ?? '';
                 }
             }
         }

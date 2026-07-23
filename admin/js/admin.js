@@ -406,6 +406,7 @@
          * Get a query parameter value.
          */
         getQueryParam: function (name) {
+            if (typeof URLSearchParams === "undefined") { return ""; }
             var params = new URLSearchParams(window.location.search);
             return (params.get(name) || '').trim();
         },
