@@ -120,8 +120,11 @@ class Notifier {
 
         $headers = array(
             'Content-Type: text/html; charset=UTF-8',
-            'From: Woo Agentic Checkout <' . get_option( 'admin_email' ) . '>',
         );
+        $admin_email = get_option( 'admin_email', '' );
+        if ( is_email( $admin_email ) ) {
+            $headers[] = 'From: Woo Agentic Checkout <' . $admin_email . '>';
+        }
 
         return wp_mail( $to, $subject, $body, $headers );
     }

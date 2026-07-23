@@ -111,6 +111,14 @@ class SignalCollector {
      * @return array Raw report data or empty array on failure.
      */
     public function fetch_ga4_report( string $start_date, string $end_date ): array {
+        // Rate limit: max 1 GA4 report fetch per 60 seconds.
+        $rate_key = 'wac_ga4_report_rate';
+        $last_fetch = get_transient( $rate_key );
+        if ( $last_fetch && ( time() - $last_fetch ) < 60 ) {
+            return array( 'error' => 'Rate limited: GA4 report can be fetched at most once per 60 seconds.' );
+        }
+        set_transient( $rate_key, time(), 120 );
+
         // Validate date format (YYYY-MM-DD).
         if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $start_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $end_date ) ) {
             return array( 'error' => 'Invalid date format. Use YYYY-MM-DD.' );
