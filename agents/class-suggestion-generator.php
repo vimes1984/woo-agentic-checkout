@@ -230,7 +230,11 @@ class SuggestionGenerator {
          *
          * @param array $context The context array.
          */
-        $context = apply_filters( 'wac_suggestion_context', $context );
+        // Ensure filter returns an array before passing to re-sanitization.
+        $filtered = apply_filters( 'wac_suggestion_context', $context );
+        if ( is_array( $filtered ) ) {
+            $context = $filtered;
+        }
 
         // Re-sanitize context after filter to prevent unsafe data injection.
         if ( ! is_array( $context ) ) {
