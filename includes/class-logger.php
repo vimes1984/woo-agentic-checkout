@@ -70,6 +70,11 @@ class Logger {
     private function log( string $level, string $event, $context ): void {
         global $wpdb;
 
+        // Guard against missing database (e.g. early loading edge-case).
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+            return;
+        }
+
         // Validate event name length (DB column is VARCHAR(255)).
         if ( strlen( $event ) > 100 ) {
             $event = substr( $event, 0, 100 );
