@@ -169,7 +169,7 @@ class Core {
     /**
      * Register admin menu pages.
      */
-    public function register_admin_menu() {
+    public function register_admin_menu(): void {
         add_submenu_page(
             'woocommerce',
             __( 'Agentic Checkout', 'woo-agentic-checkout' ),
@@ -188,7 +188,7 @@ class Core {
      * the wac_msg param, so we use a suppression flag to avoid double-rendering
      * when JS already handled it.
      */
-    public function admin_notices() {
+    public function admin_notices(): void {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             return;
         }
@@ -272,7 +272,7 @@ class Core {
      * Defense-in-depth: verify capability even though add_submenu_page
      * enforces manage_woocommerce at the menu-registration layer.
      */
-    public function render_admin_page() {
+    public function render_admin_page(): void {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             wp_die(
                 esc_html__( 'You do not have sufficient permissions to access this page.', 'woo-agentic-checkout' ),
@@ -293,7 +293,7 @@ class Core {
      *
      * @param string $hook The current admin page hook.
      */
-    public function enqueue_admin_assets( $hook ) {
+    public function enqueue_admin_assets( string $hook ): void {
         if ( ! is_string( $hook ) || ! str_contains( $hook, 'wac-' ) ) {
             return;
         }
@@ -355,7 +355,7 @@ class Core {
     /**
      * Enqueue public (checkout) assets.
      */
-    public function enqueue_public_assets() {
+    public function enqueue_public_assets(): void {
         if ( ! is_checkout() ) {
             return;
         }
@@ -384,7 +384,7 @@ class Core {
     /**
      * Hourly tick — Error Detector + Self-Healer run.
      */
-    public function agent_tick() {
+    public function agent_tick(): void {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
@@ -394,7 +394,7 @@ class Core {
     /**
      * Daily run — Conversion Analyzer + AB Optimizer.
      */
-    public function daily_agent_run() {
+    public function daily_agent_run(): void {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
@@ -404,7 +404,7 @@ class Core {
     /**
      * Weekly run — Suggestion Generator.
      */
-    public function weekly_suggestion_run() {
+    public function weekly_suggestion_run(): void {
         if ( ! isset( $this->services['agents'] ) ) {
             return;
         }
@@ -429,7 +429,7 @@ class Core {
     /**
      * Handle beacon AJAX (anonymous telemetry).
      */
-    public function ajax_beacon() {
+    public function ajax_beacon(): void {
         check_ajax_referer( 'wac_beacon', 'nonce' );
 
         $event    = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
@@ -464,7 +464,7 @@ class Core {
     /**
      * Register REST API routes.
      */
-    public function register_rest_routes() {
+    public function register_rest_routes(): void {
         register_rest_route( 'wac/v1', '/status', array(
             'methods'             => 'GET',
             'callback'            => array( $this, 'rest_status' ),
@@ -507,7 +507,7 @@ class Core {
     /**
      * GET /wac/v1/suggestions
      */
-    public function rest_suggestions() {
+    public function rest_suggestions(): mixed {
         if ( ! isset( $this->services['suggest'] ) ) {
             return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
         }
@@ -576,7 +576,7 @@ class Core {
     /**
      * Inject alternative checkout template if experiment variant requires it.
      */
-    public function maybe_inject_checkout_template() {
+    public function maybe_inject_checkout_template(): void {
         if ( isset( $this->services['modifier'] ) ) {
             $this->services['modifier']->maybe_override_template();
         }
@@ -585,7 +585,7 @@ class Core {
     /**
      * Inject A/B test experiment tracking data into checkout.
      */
-    public function inject_experiment_tracker() {
+    public function inject_experiment_tracker(): void {
         if ( isset( $this->services['beacon'] ) ) {
             $this->services['beacon']->inject_tracker();
         }
@@ -597,7 +597,7 @@ class Core {
      * Sanitizes session-stored error data before logging to prevent
      * stored XSS in log viewer and filter injections.
      */
-    public function capture_checkout_errors() {
+    public function capture_checkout_errors(): void {
         if ( ! function_exists( 'wc' ) ) {
             return;
         }

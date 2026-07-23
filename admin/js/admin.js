@@ -287,6 +287,7 @@
          * Remove loading state.
          */
         hideLoading: function ($el) {
+            if (!$el || !$el.length || typeof $el.removeClass !== 'function') { return; }
             $el.removeClass('wac-loading');
             if ($el.is('button, input[type="submit"]')) {
                 var original = $el.data('wac-original-text');
