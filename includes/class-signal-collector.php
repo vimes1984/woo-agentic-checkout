@@ -29,6 +29,8 @@ class SignalCollector {
     const MAX_RESPONSE_BYTES = 500000;
     const JWT_EXPIRY_SECONDS = 3600;
     const JWT_CACHE_TTL = 3300;
+    const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+    const ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
@@ -419,7 +421,7 @@ class SignalCollector {
         $now = time();
         $claims = array(
             'iss'   => $credentials['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
+            'scope' => self::ANALYTICS_SCOPE,
             'aud'   => 'https://oauth2.googleapis.com/token',
             'exp'   => $now + 3600,
             'iat'   => $now,
