@@ -64,11 +64,12 @@ class SelfHealer {
      * @return array{success: bool, action: string, message: string, rollback_id?: string}
      */
     public function attempt_heal( string $issue_id, string $action, array $params, string $permission = 'suggest' ): array {
+        $safe_action = sanitize_key( $action );
         if ( ! in_array( $action, self::ACTIONS, true ) ) {
             return array(
                 'success' => false,
-                'action'  => $action,
-                'message' => "Unknown healing action: {$action}",
+                'action'  => $safe_action,
+                'message' => 'Unknown healing action: ' . $safe_action,
             );
         }
 
@@ -92,7 +93,7 @@ class SelfHealer {
         }
 
         // Execute the action.
-        $method = 'do_' . sanitize_key( $action );
+        $method = 'do_' . $safe_action;
         if ( method_exists( $this, $method ) ) {
             try {
                 $result = $this->$method( $params );
@@ -107,8 +108,8 @@ class SelfHealer {
 
                 return array(
                     'success'     => true,
-                    'action'      => $action,
-                    'message'     => $result['message'] ?? 'Healing action applied.',
+                    'action'      => $safe_action,
+                    'message'     => isset( $result['message'] ) ? sanitize_text_field( $result['message'] ) : 'Healing action applied.',
                     'rollback_id' => $rollback_id,
                 );
             } catch ( \Exception $e ) {
