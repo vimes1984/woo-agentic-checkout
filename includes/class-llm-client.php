@@ -106,7 +106,8 @@ class LLMClient {
             throw new \InvalidArgumentException( 'User prompt cannot be empty.' );
         }
 
-        $cache_ttl = $cache_ttl ?? $this->cache_ttl;
+        // Clamp cache TTL to safe bounds (0 = no cache, max = 1 week).
+        $cache_ttl = max( 0, min( WEEK_IN_SECONDS, $cache_ttl ?? $this->cache_ttl ) );
         $start_time = microtime( true );
 
         // ── Check cache first ───────────────────────────────────────
