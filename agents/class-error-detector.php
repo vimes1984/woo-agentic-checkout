@@ -24,6 +24,9 @@ class ErrorDetector {
     const MIN_SAMPLES_FOR_LLM = 3;
     const MAX_ERROR_GROUP_SIZE = 50;
     const ERROR_SAMPLE_COUNT = 5;
+    const NOTIFICATION_EVENT_MAX_LENGTH = 100;
+    const NOTIFICATION_DETAILS_MAX_LENGTH = 500;
+    const SAMPLE_MESSAGE_MAX_LENGTH = 500;
     const FUNNEL_STEPS = array(
         'checkout_started',
         'billing_completed',
