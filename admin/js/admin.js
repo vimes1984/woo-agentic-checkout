@@ -875,6 +875,7 @@
          * Mark a field as having an error.
          */
         markFieldError: function ($field, message) {
+            if (!$field || !$field.length || typeof $field.addClass !== 'function') { return; }
             $field.addClass('wac-field-error');
             var $td = $field.closest('td');
             $td.find('.wac-field-error-message').remove();
@@ -885,6 +886,7 @@
          * Mark a field as valid.
          */
         markFieldValid: function ($field) {
+            if (!$field || !$field.length || typeof $field.addClass !== 'function') { return; }
             $field.addClass('wac-field-valid');
         },
 
