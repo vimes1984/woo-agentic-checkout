@@ -331,13 +331,13 @@ class AdminUI {
                 </p>
                 <div class="wac-welcome-card__links">
                     <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=agents" ) ); ?>" class="button button-secondary">
-                        <span role="img" aria-label="Agents">🤖</span> <?php esc_html_e( 'View Agents', 'woo-agentic-checkout' ) ?>
+                        <span role="img" aria-label="Agents">🤖</span> <?php esc_html_e( 'View Agents', 'woo-agentic-checkout' ); ?>
                     </a>
                     <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=suggestions" ) ); ?>" class="button button-secondary">
-                        <span role="img" aria-label="Suggestions">💡</span> <?php esc_html_e( 'Review Suggestions', 'woo-agentic-checkout' ) ?>
+                        <span role="img" aria-label="Suggestions">💡</span> <?php esc_html_e( 'Review Suggestions', 'woo-agentic-checkout' ); ?>
                     </a>
                     <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&amp;tab=settings" ) ); ?>" class="button button-secondary">
-                        <span role="img" aria-label="Settings">⚙️</span> <?php esc_html_e( 'Configure', 'woo-agentic-checkout' ) ?>
+                        <span role="img" aria-label="Settings">⚙️</span> <?php esc_html_e( 'Configure', 'woo-agentic-checkout' ); ?>
                     </a>
                 </div>
             </div>

@@ -155,7 +155,7 @@ class ErrorHandler {
     /**
      * Handle fatal errors on shutdown.
      */
-    public static function handle_shutdown() {
+    public static function handle_shutdown(): void {
         $error = error_get_last();
 
         if ( null === $error ) {
