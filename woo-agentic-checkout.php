@@ -34,7 +34,7 @@ defined( 'WAC_BASENAME' )|| define( 'WAC_BASENAME', plugin_basename( __FILE__ ) 
  *
  * @param string $class Class name being loaded.
  */
-function wac_autoload( $class ) {
+function wac_autoload( string $class ): void {
     static $autoloading = false;
     if ( $autoloading ) {
         return; // Prevent recursion if require_once triggers another autoload.
@@ -52,7 +52,7 @@ function wac_autoload( $class ) {
  *
  * @param string $class Class name being loaded.
  */
-function wac_autoload_execute( $class ) {
+function wac_autoload_execute( string $class ): void {
     $prefix = 'WooAgenticCheckout\\';
     $len    = strlen( $prefix );
 
@@ -139,7 +139,7 @@ spl_autoload_register( 'wac_autoload' );
 /**
  * Main plugin bootstrap.
  */
-function wac_init() {
+function wac_init(): void {
     // Load plugin text domain for i18n.
     load_plugin_textdomain( 'woo-agentic-checkout', false, dirname( WAC_BASENAME ) . '/languages' );
 
@@ -191,7 +191,7 @@ add_action( 'plugins_loaded', 'wac_init' );
 /**
  * Register the error handler early (fires on plugins_loaded, priority 1).
  */
-function wac_register_error_handler() {
+function wac_register_error_handler(): void {
     \WooAgenticCheckout\ErrorHandler::register();
 }
 add_action( 'plugins_loaded', 'wac_register_error_handler', 1 );
@@ -200,7 +200,7 @@ add_action( 'plugins_loaded', 'wac_register_error_handler', 1 );
  * Uninstall cleanup -- drop all plugin tables and remove options.
  */
 register_uninstall_hook( __FILE__, 'wac_uninstall' );
-function wac_uninstall() {
+function wac_uninstall(): void {
     if ( class_exists( 'WooAgenticCheckout\\Schema' ) ) {
         $schema = new \WooAgenticCheckout\Schema();
         $schema->drop_tables();
