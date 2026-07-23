@@ -344,6 +344,14 @@
         _sendRaw: function (event, data) {
             if (!this.sessionId) return;
 
+            // Validate event name before sending.
+            if (typeof event !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(event)) {
+                if (window.console && console.warn) {
+                    console.warn('WAC beacon: invalid event name, skipping send');
+                }
+                return;
+            }
+
             // Validate sessionId format before sending.
             if (!/^[a-zA-Z0-9_-]+$/.test(this.sessionId)) {
                 if (window.console && console.warn) {
