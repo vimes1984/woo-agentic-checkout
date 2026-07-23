@@ -324,10 +324,10 @@ class AdminUI {
             <div class="wac-welcome-card__content">
                 <h3 class="wac-welcome-card__title">
                     <span role="img" aria-label="Wave">👋</span>
-                    <?php esc_html_e( 'Welcome to Woo Agentic Checkout', 'woo-agentic-checkout' ) ?>
+                    <?php esc_html_e( 'Welcome to Woo Agentic Checkout', 'woo-agentic-checkout' ); ?>
                 </h3>
                 <p class="wac-welcome-card__text">
-                    <?php esc_html_e( 'This plugin uses AI agents to optimise your WooCommerce checkout. Agents run autonomously on schedules — detect errors, analyse conversion data, generate suggestions, and heal issues automatically.', 'woo-agentic-checkout' ) ?>
+                    <?php esc_html_e( 'This plugin uses AI agents to optimise your WooCommerce checkout. Agents run autonomously on schedules — detect errors, analyse conversion data, generate suggestions, and heal issues automatically.', 'woo-agentic-checkout' ); ?>
                 </p>
                 <div class="wac-welcome-card__links">
                     <a href="?page=wac-dashboard&tab=agents" class="button button-secondary">

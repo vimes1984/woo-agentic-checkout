@@ -90,7 +90,7 @@ class Logger {
             $context_data = '{}'; // Fallback if JSON encoding fails.
         }
         if ( is_string( $context_data ) && strlen( $context_data ) > 10000 ) {
-            $context_data = substr( $context_data, 0, 10000 );
+            $context_data = mb_substr( $context_data, 0, 10000, 'UTF-8' );
         }
 
         $data = array(

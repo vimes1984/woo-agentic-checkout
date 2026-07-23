@@ -1245,7 +1245,8 @@
             });
 
             // On mobile, add a "Dismiss All" link when 3+ toasts are visible.
-            var observer = new MutationObserver(function () {
+            if (!this._toastObserver) {
+            this._toastObserver = new MutationObserver(function () {
                 var $container = $('.wac-toast-container');
                 var count = $container.find('.wac-toast').length || 0;
                 var $dismissAll = $container.find('.wac-toast-dismiss-all');
@@ -1267,7 +1268,7 @@
 
             var container = document.querySelector('.wac-toast-container');
             if (container) {
-                observer.observe(container, { childList: true, subtree: true });
+                self._toastObserver.observe(container, { childList: true, subtree: true });
             }
         },
 
