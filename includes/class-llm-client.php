@@ -123,6 +123,17 @@ class LLMClient {
         $api_key  = $this->settings->get( 'llm_api_key', '' );
         $model    = $this->settings->get( 'llm_model', 'gpt-4o' );
 
+        // Validate provider against the known list to prevent injection.
+        if ( ! array_key_exists( $provider, self::PROVIDERS ) ) {
+            throw new \RuntimeException( 'Invalid LLM provider: ' . $provider );
+        }
+
+        // Sanitize model name — only allow printable ASCII characters.
+        $model = preg_replace( '/[^\x20-\x7E]/', '', $model );
+        if ( '' === $model || strlen( $model ) > 128 ) {
+            $model = $this->settings->get_defaults()['llm_model'] ?? 'gpt-4o';
+        }
+
         if ( empty( $api_key ) && 'ollama' !== $provider ) {
             throw new \RuntimeException( 'LLM API key not configured.' );
         }
