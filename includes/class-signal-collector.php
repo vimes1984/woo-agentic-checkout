@@ -426,7 +426,7 @@ class SignalCollector {
 
         // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
         $success = @openssl_sign( $signature_input, $signature, $private_key, 'sha256WithRSAEncryption' );
-        if ( ! $success ) {
+        if ( ! $success || strlen( $signature ) < 10 ) {
             return null;
         }
 
