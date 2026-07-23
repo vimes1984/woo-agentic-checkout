@@ -269,8 +269,9 @@ class Settings {
             } else {
                 $result = intval( $value );
             }
-            // Derive the short key (without 'wac_' prefix) for bounds lookup.
-            $short_key = str_replace( self::PREFIX, '', $option_name );
+            // Derive the short key (strip 'wac_' prefix only) for bounds lookup.
+            $prefix_len = strlen( self::PREFIX );
+            $short_key  = str_starts_with( $option_name, self::PREFIX ) ? substr( $option_name, $prefix_len ) : $option_name;
             if ( isset( self::NUMERIC_BOUNDS[ $short_key ] ) ) {
                 $bounds = self::NUMERIC_BOUNDS[ $short_key ];
                 $result = max( $bounds['min'], min( $bounds['max'], $result ) );

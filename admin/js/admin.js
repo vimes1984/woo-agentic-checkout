@@ -297,7 +297,7 @@
          * @param {jQuery} $container - The updated container.
          */
         focusFirstFocusable: function ($container) {
-            if (!$container || !$container.length) {
+            if (!$container || !$container.length || typeof $container.find !== 'function') {
                 return;
             }
             var $focusable = $container.find(
@@ -1267,7 +1267,7 @@
             });
 
             var container = document.querySelector('.wac-toast-container');
-            if (container) {
+            if (container && typeof self._toastObserver !== 'undefined' && self._toastObserver) {
                 self._toastObserver.observe(container, { childList: true, subtree: true });
             }
         },
