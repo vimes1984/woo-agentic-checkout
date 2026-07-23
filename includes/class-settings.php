@@ -195,11 +195,15 @@ class Settings {
      * while still hardening against injection. Clamps numeric values to
      * configured bounds to prevent logically invalid configurations.
      *
-     * @param mixed $value
+     * WordPress calls this with ($value, $option_name). We use the option
+     * name to apply per-key bounds defined in NUMERIC_BOUNDS.
+     *
+     * @param mixed  $value       The setting value.
+     * @param string $option_name The option name (passed by WordPress).
      *
      * @return mixed
      */
-    public function sanitize( $value ) {
+    public function sanitize( $value, $option_name = '' ) {
         if ( is_string( $value ) ) {
             return sanitize_text_field( $value );
         }
@@ -213,10 +217,10 @@ class Settings {
             } else {
                 $result = intval( $value );
             }
-            // Clamp to configured bounds if applicable.
-            $key = $this->current_sanitize_key ?? '';
-            if ( isset( self::NUMERIC_BOUNDS[ $key ] ) ) {
-                $bounds = self::NUMERIC_BOUNDS[ $key ];
+            // Derive the short key (without 'wac_' prefix) for bounds lookup.
+            $short_key = str_replace( self::PREFIX, '', $option_name );
+            if ( isset( self::NUMERIC_BOUNDS[ $short_key ] ) ) {
+                $bounds = self::NUMERIC_BOUNDS[ $short_key ];
                 $result = max( $bounds['min'], min( $bounds['max'], $result ) );
             }
             return $result;
