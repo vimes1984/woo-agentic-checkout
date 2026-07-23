@@ -78,11 +78,12 @@ class SelfHealingAgent {
      * @return array Standardised result (success, actions, errors, summary, healed, failed).
      */
     public function run(): array {
-        $healer    = $this->services['healer'] ?? null;
-        $signals   = $this->services['signals'] ?? null;
-        $logger    = $this->services['logger'] ?? null;
-        $settings  = $this->services['settings'] ?? null;
-        $llm       = $this->services['llm'] ?? null;
+        $services  = $this->services;
+        $healer    = isset( $services['healer'] ) ? $services['healer'] : null;
+        $signals   = isset( $services['signals'] ) ? $services['signals'] : null;
+        $logger    = isset( $services['logger'] ) ? $services['logger'] : null;
+        $settings  = isset( $services['settings'] ) ? $services['settings'] : null;
+        $llm       = isset( $services['llm'] ) ? $services['llm'] : null;
 
         if ( ! $healer || ! $signals || ! $settings || ! $logger ) {
             return array(
