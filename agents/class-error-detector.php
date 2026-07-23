@@ -21,6 +21,8 @@ class ErrorDetector {
     /**
      * Critical error event patterns for severity classification.
      */
+    const MIN_SAMPLES_FOR_LLM = 3;
+
     const CRITICAL_EVENTS = array(
         'checkout_fatal',
         'payment_gateway_failure',
