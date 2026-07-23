@@ -297,7 +297,7 @@ class SelfHealingAgent {
             ) );
             $checks["db_table_{$short}"] = array(
                 'passed' => $exists,
-                'detail' => "Table {$short} " . ( $exists ? 'exists' : 'missing' ),
+                'detail' => "Table " . substr( $short, 0, 64 ) . " " . ( $exists ? 'exists' : 'missing' ),
             );
         }
 
