@@ -1087,7 +1087,6 @@ details.wac-card[open] summary {
 .wac-settings-form select,
 .wac-settings-form input[type="text"],
 .wac-settings-form input[type="password"],
-.wac-settings-form input[type="password"]:not(:focus) {
 .wac-settings-form input[type="email"],
 .wac-settings-form input[type="url"],
 .wac-settings-form input[type="number"] {
