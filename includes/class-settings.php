@@ -82,7 +82,7 @@ class Settings {
     }
 
     /**
-     * Set a setting value.
+     * Set a setting value with bounds validation.
      *
      * @param string $key
      * @param mixed  $value
@@ -90,6 +90,11 @@ class Settings {
      * @return bool
      */
     public function set( string $key, $value ): bool {
+        // Apply numeric bounds if configured.
+        if ( is_numeric( $value ) && isset( self::NUMERIC_BOUNDS[ $key ] ) ) {
+            $bounds = self::NUMERIC_BOUNDS[ $key ];
+            $value  = max( $bounds['min'], min( $bounds['max'], $value ) );
+        }
         return update_option( self::PREFIX . $key, $value );
     }
 
