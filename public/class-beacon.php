@@ -17,6 +17,11 @@ class Beacon {
     public function inject_tracker() {
         $experiments = $this->get_experiment_data();
 
+        // Cap experiment data sent to JS to prevent oversized inline scripts.
+        if ( count( $experiments ) > 20 ) {
+            $experiments = array_slice( $experiments, 0, 20 );
+        }
+
         if ( empty( $experiments ) ) {
             return;
         }

@@ -27,7 +27,7 @@ class Core {
     /**
      * @return self
      */
-    public static function get_instance() {
+    public static function get_instance(): self {
         if ( null === self::$instance ) {
             self::$instance = new self();
         }
@@ -620,7 +620,7 @@ class Core {
      * @param mixed $data Raw context data.
      * @return mixed Sanitized context data.
      */
-    private function sanitize_log_context( $data, int $depth = 0 ) {
+    private function sanitize_log_context( $data, int $depth = 0 ): mixed {
         if ( $depth > 5 ) {
             return '[max_depth]';
         }
