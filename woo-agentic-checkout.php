@@ -218,9 +218,11 @@ function wac_uninstall(): void {
     }
 
     // Clear all scheduled cron events.
-    wp_clear_scheduled_hook( 'wac_agent_tick' );
-    wp_clear_scheduled_hook( 'wac_daily_agent_run' );
-    wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+    if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+        wp_clear_scheduled_hook( 'wac_agent_tick' );
+        wp_clear_scheduled_hook( 'wac_daily_agent_run' );
+        wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+    }
 }
 
 /**
@@ -228,9 +230,11 @@ function wac_uninstall(): void {
  */
 register_deactivation_hook( __FILE__, function () {
     // Clear all scheduled cron events.
-    wp_clear_scheduled_hook( 'wac_agent_tick' );
-    wp_clear_scheduled_hook( 'wac_daily_agent_run' );
-    wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+    if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+        wp_clear_scheduled_hook( 'wac_agent_tick' );
+        wp_clear_scheduled_hook( 'wac_daily_agent_run' );
+        wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+    }
 
     // Unregister the error handler.
     if ( class_exists( 'WooAgenticCheckout\\ErrorHandler' ) ) {
