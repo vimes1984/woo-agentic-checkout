@@ -226,6 +226,10 @@ class Schema {
                 $threshold
             ) );
             $total += $deleted;
+            // Brief pause between chunks to reduce database server CPU load.
+            if ( $deleted > 0 && $total % 10000 === 0 ) {
+                usleep( 50000 );
+            }
         } while ( $deleted > 0 && $total < $max_total );
 
         // Also purge stale beacon events (> 90 days).
