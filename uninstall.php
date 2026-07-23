@@ -98,6 +98,9 @@ if ( class_exists( '\WooAgenticCheckout\Schema' ) ) {
     }
 }
 
+// Delete any wac_ prefixed theme mods.
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'theme_mods_wac_%'" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+
 // Clear cron hooks.
 wp_clear_scheduled_hook( 'wac_agent_tick' );
 wp_clear_scheduled_hook( 'wac_daily_agent_run' );
