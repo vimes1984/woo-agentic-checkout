@@ -250,6 +250,30 @@ class SelfHealer {
             throw new \InvalidArgumentException( 'Setting name not in allowed list for rollback.' );
         }
 
+        // Sanitize value based on option type.
+        switch ( $option_name ) {
+            case 'wac_notify_email':
+                $prev_value = sanitize_email( $prev_value );
+                break;
+            case 'wac_slack_webhook':
+                $prev_value = esc_url_raw( $prev_value );
+                break;
+            case 'wac_notify_email_enabled':
+            case 'wac_notify_slack_enabled':
+                $prev_value = 'yes' === $prev_value ? 'yes' : 'no';
+                break;
+            case 'wac_agent_failure_counts':
+                $prev_value = is_array( $prev_value ) ? $prev_value : array();
+                break;
+            case 'wac_agent_enabled':
+                $prev_value = is_array( $prev_value ) ? $prev_value : array();
+                break;
+            case 'wac_auto_heal_permission':
+                $allowed_perms = array( 'monitor', 'suggest', 'auto_patch', 'auto_full' );
+                $prev_value    = in_array( $prev_value, $allowed_perms, true ) ? $prev_value : 'suggest';
+                break;
+        }
+
         update_option( $option_name, $prev_value );
 
         return array(
