@@ -20,6 +20,8 @@ class SignalCollector {
      * GA4 Data API URL template.
      */
     const GA4_DATA_API = 'https://analyticsdata.googleapis.com/v1beta/properties/%s:runReport';
+    const GA4_RATE_LIMIT_SECONDS = 2;
+    const GA4_REPORT_RATE_LIMIT_SECONDS = 60;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
