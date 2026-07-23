@@ -353,7 +353,7 @@ class ErrorDetector {
                         'event'    => 'funnel_anomaly',
                         'severity' => 'warning',
                         'count'    => 1,
-                        'details'  => "High drop-off ({$dropoff}%) at step: {$step}",
+                        'details'  => 'High drop-off (' . round( $dropoff, 2 ) . '%) at step: ' . sanitize_key( $step ),
                         'samples'  => array(),
                     );
                 }
