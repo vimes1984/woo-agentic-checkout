@@ -92,6 +92,12 @@ class SuggestionGenerator {
             $suggestions = array();
         }
 
+        // Cap suggestions to prevent runaway LLM output.
+        $max_suggestions = 20;
+        if ( count( $suggestions ) > $max_suggestions ) {
+            $suggestions = array_slice( $suggestions, 0, $max_suggestions );
+        }
+
         // Auto-apply high-confidence suggestions if permissions allow.
         $permission = $settings->get_heal_permission();
         $auto_applied = 0;
