@@ -401,7 +401,7 @@ class SuggestionEngine {
         // Sanitize CSS: strip any HTML tags, allow only safe CSS characters.
         $css = $data['css'] ?? '';
         $css = wp_strip_all_tags( $css );
-        if ( empty( $css ) || strlen( $css ) > 50000 ) {
+        if ( empty( $css ) || strlen( $css ) > 50000 || strlen( $css ) < 3 ) {
             return false;
         }
 
