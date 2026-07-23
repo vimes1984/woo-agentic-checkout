@@ -409,7 +409,7 @@ class AdminUI {
                         <?php endforeach; ?>
                     </ul>
                     <p style="margin:12px 0 0;">
-                        <a href="?page=wac-dashboard&tab=experiments" class="button button-secondary">View All →</a>
+                        <a href="<?php echo esc_url( admin_url( "admin.php?page=wac-dashboard&tab=experiments" ) ); ?>" class="button button-secondary">View All →</a>
                     </p>
                 <?php endif; ?>
             </div>
@@ -994,10 +994,10 @@ class AdminUI {
         </div>
 
         <div class="wac-filter-bar" role="group" aria-label="Log level filter">
-            <a href="?page=wac-dashboard&tab=logs" class="button <?php echo empty( $level ) ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo empty( $level ) ? 'true' : 'false'; ?>"><?php esc_html_e( 'All', 'woo-agentic-checkout' ); ?></a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=error" class="button <?php echo 'error' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'error' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Errors', 'woo-agentic-checkout' ); ?></a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=warning" class="button <?php echo 'warning' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'warning' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Warnings', 'woo-agentic-checkout' ); ?></a>
-            <a href="?page=wac-dashboard&tab=logs&log_level=info" class="button <?php echo 'info' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'info' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Info', 'woo-agentic-checkout' ); ?></a>
+            <a href="<?php echo esc_url( admin_url( "?page=wac-dashboard&tab=logs" ) ); ?>" class="button <?php echo empty( $level ) ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo empty( $level ) ? 'true' : 'false'; ?>"><?php esc_html_e( 'All', 'woo-agentic-checkout' ); ?></a>
+            <a href="<?php echo esc_url( admin_url( "?page=wac-dashboard&tab=logs&log_level=error" ) ); ?>" class="button <?php echo 'error' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'error' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Errors', 'woo-agentic-checkout' ); ?></a>
+            <a href="<?php echo esc_url( admin_url( "?page=wac-dashboard&tab=logs&log_level=warning" ) ); ?>" class="button <?php echo 'warning' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'warning' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Warnings', 'woo-agentic-checkout' ); ?></a>
+            <a href="<?php echo esc_url( admin_url( "?page=wac-dashboard&tab=logs&log_level=info" ) ); ?>" class="button <?php echo 'info' === $level ? 'button-primary' : ''; ?>" role="button" aria-pressed="<?php echo 'info' === $level ? 'true' : 'false'; ?>"><?php esc_html_e( 'Info', 'woo-agentic-checkout' ); ?></a>
         </div>
 
         <?php if ( empty( $logs ) ) : ?>
