@@ -330,7 +330,7 @@ class SelfHealer {
                 'action'        => $safe_action,
                 'params'        => wp_json_encode( $params ),
                 'rollback_data' => wp_json_encode( $params ), // Store original state for undo
-                'result'        => $result['message'] ?? 'OK',
+                'result'        => isset( $result['message'] ) ? sanitize_text_field( $result['message'] ) : 'OK',
                 'created_at'    => current_time( 'mysql' ),
             ),
             array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
