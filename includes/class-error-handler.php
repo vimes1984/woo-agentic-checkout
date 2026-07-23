@@ -192,7 +192,7 @@ class ErrorHandler {
      *
      * @param \Throwable $exception
      */
-    public static function handle_exception( $exception ) {
+    public static function handle_exception( \Throwable $exception ): void {
         // Not our concern? Let WordPress handle it properly.
         if ( ! self::is_relevant_path( $exception->getFile() ) ) {
             // Restore default handler so WP shows its own error page.

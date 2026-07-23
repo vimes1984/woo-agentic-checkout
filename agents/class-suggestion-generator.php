@@ -232,6 +232,16 @@ class SuggestionGenerator {
          */
         $context = apply_filters( 'wac_suggestion_context', $context );
 
+        // Re-sanitize context after filter to prevent unsafe data injection.
+        if ( ! is_array( $context ) ) {
+            $context = array();
+        }
+        foreach ( $context as $ctx_key => $ctx_value ) {
+            if ( is_string( $ctx_value ) ) {
+                $context[ $ctx_key ] = substr( sanitize_text_field( $ctx_value ), 0, 1000 );
+            }
+        }
+
         return $context;
     }
 
