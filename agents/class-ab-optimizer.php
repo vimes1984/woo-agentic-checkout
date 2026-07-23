@@ -151,9 +151,11 @@ class ABOptimizer {
             }
 
             if ( ! $bayesian_ok ) {
-                $logger->warning( 'ab_optimizer_invalid_bayesian', array(
+                if ( $logger ) {
+                    $logger->warning( 'ab_optimizer_invalid_bayesian', array(
                     'exp_id' => $exp['id'],
-                ) );
+                    ) );
+                }
                 continue;
             }
 
