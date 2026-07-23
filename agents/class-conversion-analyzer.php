@@ -22,6 +22,7 @@ class ConversionAnalyzer {
     const REVISION = 'batch5.12';
     const ANALYSIS_VERSION = '1.0';
     const LOCK_TIMEOUT = 600;
+    const LARGE_PROMPT_THRESHOLD = 80000;
 
     /**
      * @var array Service dependencies.
