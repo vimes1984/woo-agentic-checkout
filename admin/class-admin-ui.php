@@ -448,7 +448,7 @@ class AdminUI {
                         <select id="wac-quick-agent-select" name="agent_key" aria-label="<?php esc_attr_e( 'Select agent to run', 'woo-agentic-checkout' ); ?>">
                             <?php $agent_keys = is_array( $this->agents->get_agent_keys() ) ? $this->agents->get_agent_keys() : array(); ?><?php foreach ( $agent_keys as $key ) : ?>
                                 <option value="<?php echo esc_attr( $key ); ?>">
-                                    <?php echo esc_html( $status[ $key ]['label'] ?? $key ); ?>
+                                    <?php echo esc_html( ( is_array( $status[ $key ] ?? null ) ? $status[ $key ]['label'] ?? $key : $key ) ); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
