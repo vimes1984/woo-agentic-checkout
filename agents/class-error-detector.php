@@ -135,6 +135,8 @@ class ErrorDetector {
             $by_type = $this->group_errors( $errors );
 
             foreach ( $by_type as $event => $grouped ) {
+                // Cap group size to prevent oversized analysis.
+                $grouped = array_slice( $grouped, 0, 50 );
                 $count = count( $grouped );
                 $severity = $this->classify_severity( $grouped );
 
