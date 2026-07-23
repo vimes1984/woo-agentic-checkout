@@ -114,6 +114,3 @@ $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'wac_%'" ); // 
 // Flush any remaining cache.
 wp_cache_flush();
 wp_clear_scheduled_hook( 'wac_hourly_cleanup' );
-
-// Clear any pending cache.
-wp_cache_flush();
