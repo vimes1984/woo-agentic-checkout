@@ -58,6 +58,10 @@ $options = array(
 
 foreach ( $options as $option ) {
     delete_option( $option );
+    // Also clean up multisite network options.
+    if ( is_multisite() ) {
+        delete_site_option( $option );
+    }
 }
 
 // Drop custom tables.
