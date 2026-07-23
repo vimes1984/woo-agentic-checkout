@@ -493,7 +493,7 @@ class Core {
     /**
      * GET /wac/v1/status
      */
-    public function rest_status( \WP_REST_Request $request ) {
+    public function rest_status( \WP_REST_Request $request ): mixed {
         return rest_ensure_response( array(
             'version'       => WAC_VERSION,
             'activeAgents'  => isset( $this->services['agents'] ) ? $this->services['agents']->get_status() : array(),
@@ -524,7 +524,7 @@ class Core {
     /**
      * POST /wac/v1/suggestions/{id}/apply
      */
-    public function rest_apply_suggestion( \WP_REST_Request $request ) {
+    public function rest_apply_suggestion( \WP_REST_Request $request ): mixed {
         $id = absint( $request->get_param( 'id' ) );
         if ( $id < 1 ) {
             return new \WP_Error( 'invalid_id', __( 'Invalid suggestion ID.', 'woo-agentic-checkout' ), array( 'status' => 400 ) );
