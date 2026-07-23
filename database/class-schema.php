@@ -289,6 +289,8 @@ class Schema {
     public function get_table_info(): array {
         global $wpdb;
 
+        $wpdb->suppress_errors( true );
+
         $tables = array(
             'wac_logs'         => $wpdb->prefix . 'wac_logs',
             'wac_ab_experiments' => $wpdb->prefix . 'wac_ab_experiments',
@@ -339,6 +341,7 @@ class Schema {
             }
         }
 
+        $wpdb->suppress_errors( false );
         return $info;
     }
 }
