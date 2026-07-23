@@ -233,6 +233,9 @@
          * Animate and remove a toast.
          */
         dismissToast: function ($toast) {
+            if (!$toast || !$toast.length || !$toast.hasClass) {
+                return;
+            }
             if ($toast.hasClass('wac-toast--removing')) {
                 return;
             }
@@ -319,13 +322,14 @@
          */
         debounce: function (fn, delay) {
             var timer = null;
+            var lastFn = fn;
             return function () {
                 var context = this;
                 var args = arguments;
                 clearTimeout(timer);
-                if (typeof fn !== 'function') { return; }
+                if (typeof lastFn !== 'function') { return; }
                 timer = setTimeout(function () {
-                    fn.apply(context, args);
+                    lastFn.apply(context, args);
                 }, delay || 250);
             };
         },
@@ -976,7 +980,7 @@
                 if (query) {
                     sessionStorage.setItem(filterKey, query);
                 } else {
-                    sessionStorage.removeItem(filterKey);
+                    try { sessionStorage.removeItem(filterKey); } catch (e) { /* storage may be unavailable */ }
                 }
 
                 // Show visible count.
@@ -1000,7 +1004,8 @@
             $('.wac-table-filter').each(function () {
                 var $input = $(this);
                 var filterKey = 'wac_filter_' + ($input.attr('id') || 'default');
-                var saved = sessionStorage.getItem(filterKey);
+                var saved = '';
+                try { saved = sessionStorage.getItem(filterKey) || ''; } catch (e) { saved = ''; }
                 if (saved) {
                     $input.val(saved);
                     $input.trigger('keyup');
