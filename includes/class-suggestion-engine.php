@@ -549,8 +549,54 @@ PROMPT;
     /**
      * Build the user prompt with current context data.
      */
+    /**
+     * Recursively sanitize context data to prevent prompt injection via user-controlled fields.
+     * Strips HTML tags, truncates long strings, and removes suspicious patterns (e.g., "ignore instructions", "system prompt").
+     *
+     * @param mixed $data Context data.
+     * @param int   $depth Recursion depth guard.
+     * @return mixed Sanitized data.
+     */
+    private function sanitize_context_for_llm( $data, int $depth = 0 ) {
+        if ( $depth > 10 ) {
+            return null;
+        }
+        if ( is_string( $data ) ) {
+            // Strip HTML tags and truncate to 1000 chars.
+            $data = wp_strip_all_tags( $data );
+            $data = substr( $data, 0, 1000 );
+            // Block common prompt injection phrases.
+            $phrases = array(
+                '/\\bignore (all )?(previous|above|below).*instructions\\b/i',
+                '/\\bsystem prompt\\b/i',
+                '/\\byou are (not |an? )/i',
+                '/\\bforget (all |everything)/i',
+                '/\\bdisregard\\b/i',
+                '/\\bnew instructions\\b/i',
+                '/\\boverride\\b/i',
+            );
+            foreach ( $phrases as $pattern ) {
+                if ( preg_match( $pattern, $data ) ) {
+                    $data = '[redacted]';
+                    break;
+                }
+            }
+            return $data;
+        }
+        if ( is_array( $data ) ) {
+            $result = array();
+            foreach ( $data as $key => $value ) {
+                $result[ $key ] = $this->sanitize_context_for_llm( $value, $depth + 1 );
+            }
+            return $result;
+        }
+        return $data;
+    }
+
     private function build_user_prompt( array $context ): string {
-        $json = wp_json_encode( $context, JSON_PRETTY_PRINT );
+        // Sanitize context to prevent prompt injection attacks.
+        $safe_context = $this->sanitize_context_for_llm( $context );
+        $json = wp_json_encode( $safe_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
         return "Current store context:\n\n{$json}\n\nGenerate 3-5 checkout improvement suggestions.";
     }
 
