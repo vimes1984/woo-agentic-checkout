@@ -433,7 +433,7 @@
                             xhr.setRequestHeader('X-WP-Nonce', wacData.nonce);
                         },
                         success: function (response) {
-                            if (response.success) {
+                            if (response && response.success) {
                                 self.showToast(self.__('appliedNotice') || 'Suggestion applied successfully!', 'success');
                                 if ($card.length) {
                                     $card.fadeOut(300, function () { $(this).remove(); });
@@ -441,7 +441,7 @@
                                     $row.fadeOut(300, function () { $(this).remove(); });
                                 }
                             } else {
-                                var errMsg = response.data && response.data.message
+                                var errMsg = response && response.data && response.data.message
                                     ? response.data.message
                                     : self.__('errorGeneric');
                                 self.showToast(errMsg, 'error');
@@ -488,7 +488,7 @@
                             reason: reason
                         },
                         success: function (response) {
-                            if (response.success) {
+                            if (response && response.success) {
                                 self.showToast(self.__('rejectedNotice') || 'Suggestion rejected.', 'info');
                                 if ($card.length) {
                                     $card.fadeOut(300, function () { $(this).remove(); });
@@ -496,7 +496,7 @@
                                     $row.fadeOut(300, function () { $(this).remove(); });
                                 }
                             } else {
-                                var errMsg = response.data && response.data.message
+                                var errMsg = response && response.data && response.data.message
                                     ? response.data.message
                                     : self.__('errorGeneric');
                                 self.showToast(errMsg, 'error');
@@ -571,8 +571,8 @@
                             id: id
                         },
                         success: function (response) {
-                            if (response.success) {
-                                self.showToast(response.data && response.data.message
+                            if (response && response.success) {
+                                self.showToast(response && response.data && response.data.message
                                     ? response.data.message : 'Experiment paused.', 'success');
                                 var $badge = $link.closest('tr').find('.wac-badge-active');
                                 $badge
@@ -583,7 +583,7 @@
                                     '<button class="wac-action-link wac-resume-exp" data-id="' + self.escHtml(String(id)) + '" title="Resume this experiment">Resume</button>'
                                 );
                             } else {
-                                self.showToast(response.data && response.data.message
+                                self.showToast(response && response.data && response.data.message
                                     ? response.data.message : 'Failed to pause.', 'error');
                                 self.hideLoading($link);
                             }
@@ -618,8 +618,8 @@
                             id: id
                         },
                         success: function (response) {
-                            if (response.success) {
-                                self.showToast(response.data && response.data.message
+                            if (response && response.success) {
+                                self.showToast(response && response.data && response.data.message
                                     ? response.data.message : 'Experiment resumed.', 'success');
                                 var $badge = $link.closest('tr').find('.wac-badge-paused');
                                 $badge
@@ -630,7 +630,7 @@
                                     '<button class="wac-action-link wac-pause-exp" data-id="' + self.escHtml(String(id)) + '" title="Pause this experiment">Pause</button>'
                                 );
                             } else {
-                                self.showToast(response.data && response.data.message
+                                self.showToast(response && response.data && response.data.message
                                     ? response.data.message : 'Failed to resume.', 'error');
                                 self.hideLoading($link);
                             }
@@ -721,7 +721,7 @@
                             agent_key: agentKey
                         },
                         success: function (response) {
-                            if (response.success) {
+                            if (response && response.success) {
                                 self.showToast(
                                     self.__('agentSuccess', agentKey) ||
                                         "Agent '" + agentKey + "' completed successfully.",
@@ -729,7 +729,7 @@
                                 );
                             } else {
                                 self.showToast(
-                                    response.data && response.data.message
+                                    response && response.data && response.data.message
                                         ? response.data.message
                                         : 'Agent run failed.',
                                     'error'

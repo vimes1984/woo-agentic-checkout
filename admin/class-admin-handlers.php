@@ -165,6 +165,10 @@ class AdminHandlers {
 
         $result = $agent_manager->manual_run( $agent_key );
 
+        if ( ! is_array( $result ) ) {
+            $result = array( 'error' => 'Invalid result type' );
+        }
+
         $this->logger->info( 'manual_agent_run', array(
             'agent'  => $agent_key,
             'result' => is_array( $result ) ? ( $result['error'] ?? 'success' ) : 'unknown',
