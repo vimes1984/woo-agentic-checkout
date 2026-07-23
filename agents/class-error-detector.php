@@ -144,7 +144,7 @@ class ErrorDetector {
                     'event'     => $event,
                     'count'     => $count,
                     'severity'  => $severity,
-                    'samples'   => array_slice( $grouped, 0, 3 ),
+                    'samples'   => array_slice( $grouped, 0, 5 ),
                     'first_seen' => $grouped[0]['created_at'] ?? '',
                     'last_seen'  => end( $grouped )['created_at'] ?? '',
                 );
