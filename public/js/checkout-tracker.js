@@ -362,6 +362,16 @@
 
             var payload;
             try {
+                var dataSize = 0;
+                for (var k in data) {
+                    if (data.hasOwnProperty(k)) { dataSize += String(k).length + String(data[k]).length; }
+                }
+                if (dataSize > 5000) {
+                    if (window.console && console.warn) {
+                        console.warn('WAC beacon: data too large (' + dataSize + ' bytes), truncating');
+                    }
+                    data = { _truncated: true };
+                }
                 payload = JSON.stringify(data || {});
             } catch (e) {
                 if (window.console && console.warn) {
