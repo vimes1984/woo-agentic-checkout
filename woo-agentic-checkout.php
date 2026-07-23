@@ -140,6 +140,9 @@ spl_autoload_register( 'wac_autoload' );
  * Main plugin bootstrap.
  */
 function wac_init() {
+    // Load plugin text domain for i18n.
+    load_plugin_textdomain( 'woo-agentic-checkout', false, dirname( WAC_BASENAME ) . '/languages' );
+
     // Check WordPress version.
     global $wp_version;
     if ( version_compare( $wp_version, '6.0', '<' ) ) {

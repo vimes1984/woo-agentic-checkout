@@ -168,7 +168,7 @@ class SuggestionGenerator {
         $recent_errors = is_array( $recent_errors ) ? $recent_errors : array();
 
         // Annotate cold-start / no-data state.
-        $has_orders = is_array( $orders_7d ) && isset( $orders_7d['total_orders'] ) && (int) $orders_7d['total_orders'] > 0;
+        $has_orders = is_array( $orders_7d ) && isset( $orders_7d['total_orders'] ) && is_numeric( $orders_7d['total_orders'] ) && (int) $orders_7d['total_orders'] > 0;
         $has_errors = ! empty( $recent_errors );
         $has_traffic = false;
         if ( is_array( $funnel ) && ! empty( $funnel ) ) {
