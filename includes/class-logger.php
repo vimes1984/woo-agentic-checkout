@@ -24,7 +24,7 @@ class Logger {
      * @param string $event Event name.
      * @param mixed  $context Associated data.
      */
-    public function info( string $event, $context = array() ) {
+    public function info( string $event, $context = array() ): void {
         $this->log( self::INFO, $event, $context );
     }
 
@@ -34,7 +34,7 @@ class Logger {
      * @param string $event Event name.
      * @param mixed  $context Associated data.
      */
-    public function warning( string $event, $context = array() ) {
+    public function warning( string $event, $context = array() ): void {
         $this->log( self::WARNING, $event, $context );
     }
 
@@ -44,7 +44,7 @@ class Logger {
      * @param string $event Event name.
      * @param mixed  $context Associated data.
      */
-    public function error( string $event, $context = array() ) {
+    public function error( string $event, $context = array() ): void {
         $this->log( self::ERROR, $event, $context );
     }
 
@@ -54,7 +54,7 @@ class Logger {
      * @param string $event Event name.
      * @param mixed  $context Associated data.
      */
-    public function debug( string $event, $context = array() ) {
+    public function debug( string $event, $context = array() ): void {
         if ( 'yes' === get_option( 'wac_debug_mode', 'no' ) ) {
             $this->log( self::DEBUG, $event, $context );
         }
@@ -67,7 +67,7 @@ class Logger {
      * @param string $event   Event name.
      * @param mixed  $context Context (will be JSON-encoded).
      */
-    private function log( string $level, string $event, $context ) {
+    private function log( string $level, string $event, $context ): void {
         global $wpdb;
 
         // Validate event name length (DB column is VARCHAR(255)).

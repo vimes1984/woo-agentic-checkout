@@ -1171,6 +1171,7 @@
 
             if (this._refreshInterval) { clearInterval(this._refreshInterval); }
             if (this._refreshInterval) { clearInterval(this._refreshInterval); }
+            if (this._refreshInterval) { clearInterval(this._refreshInterval); }
             this._refreshInterval = setInterval(function () {
                 // Use origin + pathname to avoid query/hash injection.
                 var url = window.location.origin + window.location.pathname;
