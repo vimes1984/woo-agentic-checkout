@@ -97,7 +97,7 @@ class SelfHealingAgent {
         $notifier   = new \WooAgenticCheckout\Notifier();
 
         if ( 'monitor' === $permission ) {
-            $logger->info( 'self_heal_monitor_only', array() );
+            $logger && $logger->info( 'self_heal_monitor_only', array() );
             return array(
                 'success' => true,
                 'actions' => 0,
@@ -131,7 +131,7 @@ class SelfHealingAgent {
         // Cold start: everything healthy, no errors → skip LLM-heavy processing.
         $recent_errors = $signals->get_recent_errors( 1, 5 );
         if ( empty( $failing ) && empty( $recent_errors ) ) {
-            $logger->info( 'self_heal_cold_start', array(
+            $logger && $logger->info( 'self_heal_cold_start', array(
                 'health_checked' => count( $health_checks ),
                 'note'           => 'All health checks pass, zero recent errors — no healing needed.',
             ) );
@@ -144,7 +144,7 @@ class SelfHealingAgent {
         $actions_taken = 0;
 
         if ( ! empty( $failing ) ) {
-            $logger->warning( 'health_checks_failing', array(
+            $logger && $logger->warning( 'health_checks_failing', array(
                 'count'  => count( $failing ),
                 'checks' => array_keys( $failing ),
             ) );
@@ -170,7 +170,7 @@ class SelfHealingAgent {
 
                 // Skip if this issue is in heal cooldown.
                 if ( $this->is_heal_cooldown( $issue_id ) ) {
-                    $logger->info( 'self_heal_cooldown_hc', array(
+                    $logger && $logger->info( 'self_heal_cooldown_hc', array(
                         'issue_id' => $issue_id,
                         'note'     => 'Skipping health-check heal for recently-healed issue.',
                     ) );
@@ -215,7 +215,7 @@ class SelfHealingAgent {
 
                 // Skip if this issue is in heal cooldown.
                 if ( $this->is_heal_cooldown( $issue_id ) ) {
-                    $logger->info( 'self_heal_cooldown', array(
+                    $logger && $logger->info( 'self_heal_cooldown', array(
                         'issue_id' => $issue_id,
                         'note'     => 'Skipping heal for recently-healed issue.',
                     ) );
@@ -243,7 +243,7 @@ class SelfHealingAgent {
         $results['actions'] = $results['healed'] + $results['failed'];
         $results['summary'] = $results['healed'] . ' issues healed, ' . $results['failed'] . ' failures.';
 
-        $logger->info( 'self_heal_run', array(
+        $logger && $logger->info( 'self_heal_run', array(
             'health_checked' => count( $health_checks ),
             'health_passing' => count( $health_checks ) - count( $failing ),
             'healed'         => $results['healed'],
