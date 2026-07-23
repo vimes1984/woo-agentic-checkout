@@ -18,6 +18,8 @@
 
         /** Nonce from PHP */
         _nonce: window._wacNonce || wacBeacon.nonce || '',
+        /** AJAX endpoint URL */
+        _ajaxUrl: (typeof wacBeacon !== 'undefined' && wacBeacon.ajaxUrl) ? wacBeacon.ajaxUrl : '',
 
         /** Checkout step tracking */
         steps: {
