@@ -201,7 +201,7 @@ class Core {
         }
 
         // Suppress PHP notices if the JS flag is present — JS will show toasts instead.
-        if ( isset( $_GET['wac_js'] ) && '1' === $_GET['wac_js'] ) {
+        if ( isset( $_GET['wac_js'] ) && is_string( $_GET['wac_js'] ) && '1' === $_GET['wac_js'] ) {
             return;
         }
 
