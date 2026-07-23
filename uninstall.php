@@ -86,7 +86,8 @@ if ( class_exists( '\WooAgenticCheckout\Schema' ) ) {
     $schema = new \WooAgenticCheckout\Schema();
     $schema->drop_tables();
 } else {
-    // Fallback: direct table drops if Schema unavailable.
+    // Fallback: direct table drops if Schema is unavailable.
+    // Tables must match those in schema class's drop_tables().
     $tables = array(
         'wac_logs', 'wac_ab_experiments', 'wac_ab_variants',
         'wac_ab_events', 'wac_beacon_events', 'wac_suggestions', 'wac_heal_log',
