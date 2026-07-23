@@ -23,6 +23,7 @@ class ConversionAnalyzer {
     const ANALYSIS_VERSION = '1.0';
     const LOCK_TIMEOUT = 600;
     const LARGE_PROMPT_THRESHOLD = 80000;
+    const ERROR_MSG_MAX_LENGTH = 500;
 
     /**
      * @var array Service dependencies.
