@@ -349,6 +349,9 @@ class ErrorHandler {
         if ( ! is_dir( $log_dir ) ) {
             // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
             @mkdir( $log_dir, 0755, true );
+            if ( ! is_dir( $log_dir ) ) {
+                return false;
+            }
         }
         if ( ! is_writable( $log_dir ) ) {
             return false; // Cannot write logs, bail silently.
