@@ -115,7 +115,7 @@ class SelfHealer {
                 $this->logger->error( 'heal_failed', array(
                     'issue_id' => $issue_id,
                     'action'   => $action,
-                    'error'    => $e->getMessage(),
+                    'error'    => sanitize_text_field( $e->getMessage() ),
                 ) );
 
                 return array(
@@ -169,7 +169,7 @@ class SelfHealer {
             } catch ( \Exception $e ) {
                 $this->logger->error( 'heal_rollback_failed', array(
                     'rollback_id' => $rollback_id,
-                    'error'       => $e->getMessage(),
+                    'error'       => sanitize_text_field( $e->getMessage() ),
                 ) );
                 return false;
             }
