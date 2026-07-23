@@ -128,7 +128,9 @@ class ABOptimizer {
         foreach ( $experiments as $exp ) {
             // Validate experiment structure.
             if ( ! isset( $exp['id'] ) ) {
-                $logger->warning( 'ab_optimizer_missing_exp_id', array( 'exp' => $exp ) );
+                if ( $logger ) {
+                    $logger->warning( 'ab_optimizer_missing_exp_id', array( 'exp' => $exp ) );
+                }
                 continue;
             }
 
