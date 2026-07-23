@@ -27,6 +27,8 @@ class SignalCollector {
     const MIN_LOOKBACK_HOURS = 1;
     const MAX_FUNNEL_RESULTS = 50;
     const MAX_RESPONSE_BYTES = 500000;
+    const JWT_EXPIRY_SECONDS = 3600;
+    const JWT_CACHE_TTL = 3300;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
