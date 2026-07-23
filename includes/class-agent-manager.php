@@ -253,7 +253,8 @@ class AgentManager {
             $normalized['errors'][] = $result['error'];
             unset( $normalized['error'] );
         }
-        $normalized['summary'] = $result['summary'] ?? ($normalized['success'] ? "Agent '{$key}' completed." : "Agent '{$key}' encountered errors.");
+        $safe_key = sanitize_key( $key );
+        $normalized['summary'] = $result['summary'] ?? ($normalized['success'] ? "Agent '{$safe_key}' completed." : "Agent '{$safe_key}' encountered errors.");
 
         return $normalized;
     }
