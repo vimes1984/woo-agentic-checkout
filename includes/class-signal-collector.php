@@ -31,6 +31,7 @@ class SignalCollector {
     const JWT_CACHE_TTL = 3300;
     const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
     const ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
+    const MIN_SIGNATURE_LENGTH = 10;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
