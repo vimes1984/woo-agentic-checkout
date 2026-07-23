@@ -32,6 +32,9 @@ class SignalCollector {
     const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
     const ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
     const MIN_SIGNATURE_LENGTH = 10;
+    const EVENT_NAME_MAX_LENGTH = 40;
+    const MP_CONNECT_TIMEOUT = 5;
+    const API_CONNECT_TIMEOUT = 15;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
@@ -107,7 +110,7 @@ class SignalCollector {
 
         $response = wp_remote_post( $url, array(
             'body'    => wp_json_encode( $payload ),
-            'timeout' => 5,
+            'timeout' => self::MP_CONNECT_TIMEOUT,
             'headers' => array( 'Content-Type' => 'application/json' ),
         ) );
 
@@ -181,7 +184,7 @@ class SignalCollector {
         $url = sprintf( self::GA4_DATA_API, $property_id );
         $response = wp_remote_post( $url, array(
             'body'    => wp_json_encode( $body ),
-            'timeout' => 15,
+            'timeout' => self::API_CONNECT_TIMEOUT,
             'headers' => array(
                 'Content-Type'  => 'application/json',
                 'Authorization' => 'Bearer ' . $access_token,
