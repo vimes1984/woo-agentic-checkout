@@ -179,17 +179,27 @@ class SuggestionGenerator {
         $safe_errors = array_map( function ( $err ) {
             return array(
                 'id'         => $err['id'] ?? 0,
-                'event'      => $err['event'] ?? '',
-                'level'      => $err['level'] ?? '',
+                'event'      => substr( sanitize_text_field( $err['event'] ?? '' ), 0, 100 ),
+                'level'      => in_array( $err['level'] ?? '', array( 'info', 'warning', 'error', 'critical' ), true ) ? $err['level'] : 'info',
                 'created_at' => $err['created_at'] ?? '',
             );
         }, $recent_errors );
+
+        // Sanitize experiment data before passing to LLM context.
+        $safe_experiments = array();
+        foreach ( $experiments as $exp ) {
+            $safe_experiments[] = array(
+                'id'     => absint( $exp['id'] ?? 0 ),
+                'name'   => substr( sanitize_text_field( $exp['name'] ?? '' ), 0, 255 ),
+                'status' => sanitize_key( $exp['status'] ?? '' ),
+            );
+        }
 
         $context = array(
             'orders_24h'            => $orders_24h,
             'orders_7d'             => $orders_7d,
             'funnel'                => $funnel,
-            'experiments'           => $experiments,
+            'experiments'           => $safe_experiments,
             'recent_errors'         => $safe_errors,
             'plugin_version'        => WAC_VERSION,
             'wc_version'            => apply_filters( 'wac_context_wc_version', defined( 'WC_VERSION' ) ? WC_VERSION : 'unknown' ),
