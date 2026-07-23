@@ -530,6 +530,11 @@ class LLMClient {
 
         $decoded = json_decode( $body_raw, true );
 
+        if ( ! is_array( $decoded ) ) {
+            // Response is not valid JSON — return cleaned raw body.
+            return $this->clean_json_response( $body_raw );
+        }
+
         // Extract content from standard chat completion format.
         if ( isset( $decoded['choices'][0]['message']['content'] ) ) {
             $content = $decoded['choices'][0]['message']['content'];

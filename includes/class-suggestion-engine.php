@@ -124,6 +124,9 @@ class SuggestionEngine {
      * @return array
      */
     public function get_pending( int $limit = 20 ): array {
+        // Cap limit to prevent unbounded queries.
+        $limit = min( 100, max( 1, $limit ) );
+
         global $wpdb;
         $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}wac_suggestions WHERE status = %s ORDER BY score DESC LIMIT %d",
