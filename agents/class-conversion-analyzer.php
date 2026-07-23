@@ -175,7 +175,8 @@ class ConversionAnalyzer {
                 'cr_7d'        => $orders_7d['conversion_rate'],
                 'revenue_24h'  => $orders_24h['revenue'],
                 'analysis'     => $result,
-            ) );
+                ) );
+            }
 
             $release();
             return array(
