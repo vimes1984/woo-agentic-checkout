@@ -247,6 +247,11 @@ class Logger {
     public function purge_old_logs( int $days = 30 ): int {
         global $wpdb;
 
+        // Guard against missing database.
+        if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+            return 0;
+        }
+
         // Clamp days to safe range (1–365) to prevent accidental mass deletion.
         $days      = max( 1, min( 365, $days ) );
         $threshold = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - ( $days * DAY_IN_SECONDS ) );
