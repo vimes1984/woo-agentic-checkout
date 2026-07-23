@@ -72,6 +72,24 @@ class Settings {
     );
 
     /**
+     * Get a setting value masked for safe display in the admin interface.
+     * Returns only the first 4 characters followed by asterisks.
+     * If the value is empty, returns an empty string.
+     * Non-matching keys are returned as-is.
+     *
+     * @param string $key     Setting key.
+     * @param mixed  $default Fallback.
+     * @return mixed
+     */
+    public function get_display( string $key, $default = null ) {
+        $value = $this->get( $key, $default );
+        if ( in_array( $key, self::API_KEY_SETTINGS, true ) && is_string( $value ) && strlen( $value ) > 4 ) {
+            return substr( $value, 0, 4 ) . str_repeat( '•', min( 20, strlen( $value ) - 4 ) );
+        }
+        return $value;
+    }
+
+    /**
      * Get a setting value.
      *
      * @param string $key     Setting key (without prefix).
