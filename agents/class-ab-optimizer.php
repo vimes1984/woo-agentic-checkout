@@ -24,6 +24,8 @@ class ABOptimizer {
     const DEFAULT_MIN_CONVERSIONS = 30;
     const DEFAULT_MIN_SAMPLE = 100;
     const DEFAULT_MAX_CONCURRENT = 3;
+    const MIN_ORDERS_FOR_EXPERIMENT = 5;
+    const PROPOSAL_MAX_SIZE = 100000;
 
     /**
      * @var array Service dependencies.
