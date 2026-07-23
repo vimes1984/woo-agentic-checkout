@@ -1857,6 +1857,8 @@ class ABTestManager {
      */
     public function cleanup_old_events( int $days = 90 ): int {
         global $wpdb;
+        // Clamp days to prevent negative values (which would delete newer records) or excessively large values.
+        $days  = min( 365, max( 1, $days ) );
         $count = $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$this->table_events} WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
             $days
