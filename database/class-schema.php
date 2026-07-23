@@ -32,6 +32,8 @@ class Schema {
 
         global $wpdb;
 
+        $wpdb->suppress_errors( true );
+
         $charset_collate = $wpdb->get_charset_collate();
         // Ensure utf8mb4 is used for full Unicode support and emoji compatibility.
         if ( false === strpos( $charset_collate, 'utf8mb4' ) ) {
@@ -169,6 +171,7 @@ class Schema {
         dbDelta( $sql_suggestions );
         dbDelta( $sql_heal );
 
+        $wpdb->suppress_errors( false );
         update_option( self::DB_VERSION_KEY, self::DB_VERSION );
     }
 
