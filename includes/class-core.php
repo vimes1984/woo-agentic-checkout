@@ -669,7 +669,7 @@ class Core {
      * @param string $key Service identifier.
      * @return object|null
      */
-    public function get_service( $key ) {
+    public function get_service( string $key ) {
         return isset( $this->services[ $key ] ) ? $this->services[ $key ] : null;
     }
 }
