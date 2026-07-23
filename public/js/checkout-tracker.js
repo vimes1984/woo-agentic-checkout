@@ -408,12 +408,18 @@
     $(document).ready(function () {
         WACBeacon.init();
 
-        // Watch for dynamically-added checkout fields.
+        // Watch for dynamically-added checkout fields, capped at 50 mutations.
         var checkoutEl = document.querySelector('.woocommerce-checkout');
         if (checkoutEl && window.MutationObserver) {
-            (new MutationObserver(function () {
+            var observerCalls = 0;
+            var observer = new MutationObserver(function () {
+                if (++observerCalls > 50) {
+                    observer.disconnect();
+                    return;
+                }
                 WACBeacon._bindFieldEvents();
-            })).observe(checkoutEl, { childList: true, subtree: true });
+            });
+            observer.observe(checkoutEl, { childList: true, subtree: true });
         }
     });
 
