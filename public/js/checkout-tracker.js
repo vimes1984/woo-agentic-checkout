@@ -352,6 +352,16 @@
                 return;
             }
 
+            var payload;
+            try {
+                payload = JSON.stringify(data || {});
+            } catch (e) {
+                if (window.console && console.warn) {
+                    console.warn('WAC beacon: failed to stringify data', e);
+                }
+                return;
+            }
+
             $.ajax({
                 url: wacBeacon.ajaxUrl,
                 type: 'POST',
@@ -360,7 +370,7 @@
                     nonce: this._nonce,
                     event: event,
                     session: this.sessionId,
-                    data: JSON.stringify(data || {})
+                    data: payload
                 },
                 timeout: 3000,
                 error: function (jqXHR, textStatus, errorThrown) {
