@@ -1208,6 +1208,7 @@
          */
         observeDynamicContent: function () {
             var self = this;
+            if (window._wacContentObserver) { try { window._wacContentObserver.disconnect(); } catch(e) {} }
             var observer = new MutationObserver(function (mutations) {
                 mutations.forEach(function (mutation) {
                     if (mutation.type === 'childList' && mutation.addedNodes.length) {
@@ -1264,7 +1265,9 @@
             });
 
             // On mobile, add a "Dismiss All" link when 3+ toasts are visible.
-            if (!this._toastObserver) {
+            if (this._toastObserver) {
+                try { this._toastObserver.disconnect(); } catch(e) {}
+            }
             this._toastObserver = new MutationObserver(function () {
                 var $container = $('.wac-toast-container');
                 var count = $container.find('.wac-toast').length || 0;
