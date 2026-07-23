@@ -472,7 +472,7 @@ PROMPT;
         try {
             $result = $llm->analyze(
                 $system,
-                wp_json_encode( array( 'critical_issues' => $critical ), JSON_PRETTY_PRINT ),
+                wp_json_encode( array( 'critical_issues' => $this->sanitize_context_for_llm( $critical ) ), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
                 array(
                     'type'       => 'object',
                     'properties' => array(
