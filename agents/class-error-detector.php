@@ -177,7 +177,9 @@ class ErrorDetector {
             $analysis = $this->llm_root_cause_analysis( $critical, $llm );
 
             foreach ( $analysis as $analysed ) {
-                $logger->info( 'error_root_cause', $analysed );
+                if ( $logger ) {
+                \$logger->info( 'error_root_cause', \$analysed );
+            }
             }
 
             // Trigger self-healing for critical issues (with null service guards).
