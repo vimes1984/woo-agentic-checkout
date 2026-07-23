@@ -82,16 +82,8 @@ class ErrorDetector {
         $llm      = $this->services['llm'] ?? null;
         $notifier = new \WooAgenticCheckout\Notifier();
 
-        $notifier = null;
-        if ( class_exists( '\\WooAgenticCheckout\\Notifier' ) ) {
-            $notifier = new \WooAgenticCheckout\Notifier();
-        }
-
         try {
             if ( ! $signals || ! $logger ) {
-                if ( $notifier ) {
-                    $notifier = null; // Clean up.
-                }
                 $release();
                 return array(
                     'success' => false,
@@ -191,7 +183,7 @@ class ErrorDetector {
 
         // 5. Send notifications for critical issues (with data truncation for safety).
         foreach ( $critical as $issue ) {
-            $safe_event   = sanitize_text_field( substr( $issue['event'] ?? 'Checkout Error Detected', 0, 100 ) );
+            $safe_event   = sanitize_text_field( $issue['event'] ?? 'Checkout Error Detected' );
             $safe_details = sanitize_text_field( substr( $issue['details'] ?? $issue['event'] ?? 'Unknown critical issue', 0, 500 ) );
             // Truncate sample messages to prevent oversized payloads containing stack traces.
             $safe_issue = $issue;
@@ -221,7 +213,7 @@ class ErrorDetector {
             'success'        => count( $critical ) === 0,
             'actions'        => count( $critical ),
             'errors'         => array_column( $critical, 'event' ),
-            'summary'        => ! empty( $critical )
+            'summary'        => count( $critical ) > 0
                 ? count( $critical ) . ' critical issues found, root cause analysis performed, self-healing triggered.'
                 : 'No critical issues detected.',
             'issues'         => $issues,

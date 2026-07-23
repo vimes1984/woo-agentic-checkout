@@ -179,10 +179,21 @@ class Settings {
     }
 
     /**
+     * Numeric setting bounds — applied during sanitization.
+     */
+    const NUMERIC_BOUNDS = array(
+        'ab_min_sample_size'      => array( 'min' => 10,   'max' => 100000 ),
+        'ab_min_conversions'      => array( 'min' => 1,    'max' => 10000 ),
+        'ab_confidence_threshold' => array( 'min' => 0.5,  'max' => 0.9999 ),
+        'ab_max_concurrent'       => array( 'min' => 1,    'max' => 50 ),
+    );
+
+    /**
      * Sanitize setting values.
      *
      * Preserves float precision for settings like ab_confidence_threshold (0.95)
-     * while still hardening against injection.
+     * while still hardening against injection. Clamps numeric values to
+     * configured bounds to prevent logically invalid configurations.
      *
      * @param mixed $value
      *
@@ -198,9 +209,17 @@ class Settings {
         if ( is_numeric( $value ) ) {
             // Preserve float values (e.g. ab_confidence_threshold = 0.95).
             if ( is_float( $value + 0 ) && false !== strpos( (string) $value, '.' ) ) {
-                return floatval( $value );
+                $result = floatval( $value );
+            } else {
+                $result = intval( $value );
             }
-            return intval( $value );
+            // Clamp to configured bounds if applicable.
+            $key = $this->current_sanitize_key ?? '';
+            if ( isset( self::NUMERIC_BOUNDS[ $key ] ) ) {
+                $bounds = self::NUMERIC_BOUNDS[ $key ];
+                $result = max( $bounds['min'], min( $bounds['max'], $result ) );
+            }
+            return $result;
         }
         if ( is_bool( $value ) ) {
             return $value ? 'yes' : 'no';
