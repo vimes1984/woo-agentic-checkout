@@ -221,8 +221,8 @@ class ABOptimizer {
                 $permission = $settings->get_heal_permission();
                 if ( in_array( $permission, array( 'auto_patch', 'auto_full' ), true ) ) {
                     // Sanitize LLM output before creating experiment (prompt injection defense).
-                    $exp_name        = sanitize_text_field( $new_exp['name'] );
-                    $exp_description = sanitize_textarea_field( $new_exp['description'] );
+                    $exp_name        = substr( sanitize_text_field( $new_exp['name'] ), 0, 200 );
+                    $exp_description = substr( sanitize_textarea_field( $new_exp['description'] ), 0, 1000 );
                     $exp_traffic     = min( 100, max( 10, absint( $new_exp['traffic_pct'] ?? 50 ) ) );
                     $exp_variants    = array();
                     $variant_count = 0;
