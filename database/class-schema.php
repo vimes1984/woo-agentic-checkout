@@ -58,7 +58,7 @@ class Schema {
             INDEX idx_event (event),
             INDEX idx_created (created_at),
             INDEX idx_level_created (level, created_at)
-        ) ENGINE=InnoDB {$charset_collate};";
+        ) ENGINE=InnoDB {$charset_collate} ROW_FORMAT=DYNAMIC;";
 
         // ─── A/B Experiments ──────────────────────────────────
         $table_experiments = $wpdb->prefix . 'wac_ab_experiments';
