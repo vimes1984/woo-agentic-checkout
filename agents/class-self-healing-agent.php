@@ -232,14 +232,14 @@ class SelfHealingAgent {
                     $permission
                 );
 
-                if ( $result['success'] ) {
+                if ( is_array( $result ) && ! empty( $result['success'] ) ) {
                     $results['healed']++;
                     $this->set_heal_cooldown( $issue_id );
                 } else {
                     $results['failed']++;
                 }
 
-                $results['actions_taken'][] = $result;
+                $results['actions_taken'][] = is_array( $result ) ? $result : array();
             }
         }
 
