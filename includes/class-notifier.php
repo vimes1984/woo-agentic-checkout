@@ -22,6 +22,12 @@ class Notifier {
      * @return bool
      */
     public function notify( string $severity, string $title, string $message, array $context = array() ): bool {
+        // Validate severity against known levels to prevent injection into channels.
+        $allowed_severities = array( 'info', 'warning', 'critical' );
+        if ( ! in_array( $severity, $allowed_severities, true ) ) {
+            $severity = 'info';
+        }
+
         // Always fire a hook so custom integrations can listen.
         do_action( 'wac_notification', $severity, $title, $message, $context );
 
