@@ -158,11 +158,11 @@ class Core {
         $schema->create_tables();
 
         // Schedule daily and weekly runs.
-        if ( ! wp_next_scheduled( 'wac_daily_agent_run' ) ) {
-            wp_schedule_event( time(), 'daily', 'wac_daily_agent_run' );
+        if ( function_exists( "wp_next_scheduled" ) && ! wp_next_scheduled( "wac_daily_agent_run" ) ) {
+            if ( function_exists( "wp_schedule_event" ) ) { wp_schedule_event( time(), "daily", "wac_daily_agent_run" ); }
         }
-        if ( ! wp_next_scheduled( 'wac_weekly_suggestion_run' ) ) {
-            wp_schedule_event( time(), 'weekly', 'wac_weekly_suggestion_run' );
+        if ( function_exists( "wp_next_scheduled" ) && ! wp_next_scheduled( "wac_weekly_suggestion_run" ) ) {
+            if ( function_exists( "wp_schedule_event" ) ) { wp_schedule_event( time(), "weekly", "wac_weekly_suggestion_run" ); }
         }
     }
 
