@@ -115,14 +115,16 @@ class ConversionAnalyzer {
             $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
 
             if ( $is_cold_start ) {
-                if ( $logger ) { $logger->info( 'conversion_analysis_cold_start', array(
-                    'note' => 'No order data available yet — returning baseline.',
-                ) );
+                if ( $logger ) {
+                    $logger->info( 'conversion_analysis_cold_start', array(
+                        'note' => 'No order data available yet — returning baseline.',
+                    ) );
+                }
                 $release();
                 return array(
                     'success'             => true,
                     'actions'             => 0,
-                    'errors'              => array() ); }
+                    'errors'              => array(),
                     'summary'             => 'No order data available yet. This is normal during cold start (e.g., first 24h after install).',
                     'conversion_rate_24h' => 0,
                     'conversion_rate_7d'  => 0,
