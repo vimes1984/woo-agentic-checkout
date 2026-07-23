@@ -439,7 +439,6 @@ class AdminUI {
                 <h3><span role="img" aria-label="Actions">⚡</span> Quick Actions</h3>
                 <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wac-quick-action-form" novalidate>
                     <?php wp_nonce_field( 'wac_manual_agent', 'wac_nonce' ); ?>
-                    <?php wp_nonce_field( 'wac_quick_action', 'wac_quick_nonce' ); ?>
                     <input type="hidden" name="action" value="wac_manual_agent">
                     <p>
                         <label for="wac-quick-agent-select"><?php esc_html_e( 'Run agent:', 'woo-agentic-checkout' ); ?></label>
