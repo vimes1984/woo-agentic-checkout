@@ -365,6 +365,9 @@ class SelfHealingAgent {
      * @return array Heal actions.
      */
     private function build_heal_plan( array $failing, ?\WooAgenticCheckout\LLMClient $llm ): array {
+        // Limit max failing checks sent to LLM to prevent oversized prompts.
+        $failing = array_slice( $failing, 0, 10, true );
+
         if ( count( $failing ) > 1 ) {
             $system = <<<'PROMPT'
 You are a WooCommerce site reliability agent. Several health checks are failing.
