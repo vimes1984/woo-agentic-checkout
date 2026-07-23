@@ -254,6 +254,14 @@
             return div.innerHTML;
         },
 
+        /**
+         * Escape special regex characters in a string.
+         * Prevents ReDoS and injection via pattern attributes.
+         */
+        escapeRegExp: function (str) {
+            return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        },
+
         // ─── Utilities ──────────────────────────────────────────
 
         /**
@@ -787,7 +795,7 @@
                     var $field = $(this);
                     var pattern = $field.attr('pattern');
                     if ($field.val() && $field.val().trim() !== '') {
-                        var re = new RegExp('^' + pattern + '$');
+                        var re = new RegExp('^' + self.escapeRegExp(pattern) + '$');
                         if (!re.test($field.val())) {
                             var title = $field.attr('title') || 'Invalid format.';
                             self.markFieldError($field, title);
@@ -848,7 +856,7 @@
                 if ($field.attr('required') && (!$field.val() || $field.val().trim() === '')) {
                     self.markFieldError($field, 'This field is required.');
                 } else if ($field.attr('pattern') && $field.val() && $field.val().trim() !== '') {
-                    var re = new RegExp('^' + $field.attr('pattern') + '$');
+                    var re = new RegExp('^' + self.escapeRegExp($field.attr('pattern')) + '$');
                     if (!re.test($field.val())) {
                         self.markFieldError($field, $field.attr('title') || 'Invalid format.');
                     } else {

@@ -249,9 +249,15 @@ class Schema {
         );
 
         foreach ( $tables as $table ) {
-            $table_name = sanitize_key( $wpdb->prefix . $table );
+            // Verify table_prefix is safe before constructing the drop query.
+            $prefix = sanitize_key( $wpdb->prefix );
+            $table_name = sanitize_key( $prefix . $table );
             $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         }
+
+        // Also drop events table if present.
+        $events_table = sanitize_key( $prefix . 'wac_beacon_events' );
+        $wpdb->query( "DROP TABLE IF EXISTS `{$events_table}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         $wpdb->suppress_errors( false );
         delete_option( self::DB_VERSION_KEY );
