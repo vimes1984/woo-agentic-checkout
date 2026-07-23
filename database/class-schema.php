@@ -236,6 +236,8 @@ class Schema {
     public function drop_tables() {
         global $wpdb;
 
+        $wpdb->suppress_errors( true );
+
         $tables = array(
             'wac_logs',
             'wac_ab_experiments',
@@ -251,6 +253,7 @@ class Schema {
             $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         }
 
+        $wpdb->suppress_errors( false );
         delete_option( self::DB_VERSION_KEY );
     }
 
