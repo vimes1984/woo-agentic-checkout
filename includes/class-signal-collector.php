@@ -37,6 +37,8 @@ class SignalCollector {
     const API_CONNECT_TIMEOUT = 15;
     const PARAM_VALUE_MAX_LENGTH = 100;
     const GA4_CLIENT_ID_PREFIX = 'ga4_';
+    const CONTEXT_VALUE_MAX_LENGTH = 500;
+    const CONTEXT_JSON_MAX_LENGTH = 2000;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
