@@ -244,6 +244,38 @@ PROMPT;
     /**
      * Build the user prompt with current data.
      */
+    private function sanitize_context_for_llm( $data, int $depth = 0 ) {
+        if ( $depth > 10 ) {
+            return null;
+        }
+        if ( is_string( $data ) ) {
+            $data = wp_strip_all_tags( $data );
+            $data = substr( $data, 0, 1000 );
+            $phrases = array(
+                '/\\bignore (all )?(previous|above|below).*instructions\\b/i',
+                '/\\byou are (not |an? )/i',
+                '/\\bforget (all |everything)/i',
+                '/\\bdisregard\\b/i',
+                '/\\boverride\\b/i',
+            );
+            foreach ( $phrases as $pattern ) {
+                if ( preg_match( $pattern, $data ) ) {
+                    $data = '[redacted]';
+                    break;
+                }
+            }
+            return $data;
+        }
+        if ( is_array( $data ) ) {
+            $result = array();
+            foreach ( $data as $key => $value ) {
+                $result[ $key ] = $this->sanitize_context_for_llm( $value, $depth + 1 );
+            }
+            return $result;
+        }
+        return $data;
+    }
+
     private function build_user_prompt( array $data ): string {
         return "Conversion data:\n" . wp_json_encode( $data, JSON_PRETTY_PRINT );
     }
