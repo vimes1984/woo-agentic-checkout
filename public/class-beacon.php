@@ -121,15 +121,13 @@ class Beacon {
         }
 
         // Validate event name format: alphanumeric, underscore, hyphen only.
-                if ( 1 !== preg_match( '/^[a-zA-Z0-9_-]+$/', $event ) ) {
+        if ( 1 !== preg_match( '/^[a-zA-Z0-9_-]+$/', $event ) ) {
             wp_send_json_error( array( 'message' => 'Invalid event name format.' ), 400 );
         }
 
         // Validate session format: alphanumeric, underscore, hyphen only.
         if ( 1 !== preg_match( '/^[a-zA-Z0-9_-]+$/', $session ) ) {
             wp_send_json_error( array( 'message' => 'Invalid session format.' ), 400 );
-        }
-            wp_send_json_error( array( 'message' => 'Invalid event name format.' ), 400 );
         }
 
         /**

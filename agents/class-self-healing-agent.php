@@ -19,6 +19,22 @@ class SelfHealingAgent {
     const REVISION = 'batch5.12';
 
     /**
+     * Allowed healing action types. Prevents arbitrary action execution from LLM output.
+     */
+    const ALLOWED_HEAL_ACTIONS = array(
+        'rollback_setting',
+        'revert_template',
+        'disable_plugin',
+        'clear_cache',
+        'toggle_feature',
+        'patch_javascript',
+        'patch_css',
+        'escalate',
+        'repair_tables',
+        'reschedule_cron',
+    );
+
+    /**
      * @var array Service dependencies.
      */
     private $services;
@@ -153,9 +169,14 @@ class SelfHealingAgent {
                     continue;
                 }
 
+                // Validate action against whitelist before executing.
+                $action = isset( $plan['action'] ) && in_array( $plan['action'], self::ALLOWED_HEAL_ACTIONS, true )
+                    ? $plan['action']
+                    : 'escalate';
+
                 $result = $healer->attempt_heal(
                     $issue_id,
-                    $plan['action'],
+                    $action,
                     $plan['params'] ?? array(),
                     $permission
                 );

@@ -121,7 +121,7 @@ class SelfHealer {
                 return array(
                     'success' => false,
                     'action'  => $action,
-                    'message' => $e->getMessage(),
+                    'message' => sanitize_text_field( $e->getMessage() ),
                 );
             }
         }
