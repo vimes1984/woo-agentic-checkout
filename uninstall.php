@@ -54,6 +54,10 @@ $options = array(
     'wac_notify_email',
     'wac_notify_email_enabled',
     'wac_notify_slack_enabled',
+    'wac_template_path_checkout',
+    'wac_template_path_thankyou',
+    'wac_tracked_events',
+    'wac_schema_version',
 );
 
 foreach ( $options as $option ) {
