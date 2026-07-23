@@ -168,7 +168,9 @@ function wac_init(): void {
         }
         deactivate_plugins( WAC_BASENAME, true );
         add_action( 'admin_notices', function () {
-            unset( $_GET['activate'] ); // phpcs:ignore WordPress.Security.NonceVerification
+            if ( isset( $_GET['activate'] ) ) {
+                unset( $_GET['activate'] ); // phpcs:ignore WordPress.Security.NonceVerification
+            }
             echo '<div class="notice notice-error"><p>';
             esc_html_e( 'Woo Agentic Checkout requires WooCommerce to be installed and activated. Plugin has been deactivated.', 'woo-agentic-checkout' );
             echo '</p></div>';
