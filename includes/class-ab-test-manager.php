@@ -378,7 +378,8 @@ class ABTestManager {
         foreach ( $experiments as $exp ) {
             $variant = $this->assign_variant( $exp );
             if ( $variant ) {
-                $assignments[ $exp['name'] ] = $variant['variant_key'];
+                $safe_exp_name = sanitize_text_field( $exp['name'] );
+                $assignments[ $safe_exp_name ] = $variant['variant_key'];
             }
         }
 
