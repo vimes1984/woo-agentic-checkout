@@ -336,10 +336,14 @@ class LLMClient {
     private function call_ollama( string $api_key, string $model, string $system, string $user, array $schema ): string {
         $base_url = $this->settings->get( 'llm_ollama_url', 'http://localhost:11434' );
 
-        // Validate the custom Ollama URL against SSRF targets.
+        // Validate the custom Ollama URL: must be http/https.
         $parsed = wp_parse_url( $base_url );
         if ( ! isset( $parsed['host'] ) ) {
             throw new \RuntimeException( 'Ollama URL is malformed.' );
+        }
+        $scheme = isset( $parsed['scheme'] ) ? strtolower( $parsed['scheme'] ) : '';
+        if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+            throw new \RuntimeException( 'Ollama URL must use http or https scheme.' );
         }
         $host = strtolower( $parsed['host'] );
         if ( in_array( $host, self::BLOCKED_OLLAMA_HOSTS, true ) ) {
