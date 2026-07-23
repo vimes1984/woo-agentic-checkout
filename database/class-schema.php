@@ -185,7 +185,7 @@ class Schema {
      * Schedule the daily log purge cron job (runs on plugin activation).
      */
     public function schedule_purge_cron() {
-        if ( ! wp_next_scheduled( 'wac_daily_log_purge' ) ) {
+        if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( 'wac_daily_log_purge' ) ) {
             wp_schedule_event( time(), 'daily', 'wac_daily_log_purge' );
         }
     }
@@ -194,6 +194,9 @@ class Schema {
      * Unschedule the daily log purge cron job (runs on plugin deactivation).
      */
     public function unschedule_purge_cron() {
+        if ( ! function_exists( 'wp_next_scheduled' ) ) {
+            return;
+        }
         $timestamp = wp_next_scheduled( 'wac_daily_log_purge' );
         if ( $timestamp ) {
             wp_unschedule_event( $timestamp, 'wac_daily_log_purge' );
