@@ -112,6 +112,13 @@ class Beacon {
             $data = array();
         }
 
+        // Recursively sanitize data values to prevent stored XSS.
+        array_walk_recursive( $data, function ( &$value ) {
+            if ( is_string( $value ) ) {
+                $value = sanitize_textarea_field( $value );
+            }
+        } );
+
         if ( empty( $event ) || empty( $session ) ) {
             wp_send_json_error( array( 'message' => 'Missing required fields.' ), 400 );
         }
