@@ -261,7 +261,7 @@ class SelfHealer {
      * Revert a template override to default.
      */
     private function do_revert_template( array $params ): array {
-        $template = $params['template'] ?? '';
+        $template = sanitize_file_name( $params['template'] ?? '' );
 
         if ( empty( $template ) ) {
             throw new \InvalidArgumentException( 'Template name required.' );
@@ -276,7 +276,7 @@ class SelfHealer {
         }, 999, 2 );
 
         return array(
-            'message' => "Reverted template: {$template}",
+            'message' => 'Reverted template: ' . sanitize_file_name( $template ),
         );
     }
 

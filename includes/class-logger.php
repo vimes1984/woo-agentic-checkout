@@ -202,6 +202,30 @@ class Logger {
     }
 
     /**
+     * Limit array depth to prevent stack overflow during JSON encoding.
+     * Replaces nested values beyond $max_depth with a marker string.
+     *
+     * @param array $array     Input array.
+     * @param int   $max_depth Maximum allowed depth.
+     * @param int   $depth     Current recursion depth.
+     * @return array
+     */
+    private static function limit_array_depth( array $array, int $max_depth, int $depth = 0 ): array {
+        if ( $depth >= $max_depth ) {
+            return array( '__truncated__' => true );
+        }
+        $result = array();
+        foreach ( $array as $key => $value ) {
+            if ( is_array( $value ) ) {
+                $result[ $key ] = self::limit_array_depth( $value, $max_depth, $depth + 1 );
+            } else {
+                $result[ $key ] = $value;
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Purge old logs.
      *
      * @param int $days Keep logs newer than this many days.
