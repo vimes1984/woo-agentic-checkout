@@ -151,6 +151,11 @@ class ErrorDetector {
             }
         }
 
+        // Cap total issues to prevent oversized analysis.
+        if ( count( $issues ) > 20 ) {
+            $issues = array_slice( $issues, 0, 20 );
+        }
+
         // 2. Check checkout funnel anomalies.
         $funnel = $signals->get_funnel_data( 24 );
         $funnel_issues = $this->detect_funnel_anomalies( $funnel );
