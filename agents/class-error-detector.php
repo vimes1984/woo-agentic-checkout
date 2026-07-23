@@ -23,6 +23,14 @@ class ErrorDetector {
      */
     const MIN_SAMPLES_FOR_LLM = 3;
     const MAX_ERROR_GROUP_SIZE = 50;
+    const FUNNEL_STEPS = array(
+        'checkout_started',
+        'billing_completed',
+        'shipping_completed',
+        'payment_selected',
+        'place_order_clicked',
+        'order_placed',
+    );
     const FUNNEL_DROPOFF_THRESHOLD = 30;
     const MAX_ISSUES = 20;
     const ALLOWED_HEAL_ACTIONS = array(
