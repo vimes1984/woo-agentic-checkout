@@ -101,7 +101,7 @@ class ErrorHandler {
         if ( self::$handling ) {
             // Still let the previous handler run so WordPress functions normally.
             if ( self::$previous_handler ) {
-                return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+                return (bool) call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
             }
             return false;
         }
@@ -109,7 +109,7 @@ class ErrorHandler {
         // Only capture errors from our plugin + WooCommerce core.
         if ( ! self::is_relevant_path( $errfile ) ) {
             if ( self::$previous_handler ) {
-                return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+                return (bool) call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
             }
             return false;
         }
@@ -117,7 +117,7 @@ class ErrorHandler {
         // Suppress E_NOTICE / E_WARNING from non-critical sources (noise).
         if ( $errno <= E_WARNING && false === self::is_critical_checkout_error( $errstr, $errfile ) ) {
             if ( self::$previous_handler ) {
-                return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+                return (bool) call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
             }
             return false;
         }
@@ -146,7 +146,7 @@ class ErrorHandler {
 
         // Chain to previous handler.
         if ( self::$previous_handler ) {
-            return call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
+            return (bool) call_user_func( self::$previous_handler, $errno, $errstr, $errfile, $errline );
         }
 
         return false;
