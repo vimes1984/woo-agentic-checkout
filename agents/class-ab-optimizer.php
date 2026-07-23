@@ -306,9 +306,11 @@ class ABOptimizer {
             }
         }
         if ( ! $has_data ) {
-            $logger->info( 'ab_no_data_for_experiment', array(
+            if ( $logger ) {
+                $logger->info( 'ab_no_data_for_experiment', array(
                 'note' => 'Insufficient data to propose experiment (cold start).',
-            ) );
+                ) );
+            }
             return null;
         }
 
