@@ -120,8 +120,12 @@ class Beacon {
         $session = isset( $_POST['session'] ) ? sanitize_text_field( wp_unslash( $_POST['session'] ) ) : '';
         $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
 
+        // Ensure raw_data is a string before processing.
+        if ( ! is_string( $raw_data ) ) {
+            $raw_data = '';
+        }
         // Limit raw data to 10KB to prevent oversized payload storage.
-        if ( is_string( $raw_data ) && strlen( $raw_data ) > 10240 ) {
+        if ( strlen( $raw_data ) > 10240 ) {
             $raw_data = substr( $raw_data, 0, 10240 );
         }
 
