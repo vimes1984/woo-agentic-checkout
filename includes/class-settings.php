@@ -81,7 +81,7 @@ class Settings {
      * @param mixed  $default Fallback.
      * @return mixed
      */
-    public function get_display( string $key, $default = null ) {
+    public function get_display( string $key, $default = null ): mixed {
         $value = $this->get( $key, $default );
         if ( in_array( $key, self::API_KEY_SETTINGS, true ) && is_string( $value ) && strlen( $value ) > 4 ) {
             return substr( $value, 0, 4 ) . str_repeat( '•', min( 20, strlen( $value ) - 4 ) );
@@ -97,7 +97,7 @@ class Settings {
      *
      * @return mixed
      */
-    public function get( string $key, $default = null ) {
+    public function get( string $key, $default = null ): mixed {
         $value = get_option( self::PREFIX . $key, null );
 
         if ( null === $value ) {
@@ -220,7 +220,7 @@ class Settings {
     /**
      * Register settings with WordPress Settings API.
      */
-    public function register_settings() {
+    public function register_settings(): void {
         foreach ( $this->defaults as $key => $default ) {
             register_setting( 'wac_settings', self::PREFIX . $key, array(
                 'default'           => $default,
@@ -255,7 +255,7 @@ class Settings {
      *
      * @return mixed
      */
-    public function sanitize( $value, $option_name = '' ) {
+    public function sanitize( $value, $option_name = '' ): mixed {
         if ( is_string( $value ) ) {
             return sanitize_text_field( $value );
         }

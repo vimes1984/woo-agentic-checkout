@@ -353,6 +353,7 @@
          */
         _sendRaw: function (event, data) {
             if (!this.sessionId) return;
+            if (!this._ajaxUrl || typeof wacBeacon === 'undefined') return;
 
             // Validate event name before sending.
             if (typeof event !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(event)) {
@@ -391,7 +392,7 @@
             }
 
             $.ajax({
-                url: wacBeacon.ajaxUrl,
+                url: this._ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'wac_beacon',
