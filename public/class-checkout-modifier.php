@@ -150,6 +150,14 @@ class CheckoutModifier {
         $custom_path   = get_option( "wac_template_path_{$template_key}", '' );
         $template_file = get_option( "wac_template_file_{$template_key}", '' );
 
+        // Cap template path lengths to prevent buffer overflow in file operations.
+        if ( strlen( $custom_path ) > 500 ) {
+            $custom_path = substr( $custom_path, 0, 500 );
+        }
+        if ( strlen( $template_file ) > 200 ) {
+            $template_file = substr( $template_file, 0, 200 );
+        }
+
         if ( empty( $custom_path ) && empty( $template_file ) ) {
             return;
         }
