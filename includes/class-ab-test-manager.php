@@ -134,11 +134,11 @@ class ABTestManager {
         }
 
         // Validate experiment name max length (DB column is VARCHAR(255)).
-        if ( strlen( $name ) > 255 ) {
+        if ( mb_strlen( $name ) > 255 ) {
             return 0;
         }
         // Validate experiment description max length (free-form, limit to 10,000).
-        if ( strlen( $description ) > 10000 ) {
+        if ( mb_strlen( $description ) > 10000 ) {
             return 0;
         }
 
@@ -148,11 +148,11 @@ class ABTestManager {
                 return 0;
             }
             // Validate variant key max length (DB column is VARCHAR(64)).
-            if ( strlen( $variant['key'] ) > 64 ) {
+            if ( mb_strlen( $variant['key'] ) > 64 ) {
                 return 0;
             }
             // Validate variant name max length (DB column is VARCHAR(255)).
-            if ( strlen( $variant['name'] ) > 255 ) {
+            if ( mb_strlen( $variant['name'] ) > 255 ) {
                 return 0;
             }
             // Validate config_snapshot is valid JSON if provided.

@@ -195,9 +195,13 @@ class SuggestionGenerator {
             );
         }
 
+        // Sanitize order data to remove PII before sending to LLM.
+        $safe_orders_24h = $this->sanitize_order_data( $orders_24h );
+        $safe_orders_7d  = $this->sanitize_order_data( $orders_7d );
+
         $context = array(
-            'orders_24h'            => $orders_24h,
-            'orders_7d'             => $orders_7d,
+            'orders_24h'            => $safe_orders_24h,
+            'orders_7d'             => $safe_orders_7d,
             'funnel'                => $funnel,
             'experiments'           => $safe_experiments,
             'recent_errors'         => $safe_errors,
@@ -224,5 +228,26 @@ class SuggestionGenerator {
         $context = apply_filters( 'wac_suggestion_context', $context );
 
         return $context;
+    }
+
+    /**
+     * Sanitize order data to remove personally identifiable information before context is sent to LLM.
+     *
+     * @param mixed $orders Raw order data from signal collector.
+     * @return array Safe aggregate data.
+     */
+    private function sanitize_order_data( $orders ): array {
+        if ( ! is_array( $orders ) ) {
+            return array();
+        }
+        // Allow only aggregate/safe keys.
+        $allowed_keys = array( 'total_orders', 'total_revenue', 'avg_order_value', 'completed', 'pending', 'failed', 'cancelled', 'refunded', 'conversion_rate', 'start_date', 'end_date', 'interval' );
+        $safe = array();
+        foreach ( $orders as $key => $value ) {
+            if ( in_array( $key, $allowed_keys, true ) ) {
+                $safe[ $key ] = is_numeric( $value ) ? $value : sanitize_text_field( (string) $value );
+            }
+        }
+        return $safe;
     }
 }

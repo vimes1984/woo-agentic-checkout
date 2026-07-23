@@ -109,7 +109,23 @@ class Settings {
     }
 
     /**
-     * Set a setting value with bounds validation.
+     * Toggle settings that only accept 'yes' or 'no'.
+     */
+    const TOGGLE_SETTINGS = array(
+        'signal_collection_enabled',
+        'agent_conversion_analyzer_enabled',
+        'agent_ab_optimizer_enabled',
+        'agent_error_detector_enabled',
+        'agent_suggestion_generator_enabled',
+        'agent_self_healing_enabled',
+        'notify_email_enabled',
+        'notify_slack_enabled',
+        'auto_suggest_enabled',
+        'debug_mode',
+    );
+
+    /**
+     * Set a setting value with bounds and toggle validation.
      *
      * @param string $key
      * @param mixed  $value
@@ -121,6 +137,10 @@ class Settings {
         if ( is_numeric( $value ) && isset( self::NUMERIC_BOUNDS[ $key ] ) ) {
             $bounds = self::NUMERIC_BOUNDS[ $key ];
             $value  = max( $bounds['min'], min( $bounds['max'], $value ) );
+        }
+        // Validate toggle settings only accept 'yes' or 'no'.
+        if ( in_array( $key, self::TOGGLE_SETTINGS, true ) && is_string( $value ) && ! in_array( $value, array( 'yes', 'no' ), true ) ) {
+            $value = 'no'; // Default to no for invalid values.
         }
         return update_option( self::PREFIX . $key, $value );
     }
