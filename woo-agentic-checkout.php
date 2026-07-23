@@ -210,7 +210,7 @@ function wac_uninstall(): void {
     // including API keys (wac_llm_api_key, wac_ga4_api_secret) that would otherwise
     // be left behind and leak credentials.
     global $wpdb;
-    if ( isset( $wpdb ) ) {
+    if ( isset( $wpdb ) && is_object( $wpdb ) ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
