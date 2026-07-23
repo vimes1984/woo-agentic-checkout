@@ -70,7 +70,7 @@ class SuggestionGenerator {
         $notifier       = new \WooAgenticCheckout\Notifier();
 
         if ( 'yes' !== $settings->get( 'auto_suggest_enabled', 'yes' ) ) {
-            $logger->info( 'suggestion_generator_skipped', array( 'reason' => 'auto_suggest_disabled' ) );
+            $logger && $logger && $logger->info( 'suggestion_generator_skipped', array( 'reason' => 'auto_suggest_disabled' ) );
             return array(
                 'success' => false,
                 'actions' => 0,
@@ -125,7 +125,7 @@ class SuggestionGenerator {
             $summary .= '.';
         }
 
-        $logger->info( 'suggestion_generator_run', array(
+        $logger && $logger && $logger->info( 'suggestion_generator_run', array(
             'generated'    => count( $suggestions ),
             'auto_applied' => $auto_applied,
             'permission'   => $permission,
