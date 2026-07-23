@@ -32,6 +32,7 @@ class SuggestionEngine {
     const REVISION = 'batch5.18';
     const MAX_FIELDS = 50;
     const MAX_REMOVED_FIELDS = 20;
+    const MAX_PENDING_LIMIT = 100;
 
     /**
      * @param LLMClient $llm
