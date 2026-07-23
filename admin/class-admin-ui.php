@@ -83,7 +83,7 @@ class AdminUI {
                    role="tab" aria-selected="<?php echo 'experiments' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'experiments' === $tab ? 'page' : 'false'; ?>">
                    <?php
-                   $exp_count = count( $this->ab->get_active_experiments() );
+                   $exp_count = is_array( $this->ab->get_active_experiments() ) ? count( $this->ab->get_active_experiments() ) : 0;
                    ?>
                    🧪 Experiments<?php if ( $exp_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $exp_count ); ?></span><?php endif; ?>
                 </a>
@@ -91,7 +91,7 @@ class AdminUI {
                    class="nav-tab <?php echo 'suggestions' === $tab ? 'nav-tab-active' : ''; ?>"
                    role="tab" aria-selected="<?php echo 'suggestions' === $tab ? 'true' : 'false'; ?>"
                    aria-current="<?php echo 'suggestions' === $tab ? 'page' : 'false'; ?>">
-                   <?php $sugg_count = $this->suggest->get_pending_count(); ?>
+                   <?php $sugg_count = is_array( $this->suggest->get_pending_count() ) ? count( $this->suggest->get_pending_count() ) : (int) $this->suggest->get_pending_count(); ?>
                    💡 Suggestions<?php if ( $sugg_count > 0 ) : ?> <span class="wac-tab-count"><?php echo esc_html( $sugg_count ); ?></span><?php endif; ?>
                 </a>
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=wac-dashboard&tab=agents' ) ); ?>"

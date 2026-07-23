@@ -1162,7 +1162,6 @@
 
             if (this._refreshInterval) { clearInterval(this._refreshInterval); }
             this._refreshInterval = setInterval(function () {
-                var href = window.location.href;
                 // Use origin + pathname to avoid query/hash injection.
                 var url = window.location.origin + window.location.pathname;
                 var params = new URLSearchParams(window.location.search);

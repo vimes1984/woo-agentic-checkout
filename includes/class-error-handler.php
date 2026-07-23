@@ -178,7 +178,7 @@ class ErrorHandler {
 
         self::safe_log( 'fatal_error', array(
             'type'    => 'fatal',
-            'message' => $error['message'] ?? '',
+            'message' => isset( $error['message'] ) ? substr( $error['message'], 0, 500 ) : '',
             'file'    => self::short_path( $error['file'] ?? '' ),
             'line'    => $error['line'] ?? 0,
         ) );
