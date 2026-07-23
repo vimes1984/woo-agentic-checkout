@@ -27,6 +27,7 @@ class ErrorDetector {
     const NOTIFICATION_EVENT_MAX_LENGTH = 100;
     const NOTIFICATION_DETAILS_MAX_LENGTH = 500;
     const SAMPLE_MESSAGE_MAX_LENGTH = 500;
+    const LOCK_TIMEOUT = 600; # 10 minutes
     const FUNNEL_STEPS = array(
         'checkout_started',
         'billing_completed',
