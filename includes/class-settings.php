@@ -63,6 +63,15 @@ class Settings {
     );
 
     /**
+     * Settings that store API keys — can be masked for display.
+     */
+    const API_KEY_SETTINGS = array(
+        'llm_api_key',
+        'ga4_api_secret',
+        'ga4_credentials_json',
+    );
+
+    /**
      * Get a setting value.
      *
      * @param string $key     Setting key (without prefix).

@@ -340,6 +340,14 @@
         _sendRaw: function (event, data) {
             if (!this.sessionId) return;
 
+            // Validate sessionId format before sending.
+            if (!/^[a-zA-Z0-9_-]+$/.test(this.sessionId)) {
+                if (window.console && console.warn) {
+                    console.warn('WAC beacon: invalid sessionId, skipping send');
+                }
+                return;
+            }
+
             $.ajax({
                 url: wacBeacon.ajaxUrl,
                 type: 'POST',
