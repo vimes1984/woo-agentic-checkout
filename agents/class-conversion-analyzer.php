@@ -109,7 +109,7 @@ class ConversionAnalyzer {
 
             // Cold start / no-data guard.
             $empty_order = static function ( $orders ): bool {
-                return empty( $orders ) || ! isset( $orders['total_orders'] ) || (int) $orders['total_orders'] < 1;
+                return empty( $orders ) || ! isset( $orders['orders'] ) || (int) $orders['orders'] < 1;
             };
 
             $is_cold_start = $empty_order( $orders_24h ) && $empty_order( $orders_7d );
