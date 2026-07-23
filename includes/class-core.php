@@ -548,11 +548,12 @@ class Core {
      *
      * @return array<string, string>
      */
-    private function get_active_variant_assignments() {
+    private function get_active_variant_assignments(): array {
         if ( ! isset( $this->services['ab'] ) ) {
             return array();
         }
-        return $this->services['ab']->get_session_variants();
+        $variants = $this->services['ab']->get_session_variants();
+        return is_array( $variants ) ? $variants : array();
     }
 
     /**
