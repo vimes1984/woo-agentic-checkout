@@ -306,15 +306,6 @@
          * @param {jQuery} $el    - Target element.
          * @param {number} offset - Extra offset from top (default: 40).
          */
-        smoothScroll: function ($el, offset) {
-            offset = offset || 40;
-            if ($el && $el.length) {
-                $('html, body').animate({
-                    scrollTop: $el.offset().top - offset
-                }, 250);
-            }
-        },
-
         /**
          * Debounce a function call.
          */
