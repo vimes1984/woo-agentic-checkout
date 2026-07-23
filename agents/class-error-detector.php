@@ -117,7 +117,8 @@ class ErrorDetector {
                 'issues_found' => count( $wc_issues ),
                 'critical'     => 0,
                 'note'         => 'Zero errors in the last hour (cold start or clean state).',
-            ) );
+                ) );
+            }
 
             $release();
             return array(
