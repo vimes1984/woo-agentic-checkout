@@ -162,6 +162,7 @@ class Schema {
             rollback_data JSON,
             result TEXT,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_issue_id_action (issue_id, action),
             INDEX idx_issue (issue_id),
             INDEX idx_action (action),
             INDEX idx_created (created_at)
