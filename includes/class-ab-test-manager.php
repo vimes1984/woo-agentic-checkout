@@ -1896,9 +1896,10 @@ class ABTestManager {
      */
     public function update_description( int $experiment_id, string $description ) {
         global $wpdb;
+        $safe_description = mb_substr( sanitize_textarea_field( $description ), 0, 10000 );
         $wpdb->update(
             $this->table_experiments,
-            array( 'description' => sanitize_textarea_field( $description ) ),
+            array( 'description' => $safe_description ),
             array( 'id' => $experiment_id ),
             array( '%s' ),
             array( '%d' )
