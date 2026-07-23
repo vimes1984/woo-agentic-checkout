@@ -211,7 +211,7 @@ class CheckoutModifier {
             return $this->session_config;
         }
 
-        $variants = $this->ab->get_session_variants();
+        $variants = $this->ab ? $this->ab->get_session_variants() : array();
 
         if ( empty( $variants ) ) {
             $this->session_config = array();
@@ -219,7 +219,7 @@ class CheckoutModifier {
         }
 
         // Get the full variant config from AB test manager.
-        $experiments = $this->ab->get_active_experiments();
+        $experiments = $this->ab ? $this->ab->get_active_experiments() : array();
         $merged      = array();
         $found_any   = false;
 
