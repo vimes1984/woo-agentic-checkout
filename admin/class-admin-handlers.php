@@ -226,6 +226,7 @@ class AdminHandlers {
 
         $suggestion_id = isset( $_POST['suggestion_id'] ) ? absint( wp_unslash( $_POST['suggestion_id'] ) ) : 0;
         $reason        = isset( $_POST['reason'] ) ? sanitize_text_field( wp_unslash( $_POST['reason'] ) ) : '';
+        $reason        = mb_substr( $reason, 0, 500 ); // Max 500 chars.
 
         if ( $suggestion_id > 0 ) {
             $core   = Core::get_instance();

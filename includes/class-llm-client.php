@@ -625,7 +625,12 @@ class LLMClient {
      * @return int Estimated token count.
      */
     private function estimate_tokens( string $text ): int {
-        return (int) ceil( mb_strlen( $text ) * self::TOKEN_RATIO );
+        $est = (int) ceil( (float) mb_strlen( $text ) * self::TOKEN_RATIO );
+        // Safeguard against integer overflow on 32-bit systems.
+        if ( $est < 0 || $est > self::MAX_PROMPT_TOKENS * 2 ) {
+            return self::MAX_PROMPT_TOKENS;
+        }
+        return $est;
     }
 
     // ─── Rate Limiting ─────────────────────────────────────────────────
