@@ -104,7 +104,8 @@ class ConversionAnalyzer {
             $orders_24h  = $signals->get_recent_orders( 24 );
             $orders_7d   = $signals->get_recent_orders( 168 );
             $funnel      = $signals->get_funnel_data( 24 );
-            $experiments = $this->services['ab']->get_active_experiments();
+            $ab_svc      = $this->services['ab'] ?? null;
+            $experiments = $ab_svc ? $ab_svc->get_active_experiments() : array();
 
             // Cold start / no-data guard.
             $empty_order = static function ( $orders ): bool {

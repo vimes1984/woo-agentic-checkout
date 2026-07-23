@@ -147,6 +147,13 @@ class AdminHandlers {
             exit;
         }
 
+        // Validate against allowed agents to prevent arbitrary key injection.
+        if ( ! in_array( $agent_key, Core::ALLOWED_AGENTS, true ) ) {
+            $this->logger->warning( 'manual_agent_invalid_key', array( 'agent' => $agent_key ) );
+            wp_safe_redirect( add_query_arg( array( 'wac_msg' => 'no_agent', 'wac_js' => '1' ), wp_get_referer() ) );
+            exit;
+        }
+
         $core = Core::get_instance();
         $agent_manager = $core->get_service( 'agents' );
 
