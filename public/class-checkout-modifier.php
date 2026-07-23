@@ -372,7 +372,11 @@ class CheckoutModifier {
         // Cap hidden fields at 20 to prevent excessive CSS generation.
         $hide_keys = array_slice( $hide_keys, 0, 20 );
         $css_rules = array();
+        // Ensure keys are strings to prevent type confusion in CSS generation.
         foreach ( $hide_keys as $key ) {
+            if ( ! is_string( $key ) ) {
+                continue;
+            }
             $safe_key    = sanitize_html_class( $key );
             $css_rules[] = "#{$safe_key}_field { display: none !important; }";
         }
