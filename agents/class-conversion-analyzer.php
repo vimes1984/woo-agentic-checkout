@@ -20,6 +20,7 @@ class ConversionAnalyzer {
      * Agent revision for tracking prompt/behaviour changes.
      */
     const REVISION = 'batch5.12';
+    const ANALYSIS_VERSION = '1.0';
 
     /**
      * @var array Service dependencies.
