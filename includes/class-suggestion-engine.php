@@ -30,6 +30,8 @@ class SuggestionEngine {
      * Engine revision for tracking behaviour changes.
      */
     const REVISION = 'batch5.18';
+    const MAX_FIELDS = 50;
+    const MAX_REMOVED_FIELDS = 20;
 
     /**
      * @param LLMClient $llm
