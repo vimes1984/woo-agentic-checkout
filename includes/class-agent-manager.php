@@ -74,7 +74,8 @@ class AgentManager {
         $logger
     ) {
         $this->services = compact( 'llm', 'signals', 'ab', 'healer', 'suggest', 'settings', 'logger' );
-        $this->failure_counts = get_option( 'wac_agent_failure_counts', array() );
+        $stored = get_option( 'wac_agent_failure_counts', array() );
+        $this->failure_counts = is_array( $stored ) ? $stored : array();
         $this->register_agents();
     }
 

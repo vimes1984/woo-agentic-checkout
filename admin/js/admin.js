@@ -1294,14 +1294,15 @@
 
         /**
          * Scroll a target element into view with smooth animation.
+         * Accepts a jQuery object or CSS selector string.
          */
         smoothScroll: function (selector, offset) {
-            offset = offset || 0;
+            offset = offset || 40;
             var $el = $(selector);
             if ($el.length) {
                 $('html, body').animate({
                     scrollTop: $el.offset().top - offset
-                }, 300);
+                }, 250);
             }
         },
 
