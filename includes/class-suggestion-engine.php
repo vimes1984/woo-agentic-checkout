@@ -202,7 +202,7 @@ class SuggestionEngine {
 
         $action_data = json_decode( $suggestion['action_data'], true );
         if ( JSON_ERROR_NONE !== json_last_error() ) {
-            return new \WP_Error( 'invalid_action_data', 'Action data is not valid JSON: ' . json_last_error_msg() );
+            return new \WP_Error( 'invalid_action_data', __( 'Action data is not valid JSON.', 'woo-agentic-checkout' ) );
         }
 
         // Execute the action.
