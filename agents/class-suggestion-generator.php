@@ -165,7 +165,6 @@ class SuggestionGenerator {
         $experiments   = $ab->get_experiments( '', 10 );
         // Ensure funnel data is array to prevent foreach errors.
         $funnel        = is_array( $funnel ) ? $funnel : array();
-        $funnel        = is_array( $funnel ) ? $funnel : array();
         $recent_errors = $signals->get_recent_errors( 24, 20 );
 
         // Guard: ensure expected types for downstream consumers.
