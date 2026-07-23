@@ -405,6 +405,12 @@ class AdminHandlers {
             $this->json_error( __( 'Agent key is required.', 'woo-agentic-checkout' ) );
         }
 
+        // Validate against allowed agents to prevent arbitrary key injection.
+        if ( ! in_array( $agent_key, Core::ALLOWED_AGENTS, true ) ) {
+            $this->logger->warning( 'ajax_agent_invalid_key', array( 'agent' => $agent_key ) );
+            $this->json_error( __( 'Invalid agent key.', 'woo-agentic-checkout' ) );
+        }
+
         $core          = Core::get_instance();
         $agent_manager = $core->get_service( 'agents' );
 

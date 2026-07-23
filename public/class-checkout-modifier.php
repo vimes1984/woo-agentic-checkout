@@ -328,7 +328,7 @@ class CheckoutModifier {
             } else {
                 // Fallback: inject via wp_head.
                 add_action( 'wp_head', function () use ( $css ) {
-                    echo '<style id="wac-variant-hide">' . $css . '</style>';
+                    echo '<style id="wac-variant-hide">' . esc_html( \$css ) . '</style>';
                 }, 100 );
             }
         }
