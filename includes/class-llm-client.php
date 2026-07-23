@@ -409,7 +409,8 @@ class LLMClient {
             $body,
             array(
                 'Authorization: Bearer ' . $api_key,
-                'HTTP-Referer: ' . home_url(),
+                // Only send scheme+host to avoid leaking internal paths/query params.
+                'HTTP-Referer: ' . esc_url_raw( home_url( '/' ) ),
             )
         );
     }

@@ -328,7 +328,7 @@
          * @param {Function} callback - Invoked if confirmed.
          */
         confirmAction: function (message, callback) {
-            if (window.confirm(message)) {
+            if (window.confirm(String(message))) {
                 callback();
             }
         },
@@ -419,7 +419,7 @@
                         .find('.wac-spinner').removeClass('wac-hidden');
 
                     $.ajax({
-                        url: wacData.restUrl + '/suggestions/' + id + '/apply',
+                        url: wacData.restUrl + '/suggestions/' + encodeURIComponent(id) + '/apply',
                         type: 'POST',
                         beforeSend: function (xhr) {
                             xhr.setRequestHeader('X-WP-Nonce', wacData.nonce);
