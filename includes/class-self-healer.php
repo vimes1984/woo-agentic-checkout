@@ -219,7 +219,7 @@ class SelfHealer {
         }
         unset( $row );
 
-        return \$rows;
+        return $rows;
     }
 
     // ─── Action Implementations ──────────────────────────────────

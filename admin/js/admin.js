@@ -361,7 +361,11 @@
             messages.exp_placeholder.text    = messages.exp_placeholder.text || 'Experiment creation wizard coming soon!';
             messages.service_unavailable.text = messages.service_unavailable.text || 'Service unavailable. Please refresh and try again.';
 
-            var notice = messages[msg] || { text: msg, type: 'info' };
+            // Ignore unknown messages — prevents phishing via arbitrary URL param values.
+            if ( ! messages[ msg ] ) {
+                return;
+            }
+            var notice = messages[ msg ];
 
             // Override success with agent name if present.
             var agent = this.getQueryParam('wac_agent');
