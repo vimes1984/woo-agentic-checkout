@@ -23,6 +23,8 @@ class SignalCollector {
     const GA4_RATE_LIMIT_SECONDS = 2;
     const GA4_REPORT_RATE_LIMIT_SECONDS = 60;
     const MAX_ERROR_SAMPLES = 500;
+    const MAX_LOOKBACK_HOURS = 168;
+    const MIN_LOOKBACK_HOURS = 1;
 
     /**
      * Send a checkout event to GA4 Measurement Protocol.
