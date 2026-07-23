@@ -978,7 +978,7 @@
                 // Persist filter state in sessionStorage.
                 var filterKey = 'wac_filter_' + ($input.attr('id') || 'default');
                 if (query) {
-                    sessionStorage.setItem(filterKey, query);
+                    try { sessionStorage.setItem(filterKey, query); } catch (e) { /* storage may be unavailable */ }
                 } else {
                     try { sessionStorage.removeItem(filterKey); } catch (e) { /* storage may be unavailable */ }
                 }
