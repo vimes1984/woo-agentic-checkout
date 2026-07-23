@@ -124,7 +124,8 @@ class Schema {
             INDEX idx_session (session_id),
             INDEX idx_event (event),
             INDEX idx_created (created_at),
-            INDEX idx_beacon_session_event (session_id, event(50))
+            INDEX idx_beacon_session_event (session_id, event(50)),
+            INDEX idx_event_created (event, created_at)
         ) ENGINE=InnoDB {$charset_collate};";
 
         // ─── Suggestions ──────────────────────────────────────
