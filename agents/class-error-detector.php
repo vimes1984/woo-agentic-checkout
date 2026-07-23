@@ -164,16 +164,19 @@ class ErrorDetector {
                 $logger->info( 'error_root_cause', $analysed );
             }
 
-            // Trigger self-healing for critical issues.
-            $healer = $this->services['healer'];
-            foreach ( $analysis as $issue ) {
-                if ( isset( $issue['heal_action'] ) ) {
-                    $healer->attempt_heal(
-                        $issue['issue_id'] ?? uniqid( 'err_' ),
-                        $issue['heal_action'],
-                        $issue['heal_params'] ?? array(),
-                        $this->services['settings']->get_heal_permission()
-                    );
+            // Trigger self-healing for critical issues (with null service guards).
+            $healer   = $this->services['healer'] ?? null;
+            $settings = $this->services['settings'] ?? null;
+            if ( $healer && $settings ) {
+                foreach ( $analysis as $issue ) {
+                    if ( isset( $issue['heal_action'] ) ) {
+                        $healer->attempt_heal(
+                            $issue['issue_id'] ?? uniqid( 'err_' ),
+                            $issue['heal_action'],
+                            $issue['heal_params'] ?? array(),
+                            $settings->get_heal_permission()
+                        );
+                    }
                 }
             }
         }
