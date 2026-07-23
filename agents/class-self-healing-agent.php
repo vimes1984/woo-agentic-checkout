@@ -364,7 +364,7 @@ class SelfHealingAgent {
      *
      * @return array Heal actions.
      */
-    private function build_heal_plan( array $failing, $llm ): array {
+    private function build_heal_plan( array $failing, ?\WooAgenticCheckout\LLMClient $llm ): array {
         if ( count( $failing ) > 1 ) {
             $system = <<<'PROMPT'
 You are a WooCommerce site reliability agent. Several health checks are failing.
@@ -506,7 +506,7 @@ PROMPT;
         set_transient( $key, microtime( true ), self::HEAL_COOLDOWN_SECONDS );
     }
 
-    private function build_heal_plan_from_errors( array $errors, $llm ): array {
+    private function build_heal_plan_from_errors( array $errors, ?\WooAgenticCheckout\LLMClient $llm ): array {
         // Cold start guard: if no errors, skip LLM call.
         if ( empty( $errors ) ) {
             return array();

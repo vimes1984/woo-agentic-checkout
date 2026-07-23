@@ -50,7 +50,8 @@ class Notifier {
      * @return bool
      */
     public function critical( string $title, string $message, array $context = array() ): bool {
-        return $this->notify( 'critical', "[WAC CRITICAL] {$title}", $message, $context );
+        $safe_title = sanitize_text_field( $title );
+        return $this->notify( 'critical', '[WAC CRITICAL] ' . $safe_title, $message, $context );
     }
 
     /**
