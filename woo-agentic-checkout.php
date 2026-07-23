@@ -208,6 +208,12 @@ function wac_uninstall() {
     delete_option( 'wac_settings' );
     delete_option( 'wac_llm_calls_hourly' );
 
+    // Remove network-only options if this is multisite.
+    if ( is_multisite() ) {
+        delete_site_option( 'wac_db_version' );
+        delete_site_option( 'wac_settings' );
+    }
+
     // Clear all scheduled cron events.
     wp_clear_scheduled_hook( 'wac_agent_tick' );
     wp_clear_scheduled_hook( 'wac_daily_agent_run' );
