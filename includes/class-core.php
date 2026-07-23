@@ -205,7 +205,7 @@ class Core {
             return;
         }
 
-        $msg    = sanitize_key( wp_unslash( $_GET['wac_msg'] ) );
+        $msg    = ( isset( $_GET['wac_msg'] ) && is_string( $_GET['wac_msg'] ) ) ? sanitize_key( wp_unslash( $_GET['wac_msg'] ) ) : '';
         $agent  = isset( $_GET['wac_agent'] ) ? sanitize_key( wp_unslash( $_GET['wac_agent'] ) ) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
