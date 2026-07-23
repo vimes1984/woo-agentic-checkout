@@ -83,11 +83,12 @@ class Notifier {
      * @return bool
      */
     public function heal_applied( array $heal_result ): bool {
-        $status = $heal_result['success'] ? '✅' : '❌';
+        $status   = $heal_result['success'] ? '✅' : '❌';
+        $safe_action = isset( $heal_result['action'] ) ? sanitize_key( $heal_result['action'] ) : 'unknown';
         return $this->notify(
             $heal_result['success'] ? 'info' : 'warning',
-            "{$status} Healing Action: {$heal_result['action']}",
-            $heal_result['message'],
+            "{$status} Healing Action: {$safe_action}",
+            $heal_result['message'] ?? '',
             $heal_result
         );
     }
