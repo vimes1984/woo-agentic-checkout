@@ -251,6 +251,11 @@ class SuggestionEngine {
      * @return bool True if rejection succeeded.
      */
     public function reject_suggestion( int $id, string $reason = '' ): bool {
+        // Capability check: only users with manage_options can reject suggestions.
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return false;
+        }
+
         global $wpdb;
 
         if ( $id < 1 ) {
