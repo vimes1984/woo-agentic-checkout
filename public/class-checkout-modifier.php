@@ -154,6 +154,13 @@ class CheckoutModifier {
         if ( strlen( $custom_path ) > 500 ) {
             $custom_path = substr( $custom_path, 0, 500 );
         }
+        // Also validate template path does not contain parent directory traversal.
+        if ( false !== strpos( $custom_path, '..' ) ) {
+            $custom_path = '';
+        }
+        if ( false !== strpos( $template_file, '..' ) ) {
+            $template_file = '';
+        }
         if ( strlen( $template_file ) > 200 ) {
             $template_file = substr( $template_file, 0, 200 );
         }
