@@ -432,8 +432,8 @@ class Core {
     public function ajax_beacon(): void {
         check_ajax_referer( 'wac_beacon', 'nonce' );
 
-        $event    = isset( $_POST['event'] ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
-        $raw_data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+        $event    = ( isset( $_POST['event'] ) && is_string( $_POST['event'] ) ) ? sanitize_text_field( wp_unslash( $_POST['event'] ) ) : '';
+        $raw_data = ( isset( $_POST['data'] ) && is_string( $_POST['data'] ) ) ? wp_unslash( $_POST['data'] ) : '';
 
         // Use mb_strlen for multi-byte safety on event session validation.
         if ( mb_strlen( $event ) > 100 ) {
