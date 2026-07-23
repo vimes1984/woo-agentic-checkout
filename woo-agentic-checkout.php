@@ -221,6 +221,11 @@ function wac_uninstall(): void {
         delete_option( 'wac_db_version' );
         delete_option( 'wac_settings' );
         delete_option( 'wac_llm_calls_hourly' );
+        delete_option( 'wac_notify' );
+        delete_option( 'wac_patches' );
+        delete_option( 'wac_removals' );
+        delete_option( 'wac_rollbacks' );
+        delete_option( 'wac_ab_testing_enabled' );
     }
 
     // Remove network-only options if this is multisite.
