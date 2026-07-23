@@ -507,7 +507,7 @@ class Core {
     /**
      * GET /wac/v1/suggestions
      */
-    public function rest_suggestions(): mixed {
+    public function rest_suggestions( \WP_REST_Request $request ): mixed {
         if ( ! isset( $this->services['suggest'] ) ) {
             return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
         }
