@@ -261,8 +261,8 @@ class ErrorHandler {
             sprintf(
                 '[WAC] [%s] %s: %s',
                 strtoupper( $event ),
-                $data['type'] ?? 'unknown',
-                $data['message'] ?? 'No message'
+                isset( $data['type'] ) ? substr( (string) $data['type'], 0, 80 ) : 'unknown',
+                isset( $data['message'] ) ? substr( (string) $data['message'], 0, 500 ) : 'No message'
             )
         );
     }
