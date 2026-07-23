@@ -25,7 +25,7 @@ class Beacon {
         <script>
         // WAC Experiment Tracker — injected by server
         window._wacExperiments = <?php echo wp_json_encode( $experiments ); ?>;
-        window._wacNonce = '<?php echo esc_js( wp_create_nonce( 'wac_beacon_nonce' ) ); ?>';
+        window._wacNonce = '<?php echo esc_js( wp_create_nonce( 'wac_beacon' ) ); ?>';
 
         // localStorage bridge for cookie-disabled users.
         (function() {
@@ -93,7 +93,7 @@ class Beacon {
     public function handle_ajax() {
         // Verify nonce.
         $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-        if ( ! wp_verify_nonce( $nonce, 'wac_beacon_nonce' ) ) {
+        if ( ! wp_verify_nonce( $nonce, 'wac_beacon' ) ) {
             wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
         }
 
