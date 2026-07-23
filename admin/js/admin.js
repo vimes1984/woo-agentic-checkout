@@ -1197,6 +1197,7 @@
          * Stop the auto-refresh interval.
          */
         stopAutoRefresh: function () {
+            if (typeof window === 'undefined' || typeof clearInterval !== 'function') { return; }
             if (this._refreshInterval) {
                 clearInterval(this._refreshInterval);
                 this._refreshInterval = null;
