@@ -106,8 +106,10 @@ wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
 // Delete plugin transients.
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wac_%' OR option_name LIKE '_transient_timeout_wac_%'" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 
-// Clean up user meta for all users.
+// Clean up user meta for all users (known keys).
 $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( 'wac_beacon_session', 'wac_ab_variants', 'wac_ignored_notice' )" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+// Also clean up any wac_ prefixed user meta that may have been added.
+$wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'wac_%'" ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 
 // Flush any remaining cache.
 wp_cache_flush();
