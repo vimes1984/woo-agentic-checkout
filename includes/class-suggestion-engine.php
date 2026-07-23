@@ -34,6 +34,8 @@ class SuggestionEngine {
     const MAX_REMOVED_FIELDS = 20;
     const MAX_PENDING_LIMIT = 100;
     const MAX_TRAFFIC_PCT = 100;
+    const CSS_MAX_LENGTH = 50000;
+    const JS_MAX_LENGTH = 50000;
     const MIN_TRAFFIC_PCT = 10;
 
     /**
