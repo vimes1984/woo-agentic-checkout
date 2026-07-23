@@ -342,6 +342,8 @@ class CheckoutModifier {
      * Apply custom field labels.
      */
     private function apply_field_labels( array $fields, array $labels ): array {
+        // Cap label modifications to prevent excessive field processing.
+        $labels = array_slice( $labels, 0, 50 );
         foreach ( $labels as $field_key => $label ) {
             $safe_label = sanitize_text_field( $label );
             foreach ( $fields as $section => &$section_fields ) {
