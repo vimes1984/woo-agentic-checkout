@@ -312,7 +312,7 @@ class AgentManager {
             $status[ $key ] = array(
                 'enabled'  => $this->services['settings']->is_agent_enabled( $key ),
                 'lastRun'  => $this->services['logger']->get_last_run( $key ),
-                'label'    => $agent->get_label(),
+                'label'    => sanitize_text_field( $agent->get_label() ),
                 'failures' => $this->get_failure_count( $key ),
             );
 

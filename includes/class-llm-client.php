@@ -114,7 +114,7 @@ class LLMClient {
         if ( $cache_ttl > 0 ) {
             $cache_key = $this->build_cache_key( $system_prompt, $user_prompt, $response_schema );
             $cached    = get_transient( $cache_key );
-            if ( false !== $cached ) {
+            if ( false !== $cached && is_array( $cached ) ) {
                 do_action( 'wac_llm_cache_hit', $cache_key );
                 return $cached;
             }

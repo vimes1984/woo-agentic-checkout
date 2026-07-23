@@ -1696,6 +1696,11 @@ class ABTestManager {
             'significance_weight' => 0.2,
         );
         $weights  = array_merge( $defaults, $weights );
+        // Clamp weight values to valid range (0-1) to prevent negative/overflow manipulation.
+        foreach ( $weights as &$w ) {
+            $w = max( 0.0, min( 1.0, (float) $w ) );
+        }
+        unset( $w );
         $analysis = $this->bayesian_analysis( $experiment_id );
 
         // Guard: ensure analysis is an array before iterating.
@@ -1743,11 +1748,14 @@ class ABTestManager {
         $a = $this->export_experiment( $exp_a_id );
         $b = $this->export_experiment( $exp_b_id );
 
+        $impressions_a = array_sum( array_column( $a['variants'] ?? array(), 'impressions' ) );
+        $impressions_b = array_sum( array_column( $b['variants'] ?? array(), 'impressions' ) );
+
         return array(
             'experiment_a' => $a,
             'experiment_b' => $b,
             'differences'  => array(
-                'impressions_diff'  => ( $a['experiment']['id'] ? $b['experiment']['id'] : 0 ),
+                'impressions_diff'  => absint( $impressions_a - $impressions_b ),
             ),
         );
     }
