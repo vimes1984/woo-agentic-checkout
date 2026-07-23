@@ -230,9 +230,11 @@ class ErrorDetector {
         );
         } catch ( \Exception $e ) {
             $release();
-            $logger->error( 'error_detector_run_failed', array(
-                'error' => sanitize_text_field( substr( $e->getMessage(), 0, 500 ) ),
-            ) );
+            if ( $logger ) {
+                $logger->error( 'error_detector_run_failed', array(
+                    'error' => sanitize_text_field( substr( $e->getMessage(), 0, 500 ) ),
+                ) );
+            }
             return array(
                 'success'        => false,
                 'actions'        => 0,
