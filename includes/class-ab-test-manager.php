@@ -1942,8 +1942,8 @@ class ABTestManager {
             self::STATUS_DRAFT     => array( self::STATUS_ACTIVE ),
             self::STATUS_ACTIVE    => array( self::STATUS_PAUSED, self::STATUS_WINNER, self::STATUS_CONCLUDED ),
             self::STATUS_PAUSED    => array( self::STATUS_ACTIVE, self::STATUS_CONCLUDED ),
-            self::STATUS_WINNER    => array(),
-            self::STATUS_CONCLUDED => array(),
+            self::STATUS_WINNER    => array( self::STATUS_ARCHIVED ),
+            self::STATUS_CONCLUDED => array( self::STATUS_ARCHIVED ),
             self::STATUS_ARCHIVED  => array(),
         );
         return isset( $allowed[ $from ] ) && in_array( $to, $allowed[ $from ], true );

@@ -297,6 +297,11 @@ class CheckoutModifier {
     private function apply_field_removals( array $fields, array $remove_keys ): array {
         $this->removed_field_keys = array();
 
+        // Validate keys: only alphanumeric, underscore, colon allowed.
+        $remove_keys = array_filter( $remove_keys, function ( $key ) {
+            return is_string( $key ) && 1 === preg_match( '/^[a-zA-Z0-9_:]+$/', $key );
+        } );
+
         foreach ( $remove_keys as $key ) {
             // Key format could be "billing:city" or just "city" or "billing_city".
             foreach ( $fields as $section => &$section_fields ) {
