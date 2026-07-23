@@ -568,7 +568,11 @@ class LLMClient {
      * @return string Transient key.
      */
     private function build_cache_key( string $system_prompt, string $user_prompt, array $schema ): string {
-        $raw = $system_prompt . '|' . $user_prompt . '|' . wp_json_encode( $schema );
+        $schema_json = wp_json_encode( $schema );
+        if ( ! is_string( $schema_json ) ) {
+            $schema_json = '{}';
+        }
+        $raw = $system_prompt . '|' . $user_prompt . '|' . $schema_json;
         return 'wac_llm_' . md5( $raw );
     }
 
