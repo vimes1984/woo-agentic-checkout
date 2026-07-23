@@ -259,7 +259,8 @@
          * Prevents ReDoS and injection via pattern attributes.
          */
         escapeRegExp: function (str) {
-            return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            if (typeof str !== 'string') { str = String(str); }
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         },
 
         // ─── Utilities ──────────────────────────────────────────
