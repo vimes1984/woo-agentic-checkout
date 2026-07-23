@@ -109,7 +109,12 @@
             if (this._eventQueue.length === 0) return;
 
             var batch = this._eventQueue.splice(0, this._eventQueue.length);
-            this._sendRaw('batch_events', { events: batch });
+            try {
+                this._sendRaw('batch_events', { events: batch });
+            } catch (e) {
+                // On send failure, re-queue events for next flush (cap at 100).
+                this._eventQueue = batch.concat(this._eventQueue).slice(0, 100);
+            }
         },
 
         /**
