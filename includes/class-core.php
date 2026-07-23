@@ -272,7 +272,8 @@ class Core {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             wp_die(
                 esc_html__( 'You do not have sufficient permissions to access this page.', 'woo-agentic-checkout' ),
-                403
+                esc_html__( 'Access Denied', 'woo-agentic-checkout' ),
+                array( 'response' => 403 )
             );
         }
         if ( isset( $this->services['admin'] ) ) {
