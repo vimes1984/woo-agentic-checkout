@@ -512,6 +512,9 @@ class Core {
             return new \WP_Error( 'service_unavailable', 'Suggestion engine not initialized.', array( 'status' => 503 ) );
         }
         $pending = $this->services['suggest']->get_pending();
+        if ( is_wp_error( $pending ) ) {
+            return new \WP_Error( 'engine_error', __( 'Failed to fetch suggestions.', 'woo-agentic-checkout' ), array( 'status' => 500 ) );
+        }
         if ( ! is_array( $pending ) ) {
             $pending = array();
         }
