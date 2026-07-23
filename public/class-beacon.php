@@ -33,6 +33,10 @@ class Beacon {
                 var ls = window.localStorage;
                 if (!ls) return;
                 var cid = ls.getItem('wac_client_id');
+                // Validate existing client ID format to prevent injection.
+                if (cid && !/^wac_[a-zA-Z0-9_]+$/.test(cid)) {
+                    cid = '';
+                }
                 if (!cid) {
                     cid = 'wac_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     ls.setItem('wac_client_id', cid);
