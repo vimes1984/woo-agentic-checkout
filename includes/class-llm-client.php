@@ -676,6 +676,10 @@ class LLMClient {
         if ( $this->call_count < 0 ) {
             $this->call_count = 0;
         }
+        // Cap at double max to prevent integer overflow on 32-bit.
+        if ( $this->call_count >= self::MAX_CALLS_PER_HOUR * 2 ) {
+            return;
+        }
         $this->call_count++;
         // Transient expires after 1 hour, auto-resetting the counter.
         set_transient( 'wac_llm_calls_hourly', $this->call_count, HOUR_IN_SECONDS );
