@@ -67,6 +67,12 @@ class SuggestionEngine {
             $response = $this->llm->analyze( $system_prompt, $user_prompt, $schema );
             $suggestions = $response['suggestions'] ?? array();
 
+            // Validate response size: max 20 suggestions to prevent overload.
+            if ( count( $suggestions ) > 20 ) {
+                $suggestions = array_slice( $suggestions, 0, 20 );
+                do_action( 'wac_log_warning', 'suggestion_response_truncated', 'LLM returned >20 suggestions; truncated to 20.' );
+            }
+
             $saved = array();
             foreach ( $suggestions as $suggestion ) {
                 // Normalize score to 0–1 range.
