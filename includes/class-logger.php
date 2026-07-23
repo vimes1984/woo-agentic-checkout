@@ -173,6 +173,10 @@ class Logger {
 
         $rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
 
+        if ( ! is_array( $rows ) ) {
+            return array();
+        }
+
         // Strict type casting for numeric fields.
         foreach ( $rows as &$row ) {
             if ( isset( $row["id"] ) ) {
