@@ -160,12 +160,15 @@ class SuggestionGenerator {
             $funnel = array_slice( $funnel, 0, 10 );
         }
         $experiments   = $ab->get_experiments( '', 10 );
+        $funnel        = is_array( $funnel ) ? $funnel : array();
         $recent_errors = $signals->get_recent_errors( 24, 20 );
 
         // Guard: ensure expected types for downstream consumers.
         $funnel      = is_array( $funnel ) ? $funnel : array();
         $experiments = is_array( $experiments ) ? $experiments : array();
         $recent_errors = is_array( $recent_errors ) ? $recent_errors : array();
+        $orders_24h = is_array( $orders_24h ) ? $orders_24h : array();
+        $orders_7d = is_array( $orders_7d ) ? $orders_7d : array();
 
         // Annotate cold-start / no-data state.
         $has_orders = is_array( $orders_7d ) && isset( $orders_7d['total_orders'] ) && is_numeric( $orders_7d['total_orders'] ) && (int) $orders_7d['total_orders'] > 0;
