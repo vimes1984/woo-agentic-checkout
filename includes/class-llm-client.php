@@ -503,7 +503,7 @@ class LLMClient {
             'method'      => 'POST',
             'body'        => wp_json_encode( $body ),
             'headers'     => $default_headers,
-            'timeout'     => 30,
+            'timeout'     => max( 5, absint( apply_filters( 'wac_llm_timeout', 30 ) ) ),
             'redirection' => 0,
             'httpversion' => '1.1',
             'blocking'    => true,
