@@ -62,15 +62,19 @@ class Notifier {
      * @return bool
      */
     public function new_suggestion( array $suggestion ): bool {
+        $safe_title      = isset( $suggestion['title'] ) ? sanitize_text_field( $suggestion['title'] ) : '';
+        $safe_category   = isset( $suggestion['category'] ) ? sanitize_text_field( $suggestion['category'] ) : 'general';
+        $safe_action     = isset( $suggestion['action_type'] ) ? sanitize_key( $suggestion['action_type'] ) : 'unknown';
+        $safe_desc       = isset( $suggestion['description'] ) ? sanitize_text_field( $suggestion['description'] ) : '';
         return $this->notify(
             'info',
-            "💡 New Checkout Suggestion: {$suggestion['title']}",
+            '💡 New Checkout Suggestion: ' . $safe_title,
             sprintf(
                 "Score: %.0f%%\nCategory: %s\nAction: %s\n\n%s",
                 (float) ( $suggestion['score'] ?? 0 ) * 100,
-                $suggestion['category'] ?? 'general',
-                $suggestion['action_type'] ?? 'unknown',
-                $suggestion['description'] ?? ''
+                $safe_category,
+                $safe_action,
+                $safe_desc
             ),
             $suggestion
         );

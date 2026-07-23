@@ -363,7 +363,8 @@ class AdminUI {
                                     </td>
                                     <td>
                                         <?php
-                                        if ( ! empty( $agent['enabled'] ) ) {
+                                        $agent_enabled = ! empty( $agent['enabled'] );
+                                        if ( $agent_enabled ) {
                                             echo '<span class="wac-status-dot wac-status-dot--active" aria-hidden="true"></span>';
                                             echo $this->badge( 'active', __( 'Active', 'woo-agentic-checkout' ), true );
                                         } else {
@@ -540,7 +541,7 @@ class AdminUI {
                                 </td>
                             </tr>
 
-                            <?php if ( ! empty( $exp['variants'] ) && is_array( $exp['variants'] ) ) : ?>
+                            <?php if ( isset( $exp['variants'] ) && is_array( $exp['variants'] ) && ! empty( $exp['variants'] ) ) : ?>
                                 <?php foreach ( $exp['variants'] as $variant ) : ?>
                                     <tr class="wac-variant-row wac-hidden" data-exp-id="<?php echo esc_attr( $exp['id'] ); ?>">
                                         <td></td>

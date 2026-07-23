@@ -86,3 +86,7 @@ foreach ( $tables as $table ) {
 wp_clear_scheduled_hook( 'wac_agent_tick' );
 wp_clear_scheduled_hook( 'wac_daily_agent_run' );
 wp_clear_scheduled_hook( 'wac_weekly_suggestion_run' );
+wp_clear_scheduled_hook( 'wac_hourly_cleanup' );
+
+// Clear any pending cache.
+wp_cache_flush();
