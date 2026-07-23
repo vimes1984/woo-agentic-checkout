@@ -1588,6 +1588,10 @@ class ABTestManager {
             if ( $r < $lower || $r > $upper ) {
                 $outliers[] = $r;
             }
+            // Cap outliers collection to prevent unbounded memory allocation.
+            if ( count( $outliers ) >= 1000 ) {
+                break;
+            }
         }
 
         return array(

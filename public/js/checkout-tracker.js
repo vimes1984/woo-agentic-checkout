@@ -386,6 +386,9 @@
                     if (window.console && console.warn) {
                         console.warn('WAC beacon error:', textStatus, errorThrown);
                     }
+                },
+                complete: function () {
+                    self._sending = false;
                 }
             });
         }
