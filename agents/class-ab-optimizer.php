@@ -19,6 +19,11 @@ class ABOptimizer {
      */
     const REVISION = 'batch5.12';
     const MAX_VARIANTS = 5;
+    const LOCK_TIMEOUT = 600;
+    const DEFAULT_CONFIDENCE = 0.95;
+    const DEFAULT_MIN_CONVERSIONS = 30;
+    const DEFAULT_MIN_SAMPLE = 100;
+    const DEFAULT_MAX_CONCURRENT = 3;
 
     /**
      * @var array Service dependencies.
