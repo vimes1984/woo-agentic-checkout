@@ -220,7 +220,7 @@
                 self.trackStep('order_placed', {
                     orderId: orderId
                 });
-            } else if (window.location.href.indexOf('order-received') > -1) {
+            } else if (window.location.href && window.location.href.indexOf('order-received') > -1) {
                 var params = new URLSearchParams(window.location.search);
                 var orderId = parseInt(params.get('order_id'), 10) || 0;
                 self.trackStep('order_placed', {
