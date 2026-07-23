@@ -344,7 +344,11 @@ class CheckoutModifier {
     private function apply_field_labels( array $fields, array $labels ): array {
         // Cap label modifications to prevent excessive field processing.
         $labels = array_slice( $labels, 0, 50 );
+        // Validate field_key is a string to prevent type confusion.
         foreach ( $labels as $field_key => $label ) {
+            if ( ! is_string( $field_key ) ) {
+                continue;
+            }
             $safe_label = sanitize_text_field( $label );
             foreach ( $fields as $section => &$section_fields ) {
                 if ( isset( $section_fields[ $field_key ] ) ) {
