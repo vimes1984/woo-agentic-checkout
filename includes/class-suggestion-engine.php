@@ -173,8 +173,8 @@ class SuggestionEngine {
      */
     public function apply_suggestion( int $id, bool $is_auto_apply = false ) {
         // Capability check: skip for automated/cron execution, enforce for HTTP/AJAX requests.
-        if ( ! $is_auto_apply && ! current_user_can( 'manage_options' ) ) {
-            return new \WP_Error( 'forbidden', 'You do not have permission to apply suggestions.' );
+        if ( ! $is_auto_apply && ! current_user_can( 'manage_woocommerce' ) ) {
+            return new \WP_Error( 'forbidden', __( 'You do not have permission to apply suggestions.', 'woo-agentic-checkout' ) );
         }
 
         global $wpdb;
@@ -648,18 +648,26 @@ PROMPT;
      * @return array
      */
     public function get_suggestions( string $status = '', int $limit = 50 ): array {
+        // Cap limit to prevent unbounded queries.
+        $limit = min( 200, max( 1, $limit ) );
+
         global $wpdb;
 
         $sql  = "SELECT * FROM {$wpdb->prefix}wac_suggestions";
         $args = array();
 
         if ( ! empty( $status ) ) {
+            // Validate status against known values to prevent SQL injection via prepare bypass.
+            $valid_statuses = array( self::STATUS_PENDING, self::STATUS_APPLIED, self::STATUS_REJECTED, self::STATUS_ROLLED_BACK );
+            if ( ! in_array( $status, $valid_statuses, true ) ) {
+                $status = '';
+            }
             $sql  .= ' WHERE status = %s';
             $args[] = $status;
         }
 
         $sql  .= ' ORDER BY score DESC, created_at DESC LIMIT %d';
-        $args[] = absint( $limit );
+        $args[] = $limit;
 
         return $wpdb->get_results(
             $wpdb->prepare( $sql, $args ),
