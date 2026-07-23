@@ -349,7 +349,8 @@ class CheckoutModifier {
             if ( ! is_string( $field_key ) ) {
                 continue;
             }
-            $safe_label = sanitize_text_field( $label );
+            // Cap label length to prevent excessively long field labels.
+            $safe_label = substr( sanitize_text_field( $label ), 0, 200 );
             foreach ( $fields as $section => &$section_fields ) {
                 if ( isset( $section_fields[ $field_key ] ) ) {
                     $section_fields[ $field_key ]['label'] = $safe_label;
