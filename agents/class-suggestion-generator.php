@@ -128,7 +128,7 @@ class SuggestionGenerator {
             $summary .= '.';
         }
 
-        $logger && $logger && $logger->info( 'suggestion_generator_run', array(
+        $logger && $logger->info( 'suggestion_generator_run', array(
             'generated'    => count( $suggestions ),
             'auto_applied' => $auto_applied,
             'permission'   => $permission,
