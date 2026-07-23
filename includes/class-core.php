@@ -608,6 +608,8 @@ class Core {
                 $safe_error = $this->sanitize_log_context( $error );
                 $this->services['logger']->error( 'checkout_validation_error', $safe_error );
             }
+            // Clear session errors after logging to prevent duplicate logs on repeat requests.
+            $woocommerce->session->set( 'wac_checkout_errors', array() );
         }
     }
 
