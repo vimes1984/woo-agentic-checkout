@@ -139,6 +139,10 @@ class SelfHealingAgent {
             return $results;
         }
 
+        // Cap healing actions per run to prevent runaway healing loops.
+        $max_heal_actions = 10;
+        $actions_taken = 0;
+
         if ( ! empty( $failing ) ) {
             $logger->warning( 'health_checks_failing', array(
                 'count'  => count( $failing ),
@@ -184,6 +188,10 @@ class SelfHealingAgent {
                 $this->set_heal_cooldown( $issue_id );
                 $results['actions_taken'][] = $result;
                 $notifier->heal_applied( $result );
+                $actions_taken++;
+                if ( $actions_taken >= $max_heal_actions ) {
+                    break;
+                }
             }
         }
 
