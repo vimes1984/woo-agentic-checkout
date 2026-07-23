@@ -210,6 +210,16 @@ function wac_uninstall(): void {
     delete_option( 'wac_db_version' );
     delete_option( 'wac_settings' );
     delete_option( 'wac_llm_calls_hourly' );
+    delete_option( 'wac_notify_email' );
+    delete_option( 'wac_slack_webhook' );
+    delete_option( 'wac_notify_email_enabled' );
+    delete_option( 'wac_notify_slack_enabled' );
+    delete_option( 'wac_agent_failure_counts' );
+    delete_option( 'wac_css_patches' );
+    delete_option( 'wac_js_patches' );
+    delete_option( 'wac_removed_fields' );
+    delete_option( 'wac_setting_rollbacks' );
+    delete_option( 'wac_heal_permission_level' );
 
     // Remove network-only options if this is multisite.
     if ( is_multisite() ) {
