@@ -137,6 +137,10 @@ class Settings {
      * @return bool
      */
     public function set( string $key, $value ): bool {
+        // Cap key length to prevent MySQL option_name truncation.
+        if ( strlen( $key ) > 55 ) {
+            $key = substr( $key, 0, 55 );
+        }
         // Apply numeric bounds if configured.
         if ( is_numeric( $value ) && isset( self::NUMERIC_BOUNDS[ $key ] ) ) {
             $bounds = self::NUMERIC_BOUNDS[ $key ];
