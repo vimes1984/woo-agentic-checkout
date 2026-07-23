@@ -336,6 +336,9 @@
          * Track an error event.
          */
         trackError: function (type, message, extra) {
+            // Coerce and cap error fields for safe storage.
+            type = String(type || 'unknown').substring(0, 50);
+            message = String(message || '').substring(0, 500);
             this.steps.errors.push({
                 type: type,
                 message: message,
