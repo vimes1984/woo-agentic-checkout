@@ -111,7 +111,8 @@ class ErrorDetector {
             $funnel    = $signals->get_funnel_data( 24 );
             $wc_issues = $this->check_wc_health();
 
-            $logger->info( 'error_detector_run', array(
+            if ( $logger ) {
+            \$logger->info( 'error_detector_run', array(
                 'total_errors' => 0,
                 'issues_found' => count( $wc_issues ),
                 'critical'     => 0,
