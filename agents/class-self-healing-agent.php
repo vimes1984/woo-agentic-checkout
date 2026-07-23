@@ -441,7 +441,8 @@ PROMPT;
 
         foreach ( $failing as $key => $check ) {
             $action = 'escalate';
-            $params = array( 'check' => $key, 'detail' => $check['detail'] ?? '' );
+            $check_detail = isset( $check['detail'] ) && is_string( $check['detail'] ) ? substr( $check['detail'], 0, 500 ) : '';
+            $params = array( 'check' => sanitize_key( $key ), 'detail' => $check_detail );
 
             // Known fixes for common issues.
             if ( false !== strpos( $key, 'db_table' ) ) {
