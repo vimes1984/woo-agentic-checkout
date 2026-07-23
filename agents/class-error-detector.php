@@ -23,6 +23,7 @@ class ErrorDetector {
      */
     const MIN_SAMPLES_FOR_LLM = 3;
     const MAX_ERROR_GROUP_SIZE = 50;
+    const ERROR_SAMPLE_COUNT = 5;
     const FUNNEL_STEPS = array(
         'checkout_started',
         'billing_completed',
