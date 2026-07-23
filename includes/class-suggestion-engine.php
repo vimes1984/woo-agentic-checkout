@@ -420,7 +420,7 @@ class SuggestionEngine {
      */
     private function apply_js_patch( array $data ): bool {
         $js = $data['javascript'] ?? '';
-        if ( empty( $js ) || strlen( $js ) > 50000 ) {
+        if ( empty( $js ) || strlen( $js ) > 50000 || strlen( $js ) < 3 ) {
             return false;
         }
 
