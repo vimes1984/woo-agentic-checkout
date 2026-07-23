@@ -30,6 +30,14 @@ class SignalCollector {
      * @return bool
      */
     public function send_ga4_event( string $event_name, array $params = array() ): bool {
+        // Rate limit: max 1 GA4 event per 2 seconds per session.
+        $rate_key = 'wac_ga4_rate_' . md5( session_id() ?: 'cli' );
+        $last_send = get_transient( $rate_key );
+        if ( $last_send && ( time() - $last_send ) < 2 ) {
+            return false;
+        }
+        set_transient( $rate_key, time(), 60 );
+
         $measurement_id = $this->get_setting( 'ga4_measurement_id' );
         $api_secret     = $this->get_setting( 'ga4_api_secret' );
 
