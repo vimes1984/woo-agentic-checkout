@@ -209,7 +209,7 @@ class SignalCollector {
 
         return array(
             'source'        => 'ga4',
-            'property_id'   => $property_id,
+            'property_id'   => substr( $property_id, 0, 20 ),
             'date_range'    => array( $start_date, $end_date ),
             'total_conversions' => $total_conversions,
             'total_revenue'     => round( $total_revenue, 2 ),
