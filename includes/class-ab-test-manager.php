@@ -1332,9 +1332,13 @@ class ABTestManager {
      */
     public function archive_experiment( int $experiment_id ) {
         global $wpdb;
+        $exp = $this->get_experiment( $experiment_id );
+        if ( ! $exp || ! $this->is_valid_transition( $exp['status'], self::STATUS_ARCHIVED ) ) {
+            return;
+        }
         $wpdb->update(
             $this->table_experiments,
-            array( 'status' => 'archived' ),
+            array( 'status' => self::STATUS_ARCHIVED ),
             array( 'id' => $experiment_id ),
             array( '%s' ),
             array( '%d' )

@@ -388,10 +388,6 @@ body:not(.wac-ready) .wac-toast-container {
     opacity: 0.5;
     pointer-events: none;
 }
-    opacity: 0.6;
-    pointer-events: none;
-    position: relative;
-}
 
 .wac-loading > * {
     filter: blur(0.5px);
