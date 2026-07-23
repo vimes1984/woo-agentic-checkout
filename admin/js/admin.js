@@ -171,6 +171,12 @@
         showToast: function (message, type, duration) {
             type = type || 'info';
 
+            // Whitelist: only known toast types to prevent CSS class injection.
+            var allowedTypes = { success: 1, error: 1, warning: 1, info: 1 };
+            if ( ! allowedTypes[ type ] ) {
+                type = 'info';
+            }
+
             // Default durations: errors/warnings manual dismiss, others auto.
             if (typeof duration !== 'number') {
                 duration = (type === 'error' || type === 'warning') ? 0 : 4000;
@@ -183,7 +189,7 @@
                 info:    '\u2139'
             };
 
-            var icon = icons[type] || '\u2139';
+            var icon = icons[ type ];
 
             var $container = $('.wac-toast-container');
             if ($container.length === 0) {
