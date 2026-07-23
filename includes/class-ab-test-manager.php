@@ -1871,6 +1871,11 @@ class ABTestManager {
      * @return array
      */
     public function get_experiments_by_date( string $from, string $to ): array {
+        // Validate date format (Y-m-d) to prevent unnecessary DB load from arbitrary strings.
+        $date_regex = '/^\\d{4}-\\d{2}-\\d{2}$/';
+        if ( ! preg_match( $date_regex, $from ) || ! preg_match( $date_regex, $to ) ) {
+            return array();
+        }
         global $wpdb;
         return $wpdb->get_results( $wpdb->prepare(
             "SELECT e.*,

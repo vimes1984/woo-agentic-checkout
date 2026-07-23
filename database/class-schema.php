@@ -212,10 +212,12 @@ class Schema {
         // Also purge stale beacon events (> 90 days).
         $beacon_table = $wpdb->prefix . 'wac_beacon_events';
         $beacon_threshold = gmdate( 'Y-m-d H:i:s', time() - ( 90 * DAY_IN_SECONDS ) );
-        $wpdb->query( $wpdb->prepare(
-            "DELETE FROM {$beacon_table} WHERE created_at < %s",
-            $beacon_threshold
-        ) );
+        do {
+            $deleted = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$beacon_table} WHERE created_at < %s LIMIT 1000",
+                $beacon_threshold
+            ) );
+        } while ( $deleted > 0 );
     }
 
     /**
