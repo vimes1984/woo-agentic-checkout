@@ -478,6 +478,7 @@ class AdminHandlers {
         $ab   = $core->get_service( 'ab' );
 
         if ( ! $ab ) {
+            $this->logger->error( 'ab_service_unavailable', array( 'action' => 'pause' ) );
             $this->json_error( __( 'A/B testing service unavailable.', 'woo-agentic-checkout' ) );
         }
 

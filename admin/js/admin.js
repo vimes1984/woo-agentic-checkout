@@ -38,7 +38,7 @@
 
             // Guard against missing wacData before binding AJAX.
             this.checkDependencies();
-            this._hasData = (typeof wacData !== 'undefined' && wacData && wacData.ajaxUrl);
+            this._hasData = (typeof wacData !== 'undefined' && wacData !== null && typeof wacData.ajaxUrl === 'string' && wacData.ajaxUrl.length > 0);
 
             // Merge localised strings if available.
             if (window.wacData && window.wacData.strings) {
@@ -323,6 +323,7 @@
                 var context = this;
                 var args = arguments;
                 clearTimeout(timer);
+                if (typeof fn !== 'function') { return; }
                 timer = setTimeout(function () {
                     fn.apply(context, args);
                 }, delay || 250);
@@ -337,7 +338,9 @@
          */
         confirmAction: function (message, callback) {
             if (window.confirm(String(message))) {
-                callback();
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         },
 
@@ -1133,9 +1136,9 @@
             var self = this;
             $(document).on('visibilitychange', function () {
                 if (document.hidden) {
-                    self.stopAutoRefresh();
+                    if (typeof self.stopAutoRefresh === 'function') self.stopAutoRefresh();
                 } else {
-                    self.startAutoRefresh();
+                    if (typeof self.startAutoRefresh === 'function') self.startAutoRefresh();
                     self.announce('Dashboard resumed', 'polite');
                 }
             });
@@ -1152,6 +1155,7 @@
                 return;
             }
 
+            if (this._refreshInterval) { clearInterval(this._refreshInterval); }
             this._refreshInterval = setInterval(function () {
                 var href = window.location.href;
                 // Use origin + pathname to avoid query/hash injection.
@@ -1312,7 +1316,7 @@
          * Accepts a jQuery object or CSS selector string.
          */
         smoothScroll: function (selector, offset) {
-            offset = offset || 40;
+            offset = typeof offset === 'number' ? offset : 40;
             var $el = $(selector);
             if ($el.length) {
                 $('html, body').animate({
