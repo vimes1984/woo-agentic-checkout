@@ -68,22 +68,23 @@ foreach ( $options as $option ) {
     }
 }
 
-// Drop custom tables.
 global $wpdb;
 
-$tables = array(
-    'wac_logs',
-    'wac_ab_experiments',
-    'wac_ab_variants',
-    'wac_ab_events',
-    'wac_beacon_events',
-    'wac_suggestions',
-    'wac_heal_log',
-);
-
-foreach ( $tables as $table ) {
-    $table_name = sanitize_key( $wpdb->prefix . $table );
-    $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+// Drop custom tables via Schema class for consistent table management.
+if ( class_exists( '\WooAgenticCheckout\Schema' ) ) {
+    $schema = new \WooAgenticCheckout\Schema();
+    $schema->drop_tables();
+} else {
+    // Fallback: direct table drops if Schema unavailable.
+    $tables = array(
+        'wac_logs', 'wac_ab_experiments', 'wac_ab_variants',
+        'wac_ab_events', 'wac_beacon_events', 'wac_suggestions', 'wac_heal_log',
+    );
+    foreach ( $tables as $table ) {
+        $prefix   = sanitize_key( $wpdb->prefix );
+        $table_name = sanitize_key( $prefix . $table );
+        $wpdb->query( "DROP TABLE IF EXISTS `{$table_name}`" ); // phpcs:ignore
+    }
 }
 
 // Clear cron hooks.
