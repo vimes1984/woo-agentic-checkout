@@ -562,16 +562,28 @@ class LLMClient {
     }
 
     /**
-     * Clear all cached LLM responses.
+     * Clear all cached LLM responses using chunked deletion
+     * to avoid long table locks on large option tables.
      */
     public function clear_cache() {
         global $wpdb;
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-                $wpdb->esc_like( '_transient_wac_llm_' ) . '%'
-            )
-        );
+
+        $like = $wpdb->esc_like( '_transient_wac_llm_' ) . '%';
+        $table = $wpdb->options;
+
+        // Delete in chunks of 100 to prevent long-running locks.
+        $total = 0;
+        do {
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE option_name LIKE %s LIMIT 100",
+                    $like
+                )
+            );
+            $total += $deleted;
+        } while ( $deleted > 0 );
+
+        return $total;
     }
 
     /**

@@ -534,7 +534,7 @@ class ABTestManager {
                 'event_type'    => 'conversion',
                 'event_data'    => wp_json_encode( array(
                     'revenue' => $revenue,
-                    'user_id' => $user_id,
+                    'user_id' => sanitize_text_field( $user_id ),
                 ) ),
                 'session_id'    => $this->get_session_id(),
                 'created_at'    => current_time( 'mysql' ),

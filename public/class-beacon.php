@@ -120,6 +120,11 @@ class Beacon {
             wp_send_json_error( array( 'message' => 'Invalid field length.' ), 400 );
         }
 
+        // Validate event name format: alphanumeric, underscore, hyphen only.
+        if ( 1 !== preg_match( '/^[a-zA-Z0-9_-]+$/', $event ) ) {
+            wp_send_json_error( array( 'message' => 'Invalid event name format.' ), 400 );
+        }
+
         /**
          * Fires when a beacon event is received.
          *
